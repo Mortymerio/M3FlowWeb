@@ -63,6 +63,27 @@ interface AppState {
   editorFontSize: number;
   showHelpOverlay: boolean;
   showAboutModal: boolean;
+  isFallbackMode: boolean;
+  isBrowserMode: boolean;
+  isSyncModalOpen: boolean;
+  setSyncModalOpen: (val: boolean) => void;
+  
+  // GitHub Sync State
+  githubSyncToken: string;
+  githubSyncRepo: string;
+  githubSyncMarkdown: boolean;
+  githubSyncDb: boolean;
+  syncStatus: 'idle' | 'pending' | 'syncing' | 'error' | 'success';
+  syncErrorMsg: string | null;
+  syncProgress: { current: number; total: number; message: string } | null;
+  hasUnsyncedChanges: boolean;
+  lastSyncTime: number | null;
+  
+  setGithubSyncConfig: (config: Partial<{githubSyncToken: string, githubSyncRepo: string, githubSyncMarkdown: boolean, githubSyncDb: boolean}>) => void;
+  setSyncStatus: (status: 'idle' | 'pending' | 'syncing' | 'error' | 'success', errorMsg?: string | null) => void;
+  setSyncProgress: (progress: { current: number; total: number; message: string } | null) => void;
+  setUnsyncedChanges: (val: boolean) => void;
+  triggerManualSync: () => Promise<void>;
   
   // AI Config
   openAiKey: string;
@@ -148,6 +169,20 @@ export const useStore = create<AppState>((set, get) => ({
   editorFontSize: parseInt(localStorage.getItem('fontSize') || '14') || 14,
   showHelpOverlay: localStorage.getItem('hasSeenHelp') !== 'true',
   showAboutModal: false,
+  isFallbackMode: false,
+  isBrowserMode: false,
+  isSyncModalOpen: false,
+
+  // GitHub Sync Defaults
+  githubSyncToken: localStorage.getItem('githubSyncToken') || '',
+  githubSyncRepo: localStorage.getItem('githubSyncRepo') || 'm3flow-vault-backup',
+  githubSyncMarkdown: localStorage.getItem('githubSyncMarkdown') !== 'false',
+  githubSyncDb: localStorage.getItem('githubSyncDb') !== 'false',
+  syncStatus: 'idle',
+  syncErrorMsg: null,
+  syncProgress: null,
+  hasUnsyncedChanges: false,
+  lastSyncTime: parseInt(localStorage.getItem('lastSyncTime') || '0') || null,
 
   // AI Defaults
   openAiKey: localStorage.getItem('openAiKey') || '',
@@ -172,6 +207,7 @@ export const useStore = create<AppState>((set, get) => ({
   setActiveStatus: (id) => set({ activeStatusId: id, activeNotebookId: null, activeTagId: null, activeNoteId: null }),
   setActiveTag: (id) => set({ activeTagId: id, activeNotebookId: null, activeStatusId: null, activeNoteId: null }),
   setActiveNote: (id) => set({ activeNoteId: id }),
+  setSyncModalOpen: (val) => set({ isSyncModalOpen: val }),
   setEditorMode: (mode) => {
     localStorage.setItem('editorMode', mode);
     set({ editorMode: mode });
@@ -212,10 +248,67 @@ export const useStore = create<AppState>((set, get) => ({
   setWebLlmState: (newState) => {
     set((state) => ({ ...state, ...newState }));
   },
+  
+  setGithubSyncConfig: (config) => {
+    set((state) => {
+      const newState = { ...state, ...config };
+      if (config.githubSyncToken !== undefined) localStorage.setItem('githubSyncToken', config.githubSyncToken);
+      if (config.githubSyncRepo !== undefined) localStorage.setItem('githubSyncRepo', config.githubSyncRepo);
+      if (config.githubSyncMarkdown !== undefined) localStorage.setItem('githubSyncMarkdown', String(config.githubSyncMarkdown));
+      if (config.githubSyncDb !== undefined) localStorage.setItem('githubSyncDb', String(config.githubSyncDb));
+      return newState;
+    });
+  },
+  setSyncStatus: (status, errorMsg = null) => set({ syncStatus: status, syncErrorMsg: errorMsg }),
+  setSyncProgress: (progress) => set({ syncProgress: progress }),
+  setUnsyncedChanges: (val) => set({ hasUnsyncedChanges: val }),
+  
+  triggerManualSync: async () => {
+    const state = get();
+    if (!state.githubSyncToken || !state.githubSyncRepo) return;
+    
+    set({ syncStatus: 'syncing', syncProgress: { current: 0, total: 100, message: 'Starting sync...' } });
+    try {
+      const dbAPI = (window as any).dbAPI;
+      const result = await dbAPI.githubSync({
+        token: state.githubSyncToken,
+        repoName: state.githubSyncRepo,
+        notes: state.notes,
+        syncMarkdown: state.githubSyncMarkdown,
+        syncDb: state.githubSyncDb
+      });
+      
+      if (result.success) {
+        const now = Date.now();
+        localStorage.setItem('lastSyncTime', String(now));
+        set({ syncStatus: 'success', syncErrorMsg: null, hasUnsyncedChanges: false, lastSyncTime: now, syncProgress: null });
+        setTimeout(() => set({ syncStatus: 'idle' }), 3000);
+      } else {
+        set({ syncStatus: 'error', syncErrorMsg: result.error, syncProgress: null });
+      }
+    } catch (e: any) {
+      set({ syncStatus: 'error', syncErrorMsg: e.message, syncProgress: null });
+    }
+  },
 
   loadInitialData: async () => {
     try {
       const dbAPI = (window as any).dbAPI;
+      if (!dbAPI) {
+        console.warn('dbAPI no detectado. Activando Modo Navegador (Local Storage Fallback)');
+        set({ isBrowserMode: true });
+        // Intentar cargar de localStorage si existe
+        const saved = localStorage.getItem('m3flow_web_bridge');
+        if (saved) {
+          const data = JSON.parse(saved);
+          set({ notebooks: data.notebooks || [], notes: data.notes || [], tags: data.tags || [], noteTags: data.noteTags || [] });
+        }
+        return;
+      }
+
+      const isFallback = await dbAPI.isFallbackMode();
+      set({ isFallbackMode: isFallback });
+
       const [notebooks, notes, tags, noteTags] = await Promise.all([
         dbAPI.getNotebooks(),
         dbAPI.getNotes(),
@@ -232,7 +325,8 @@ export const useStore = create<AppState>((set, get) => ({
         set({ activeNoteId: notes[0].id });
       }
     } catch (e) {
-      console.error('Error cargando SQLite', e);
+      console.error('Error cargando SQLite, activando Modo Navegador', e);
+      set({ isBrowserMode: true });
     }
   },
 
@@ -256,7 +350,9 @@ export const useStore = create<AppState>((set, get) => ({
     
     // Actualizar estado local
     set({
-      notes: notes.map((n) => n.id === id ? { ...n, title, body, updatedAt: Date.now() } : n)
+      notes: notes.map((n) => n.id === id ? { ...n, title, body, updatedAt: Date.now() } : n),
+      hasUnsyncedChanges: true,
+      syncStatus: get().syncStatus !== 'error' ? 'pending' : 'error'
     });
   },
 
@@ -282,7 +378,9 @@ export const useStore = create<AppState>((set, get) => ({
     
     set({
       notes: [newNote, ...notes],
-      activeNoteId: newId
+      activeNoteId: newId,
+      hasUnsyncedChanges: true,
+      syncStatus: get().syncStatus !== 'error' ? 'pending' : 'error'
     });
   },
 
@@ -372,7 +470,9 @@ export const useStore = create<AppState>((set, get) => ({
     if (!id) return;
     set(state => ({ 
       notes: state.notes.filter(n => n.id !== id),
-      activeNoteId: state.activeNoteId === id ? null : state.activeNoteId
+      activeNoteId: state.activeNoteId === id ? null : state.activeNoteId,
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
     }));
     try {
       const dbAPI = (window as any).dbAPI;
@@ -383,7 +483,9 @@ export const useStore = create<AppState>((set, get) => ({
     set(state => ({ 
       notebooks: state.notebooks.filter(nb => nb.id !== id),
       notes: state.notes.filter(n => n.notebookId !== id),
-      activeNotebookId: state.activeNotebookId === id ? null : state.activeNotebookId
+      activeNotebookId: state.activeNotebookId === id ? null : state.activeNotebookId,
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
     }));
     try {
       const dbAPI = (window as any).dbAPI;

@@ -45,6 +45,13 @@ try {
     closeApp: () => ipcRenderer.invoke('window:close'),
     minimizeApp: () => ipcRenderer.invoke('window:minimize'),
     maximizeApp: () => ipcRenderer.invoke('window:maximize'),
+    isFallbackMode: () => ipcRenderer.invoke('db:isFallbackMode'),
+    githubTestConnection: (token: string) => ipcRenderer.invoke('github:testConnection', token),
+    githubSync: (opts: any) => ipcRenderer.invoke('github:sync', opts),
+    githubImportDb: (opts: any) => ipcRenderer.invoke('github:importDb', opts),
+    onGithubProgress: (callback: (data: { current: number; total: number; message: string }) => void) => {
+      ipcRenderer.on('github:progress', (_, data) => callback(data));
+    },
   })
   console.log('[Preload] dbAPI exposed successfully.');
 } catch (error) {

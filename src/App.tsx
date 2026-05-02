@@ -7,13 +7,9 @@ import CommandPalette from './components/CommandPalette';
 import WelcomeScreen from './components/WelcomeScreen';
 import HelpOverlay from './components/HelpOverlay';
 import AboutModal from './components/AboutModal';
+import SyncSettingsModal from './components/SyncSettingsModal';
 import { useStore } from './store';
 import { THEMES } from './themes';
-
-
-
-
-
 
 const isLightColor = (hex: string) => {
   if (!hex || hex.length < 7) return false;
@@ -26,6 +22,8 @@ const isLightColor = (hex: string) => {
 
 const App = () => {
   const loadInitialData = useStore(state => state.loadInitialData);
+  const isFallbackMode = useStore(state => state.isFallbackMode);
+  const isBrowserMode = useStore(state => state.isBrowserMode);
   const themeName = useStore(state => state.theme);
   const themeStyle = THEMES[themeName] || THEMES['cyber-ronin'];
   const [sidebarWidth, setSidebarWidth] = useState(250);
@@ -35,6 +33,44 @@ const App = () => {
   const isNoteListCollapsed = useStore(state => state.isNoteListCollapsed);
   const isResizingSidebar = useRef(false);
   const isResizingNoteList = useRef(false);
+
+  const isSyncModalOpen = useStore(state => state.isSyncModalOpen);
+  const setSyncModalOpen = useStore(state => state.setSyncModalOpen);
+  
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-sync Watchdog (5 minutes idle)
+  useEffect(() => {
+    // Escuchar el progreso
+    const dbAPI = (window as any).dbAPI;
+    if (dbAPI?.onGithubProgress) {
+      dbAPI.onGithubProgress((data: any) => {
+        useStore.getState().setSyncProgress(data);
+      });
+    }
+
+    const resetIdleTimer = () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      idleTimer.current = setTimeout(() => {
+        const state = useStore.getState();
+        if (state.hasUnsyncedChanges && state.githubSyncToken && state.syncStatus !== 'syncing') {
+          state.triggerManualSync();
+        }
+      }, 5 * 60 * 1000);
+    };
+
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('keydown', resetIdleTimer);
+    window.addEventListener('click', resetIdleTimer);
+    resetIdleTimer();
+
+    return () => {
+      window.removeEventListener('mousemove', resetIdleTimer);
+      window.removeEventListener('keydown', resetIdleTimer);
+      window.removeEventListener('click', resetIdleTimer);
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     loadInitialData().catch(_e => {
@@ -200,6 +236,22 @@ const App = () => {
         </div>
       )}
 
+      {/* Survival Indicators */}
+      {(isFallbackMode || isBrowserMode) && (
+        <div className="fixed top-12 right-6 z-[9999] flex flex-col gap-2 pointer-events-none">
+          {isFallbackMode && (
+             <div className="bg-amber-500/20 backdrop-blur-md border border-amber-500/50 text-amber-500 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest animate-pulse">
+               Survival Mode: Local DB
+             </div>
+          )}
+          {isBrowserMode && (
+             <div className="bg-red-500/20 backdrop-blur-md border border-red-500/50 text-red-500 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest animate-pulse">
+               Web Bridge: RAM Mode
+             </div>
+          )}
+        </div>
+      )}
+
       {/* Global Window Controls (Windows Style, Premium Rounded) */}
       <div className="absolute top-0 right-0 h-10 flex items-center gap-0.5 z-[999999] px-3 pointer-events-auto no-drag print:hidden" style={{ WebkitAppRegion: 'no-drag' } as any}>
         <div className={`flex items-center gap-0.5 backdrop-blur-2xl rounded-full border p-1 shadow-2xl ${themeStyle.isDark !== false ? 'bg-white/10 border-white/20' : 'bg-black/5 border-black/10'}`}>
@@ -229,6 +281,7 @@ const App = () => {
       <HelpOverlay />
       <AboutModal />
       <CommandPalette />
+      <SyncSettingsModal isOpen={isSyncModalOpen} onClose={() => setSyncModalOpen(false)} />
     </div>
   );
 };

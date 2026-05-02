@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Download, Trash2, Palette, Paintbrush } from 'lucide-react';
+import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Download, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Loader2 as SpinnerIcon } from 'lucide-react';
 
 const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
   const children = notebooks.filter((nb: any) => nb.parentId === notebook.id);
@@ -99,6 +99,12 @@ const Sidebar = () => {
   
   const [expanded, setExpanded] = useState<Set<string>>(new Set(notebooks.map(nb => nb.id)));
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const setSyncModalOpen = useStore(state => state.setSyncModalOpen);
+  
+  const syncStatus = useStore(state => state.syncStatus);
+  const syncProgress = useStore(state => state.syncProgress);
+  const hasUnsyncedChanges = useStore(state => state.hasUnsyncedChanges);
+  
   const isCustomMenuOpen = useStore(state => state.isCustomMenuOpen);
   const setCustomMenuOpen = useStore(state => state.setCustomMenuOpen);
   const customColors = useStore(state => state.customColors);
@@ -109,7 +115,7 @@ const Sidebar = () => {
   const getStatusCount = (status: string) => notes.filter(n => n.status === status).length;
 
   return (
-    <div className={`flex-1 flex flex-col h-full font-sans relative pb-16 border-r rounded-l-xl ${themeStyle.sidebarBg} ${themeStyle.sidebarText} ${themeStyle.sidebarBorder}`} style={{ WebkitAppRegion: 'drag' } as any} onClick={() => setSettingsOpen(false)}>
+    <div className={`flex-1 flex flex-col h-full font-sans relative pb-[120px] border-r rounded-l-xl ${themeStyle.sidebarBg} ${themeStyle.sidebarText} ${themeStyle.sidebarBorder}`} style={{ WebkitAppRegion: 'drag' } as any} onClick={() => setSettingsOpen(false)}>
       {/* Logo at the very top */}
       <div className={`px-4 pt-4 pb-1 flex items-center justify-between no-drag ${themeStyle.sidebarHeader}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
         <div className="flex items-center gap-3">
@@ -204,13 +210,13 @@ const Sidebar = () => {
         {/* Sección de FILTROS */}
         <div className="mt-8">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 px-2 opacity-50 flex items-center justify-between">
-            <span>Filtros</span>
+            <span>FILTERS</span>
             <span className="text-[9px] lowercase font-normal opacity-50">{notes.length} notes</span>
           </div>
 
           {/* Statuses */}
           <div className="mb-6">
-            <div className={`px-2 mb-2 text-[11px] font-bold opacity-70 ${themeStyle.sidebarText}`}>Categorías</div>
+            <div className={`px-2 mb-2 text-[11px] font-bold opacity-70 ${themeStyle.sidebarText}`}>STATUS</div>
             <div className="flex flex-col gap-0.5 text-[13px] font-medium">
               {['none', 'active', 'on-hold', 'completed', 'dropped'].map(status => {
                  const isActive = activeStatusId === status;
@@ -233,7 +239,7 @@ const Sidebar = () => {
           {/* Tags */}
           <div className="mb-8">
             <div className="px-2 mb-2 text-[11px] font-bold opacity-70 flex items-center justify-between">
-              <span>Etiquetas</span>
+              <span>TAGS</span>
               <span className="text-[9px] font-normal opacity-50 uppercase tracking-tighter">{tags.length} total</span>
             </div>
             <div className="flex flex-col gap-0.5 text-[13px] font-medium">
@@ -259,8 +265,59 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Preferencias Globales (Keybindings & Theme) */}
-      <div className={`absolute bottom-0 w-full pt-2 pb-3 px-4 flex items-center justify-between gap-1 z-10 border-t rounded-bl-xl ${themeStyle.sidebarBg} ${themeStyle.sidebarBorder} no-drag`} style={{ WebkitAppRegion: 'no-drag' } as any}>
+      {/* Footer Area (Sync + Prefs) */}
+      <div className={`absolute bottom-0 w-full z-10 border-t rounded-bl-xl flex flex-col ${themeStyle.sidebarBg} ${themeStyle.sidebarBorder} no-drag`} style={{ WebkitAppRegion: 'no-drag' } as any}>
+        
+        {/* Sync Status Button (Large) */}
+        <div className="px-3 pt-3 pb-1">
+          <div 
+            onClick={() => setSyncModalOpen(true)}
+            className={`relative overflow-hidden cursor-pointer rounded-xl border p-3 flex flex-col gap-2 transition-all hover:shadow-lg ${themeStyle.sidebarBorder} ${themeStyle.sidebarHover}`}
+          >
+            {/* Fondo de progreso animado si está sincronizando */}
+            {syncStatus === 'syncing' && syncProgress && (
+              <div 
+                className="absolute left-0 top-0 bottom-0 bg-blue-500/10 transition-all duration-300"
+                style={{ width: `${syncProgress.current}%` }}
+              />
+            )}
+
+            <div className="relative flex justify-between items-center z-10">
+              <div className="flex items-center gap-2">
+                {syncStatus === 'syncing' ? (
+                  <SpinnerIcon size={16} className={`animate-spin text-blue-500`} />
+                ) : syncStatus === 'error' ? (
+                  <AlertCircle size={16} className="text-red-500" />
+                ) : hasUnsyncedChanges ? (
+                  <Cloud size={16} className="text-amber-500" />
+                ) : (
+                  <CheckCircle2 size={16} className="text-green-500" />
+                )}
+                <span className={`text-[11px] font-bold uppercase tracking-wider`}>
+                  {syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'error' ? 'Sync Error' : hasUnsyncedChanges ? 'Pending Sync' : 'Up to date'}
+                </span>
+              </div>
+              {syncStatus === 'syncing' && syncProgress && (
+                <span className="text-[10px] font-bold text-blue-400">{Math.round(syncProgress.current)}%</span>
+              )}
+            </div>
+            
+            <div className="relative z-10 text-[9px] opacity-60 flex justify-between items-end">
+              {syncStatus === 'syncing' && syncProgress ? (
+                <span className="truncate pr-2">{syncProgress.message}</span>
+              ) : syncStatus === 'error' ? (
+                <span className="text-red-400">Check your connection.</span>
+              ) : hasUnsyncedChanges ? (
+                <span>Pending auto-sync...</span>
+              ) : (
+                <span>Safely backed up to the cloud.</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Preferencias Globales (Keybindings & Theme) */}
+        <div className="pt-1 pb-3 px-4 flex items-center justify-between gap-1">
         <select 
           value={editorMode} 
           onChange={(e) => useStore.getState().setEditorMode(e.target.value as any)}
@@ -369,6 +426,7 @@ const Sidebar = () => {
         >
           Help
         </button>
+        </div>
       </div>
     </div>
   );

@@ -1,12 +1,26 @@
 import Database from 'better-sqlite3';
 import { join } from 'path';
 import { app } from 'electron';
+import fs from 'fs';
 
-// Inicializar la base de datos local en la carpeta AppData del usuario
-const dbPath = join(app.getPath('userData'), 'm3flow.db');
-const db = new Database(dbPath);
+let db: Database.Database;
+let _isFallbackMode = false;
 
-db.pragma('journal_mode = WAL'); // Performance premium (Write-Ahead Logging)
+const getFallbackStatus = () => _isFallbackMode;
+
+const getSafeDbPath = () => {
+  try {
+    const userDataPath = app.getPath('userData');
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true });
+    }
+    return join(userDataPath, 'm3flow.db');
+  } catch (e) {
+    console.error('[DB] Error accediendo a userData, usando fallback local:', e);
+    _isFallbackMode = true;
+    return join(process.cwd(), 'm3flow-fallback.db');
+  }
+};
 
 const initDB = (onProgress?: (msg: string) => void) => {
   const log = (msg: string) => {
@@ -15,6 +29,18 @@ const initDB = (onProgress?: (msg: string) => void) => {
   };
 
   log('Iniciando base de datos...');
+  
+  try {
+    const dbPath = getSafeDbPath();
+    if (_isFallbackMode) {
+      log(`⚠️ MODO SUPERVIVENCIA: Usando base de datos local (Fallback).`);
+    }
+    db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
+  } catch (err) {
+    log(`❌ Error crítico: No se pudo abrir la base de datos.`);
+    throw err;
+  }
   const initScript = `
     CREATE TABLE IF NOT EXISTS Notebooks (
       id TEXT PRIMARY KEY,
@@ -280,4 +306,4 @@ const closeDB = () => {
   }
 };
 
-export { initDB, databaseAPI, closeDB };
+export { initDB, databaseAPI, closeDB, getFallbackStatus };

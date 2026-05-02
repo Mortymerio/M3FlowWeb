@@ -1,12 +1,12 @@
 {
   "name": "m3flow",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "The High-Performance, Local-First Knowledge Vault",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && electron-builder --linux --win",
+    "build": "tsc -b && vite build && electron-builder --win",
     "lint": "eslint .",
     "preview": "vite preview",
     "postinstall": "electron-builder install-app-deps"

@@ -5,13 +5,15 @@ M3Flow es una plataforma de escritura de alto rendimiento diseñada para la clar
 
 ---
 
-## 🔥 Novedades de esta Versión (Update 0.1.7)
+## 🔥 Novedades de esta Versión (Update 0.1.8)
 
-- **💬 AI Chat Panel & Vault Integration:** El flujo de IA ha sido rediseñado como un chat lateral persistente. Además, al usar la etiqueta `@vault` en el prompt, la IA es capaz de buscar y leer el contexto de todas las notas locales guardadas en SQLite para dar respuestas informadas sobre tu conocimiento almacenado.
-- **📝 Editor Rich Text (WYSIWYG):** Ahora puedes alternar en caliente entre el editor RAW (CodeMirror crudo) y el nuevo entorno RICH (BlockNote). El modo enriquecido facilita una experiencia de escritura visual con formato en bloque sin necesidad de conocer la sintaxis Markdown.
-- **🎨 20 Nuevos Temas (VS Code Edition):** Se han incorporado los temas oscuros y claros más famosos del ecosistema (One Dark Pro, Dracula, Night Owl, GitHub Light, SynthWave '84, etc). Todos los elementos UI (paneles, botones, barras) ahora reaccionan si el fondo es claro u oscuro.
-- **📊 Status Bar Mejorada:** La barra inferior indica en todo momento el modo de editor activo (RICH o RAW) y persiste el estado de tus paneles entre sesiones.
-- **🤖 WebLLM AI Mirror & Claude API:** (0.1.0) La IA "Zero-Cost" incrustada soporta descargas por repositorios Mirror. Además, soporte oficial para Anthropic (Claude-Sonnet 3.5/4).
+- **☁️ Cloud Sync & Backup:** Integración completa con GitHub a través de la API de Trees para respaldos atómicos y asíncronos. Permite respaldar la base de datos completa de SQLite o exportar notas como archivos Markdown legibles automáticamente en repositorios privados.
+- **🛡️ Fallback de Base de Datos (Modo Supervivencia):** Se implementó un robusto sistema de fallback. Si la carpeta principal de datos de la aplicación falla o está bloqueada por OneDrive, M3Flow intentará usar una carpeta local o habilitará el "Modo RAM/Navegador" para garantizar la continuidad.
+- **✨ UI del Dashboard de Sincronización:** El botón de sincronización fue rediseñado y movido al pie del Sidebar, incluyendo una barra de progreso inteligente y reportes precisos en tiempo real sobre el estado de la conexión a GitHub y subida de archivos.
+- **🎨 Z-Index & Theme Fixes:** Se han resuelto problemas complejos de superposición (Stacking Contexts) para los modales globales y se asegura que todos los elementos hereden impecablemente los estilos de los temas personalizados (incluyendo el color de la fuente).
+- **💬 AI Chat Panel & Vault Integration:** El flujo de IA ha sido rediseñado como un chat lateral persistente. Al usar `@vault`, la IA busca en toda la base de SQLite local.
+- **📝 Editor Rich Text (WYSIWYG):** Alterna en caliente entre RAW (CodeMirror) y RICH (BlockNote).
+- **🎨 Temas VS Code Edition:** Más de 20 temas dinámicos que se aplican consistentemente a lo largo de la app.
 
 ---
 

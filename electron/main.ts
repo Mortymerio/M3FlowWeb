@@ -14,7 +14,8 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
   : process.env.DIST;
 
 // Importar la base de datos usando require
-import { initDB, databaseAPI, closeDB } from './database';
+import { initDB, databaseAPI, closeDB, getFallbackStatus } from './database';
+import { testConnection, syncToGithub, importDbFromGithub } from './github';
 import type { Note, Notebook, Tag } from './database';
 
 
@@ -44,6 +45,33 @@ ipcMain.handle('db:createTag', (_, tag: Tag) => databaseAPI.createTag(tag));
 ipcMain.handle('db:updateTag', (_, tag: Tag) => databaseAPI.updateTag(tag));
 ipcMain.handle('db:deleteTag', (_, id: string) => databaseAPI.deleteTag(id));
 ipcMain.handle('db:toggleNoteTag', (_, noteId: string, tagId: string) => databaseAPI.toggleNoteTag(noteId, tagId));
+ipcMain.handle('db:isFallbackMode', () => getFallbackStatus());
+
+// GitHub Sync Handlers
+ipcMain.handle('github:testConnection', (_, token: string) => testConnection(token));
+ipcMain.handle('github:sync', async (_, { token, repoName, notes, syncMarkdown, syncDb }) => {
+  const dbPath = getFallbackStatus() 
+    ? join(process.cwd(), 'm3flow-fallback.db') 
+    : join(app.getPath('userData'), 'm3flow.db');
+  return syncToGithub(token, repoName, notes, dbPath, syncMarkdown, syncDb, (progress) => {
+    if (win) win.webContents.send('github:progress', progress);
+  });
+});
+ipcMain.handle('github:importDb', async (_, { token, repoName }) => {
+  const dbPath = getFallbackStatus() 
+    ? join(process.cwd(), 'm3flow-fallback.db') 
+    : join(app.getPath('userData'), 'm3flow.db');
+  
+  // Cerrar conexión actual temporalmente para evitar locks
+  closeDB();
+  const result = await importDbFromGithub(token, repoName, dbPath);
+  
+  // Enviar mensaje para recargar la app por completo (forzar reinicio de UI y DB)
+  if (result.success && win) {
+    win.reload();
+  }
+  return result;
+});
 
 ipcMain.handle('window:close', () => win?.close());
 ipcMain.handle('window:minimize', () => win?.minimize());
@@ -222,7 +250,13 @@ async function initializeApp() {
   await new Promise(resolve => setTimeout(resolve, 500));
 
   sendLog('Cargando motor de base de datos...');
-  initDB((msg) => sendLog(msg));
+  try {
+    initDB((msg) => sendLog(msg));
+  } catch (err) {
+    sendLog('⚠️ Error de DB: Iniciando en MODO NAVEGADOR (Memoria Temporal)');
+    console.error('Database initialization failed:', err);
+    // Notificamos a la ventana que use fallback web si es necesario
+  }
 
   await new Promise(resolve => setTimeout(resolve, 300));
   sendLog('Preparando interfaz de usuario...');
