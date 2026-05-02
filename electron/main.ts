@@ -3,6 +3,8 @@ import fs from 'fs';
 import { join, basename } from 'path';
 
 
+
+
 // Configuración de rutas robusta para CommonJS
 process.env.DIST_ELECTRON = __dirname;
 // En producción, 'dist' suele estar al mismo nivel que 'dist-electron'
@@ -139,7 +141,8 @@ function createWindow() {
       preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      spellcheck: false
     },
   })
 
