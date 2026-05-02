@@ -5,13 +5,13 @@ M3Flow es una plataforma de escritura de alto rendimiento diseñada para la clar
 
 ---
 
-## 🔥 Novedades de esta Versión (Update 0.1.0)
+## 🔥 Novedades de esta Versión (Update 0.1.7)
 
-- **🤖 WebLLM AI Mirror & Claude API:** La IA "Zero-Cost" incrustada ahora soporta descargas por repositorios Mirror (ej. GitHub) para esquivar restricciones de firewalls corporativos. Además, el panel soporta el provider oficial de Anthropic (Claude-Sonnet 3.5/4).
-- **📊 Status Bar Profesional:** Inspirada en Neovim y VS Code, la nueva barra de estado dinámica está anclada al pie del editor. Rastrea la línea, columna, tamaño del documento, y muestra etiquetas dinámicas semánticas interactuando de forma nativa con los modos de CodeMirror (VIM Visual, Insert y Normal).
-- **🎨 Sincronización Tema y Preview:** El slider de tamaño de fuente global ahora escala el entorno completo (Editor + Preview HTML). Los fondos de previsualización (Preview BG) fueron independizados, dando máximo control visual en modos Custom y oscuros.
-- **⚡ UI/UX Engine Hardening:** Reparados los Z-Index bugs conflictivos donde los Dropdowns (Status, Notebooks, Export) sufrían *click-through* transparentes sobre el panel de texto o bloqueaban áreas de código inferior.
-- **🛠️ Refactor Técnico:** Keymaps de Vim/Emacs cargan primero por default (evita superposición), los catches en el Store global ahora envían trazas nativas claras, y se simplificó `App.css` limpiando estilos huérfanos.
+- **💬 AI Chat Panel & Vault Integration:** El flujo de IA ha sido rediseñado como un chat lateral persistente. Además, al usar la etiqueta `@vault` en el prompt, la IA es capaz de buscar y leer el contexto de todas las notas locales guardadas en SQLite para dar respuestas informadas sobre tu conocimiento almacenado.
+- **📝 Editor Rich Text (WYSIWYG):** Ahora puedes alternar en caliente entre el editor RAW (CodeMirror crudo) y el nuevo entorno RICH (BlockNote). El modo enriquecido facilita una experiencia de escritura visual con formato en bloque sin necesidad de conocer la sintaxis Markdown.
+- **🎨 20 Nuevos Temas (VS Code Edition):** Se han incorporado los temas oscuros y claros más famosos del ecosistema (One Dark Pro, Dracula, Night Owl, GitHub Light, SynthWave '84, etc). Todos los elementos UI (paneles, botones, barras) ahora reaccionan si el fondo es claro u oscuro.
+- **📊 Status Bar Mejorada:** La barra inferior indica en todo momento el modo de editor activo (RICH o RAW) y persiste el estado de tus paneles entre sesiones.
+- **🤖 WebLLM AI Mirror & Claude API:** (0.1.0) La IA "Zero-Cost" incrustada soporta descargas por repositorios Mirror. Además, soporte oficial para Anthropic (Claude-Sonnet 3.5/4).
 
 ---
 
@@ -20,11 +20,12 @@ M3Flow es una plataforma de escritura de alto rendimiento diseñada para la clar
 | Característica | Detalle |
 | :--- | :--- |
 | **Local-First Architecture** | Privacidad total. SQLite local con rendimiento de grado empresarial. |
-| **Mermaid & Markdown** | Soporte completo para diagramas de flujo, diagramas de secuencia y resaltado de sintaxis `hljs`. |
-| **Inteligencia Artificial** | Botón mágico "Sparkles/AI". Escribe instrucciones libres y M3Flow adaptará tu nota usando OpenAI, Ollama o el que elijas. |
-| **Editor Modeless** | Elige entre edición estándar, **VIM** o **Emacs** desde la configuración rápida. |
-| **Temas Dinámicos** | Soporte para temas oscuros, claros y un modo **Custom** donde puedes definir tu propia paleta. |
-| **Exportación PRO** | Genera archivos `.md` limpios o documentos `.pdf` profesionales con un solo clic. |
+| **Inteligencia Artificial & Vault** | Panel de chat lateral con comandos como `@vault` para que la IA (OpenAI, Ollama, Claude, Gemini) extraiga contexto semántico de tus propias notas locales. |
+| **Dual Editor Mode** | Intercambia con un solo click entre un Editor WYSIWYG de texto enriquecido (BlockNote) y un Editor RAW (CodeMirror). |
+| **Modos Neovim / Emacs** | Soporte profundo de atajos y navegación para power-users de terminal dentro del editor RAW. |
+| **Temas Dinámicos & VS Code** | Soporte de +20 temas (oscuros y claros) ultra-populares y un modo **Custom** para definir tu propia paleta. |
+| **Mermaid & Markdown** | Soporte nativo para diagramas de flujo, diagramas de secuencia y resaltado de sintaxis `hljs`. |
+| **Exportación PRO** | Genera archivos `.md` limpios o documentos `.pdf` profesionales con un clic. |
 
 ---
 
@@ -76,9 +77,10 @@ npm run build
 M3Flow te ofrece total libertad para dictar qué debe hacer la IA con tu documento. Solo presiona el botón "Sparkles" (Magia) y dale una orden. 
 
 ### Configuración (API Keys)
-Ingresa al ícono de Configuración del Editor ➔ **AI Assistant Config**. Podrás elegir el proveedor deseado:
-- Para modelos locales (*Ollama*, *LM Studio*) solo necesitas especificar el puerto local (`http://localhost:11434` o `1234`). La privacidad es 100% garantizada.
-- Para servicios en la nube (*OpenAI GPT*, *Claude*, *Gemini*) debes ingresar tu **API Key**, la cual quedará guardada de forma local y encriptada.
+Ingresa a las configuraciones dentro del **AI Chat Panel**. Podrás elegir el proveedor deseado y guardar tus credenciales de forma encriptada:
+- Para modelos locales (*Ollama*, *LM Studio*) solo necesitas especificar la URL local (`http://localhost:11434`).
+- Para IA embebida en navegador (*WebLLM*), M3Flow descargará un modelo ligero a tu caché.
+- Para servicios en la nube (*OpenAI*, *Claude*, *Gemini*), la clave ingresada vivirá únicamente en tu máquina.
 
 ### Ejemplos Ingeniosos de Prompts
 

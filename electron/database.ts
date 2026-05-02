@@ -1,6 +1,6 @@
-const Database = require('better-sqlite3');
-const { join } = require('path');
-const { app } = require('electron');
+import Database from 'better-sqlite3';
+import { join } from 'path';
+import { app } from 'electron';
 
 // Inicializar la base de datos local en la carpeta AppData del usuario
 const dbPath = join(app.getPath('userData'), 'm3flow.db');
@@ -59,7 +59,7 @@ const initDB = (onProgress?: (msg: string) => void) => {
   try {
     db.prepare('ALTER TABLE Notes ADD COLUMN reminderAt INTEGER').run();
     log('Migración: Columna reminderAt añadida.');
-  } catch (e) {
+  } catch {
     // Si ya existe, fallará silenciosamente lo cual está bien
   }
 
@@ -150,7 +150,7 @@ def check_consciousness_level(neural_state):
 ## 4. Matem├iticas de la Mente
 La conciencia podr├i'a definirse matem├iticamente mediante la **Teor├i'a de la Informaci├│n Integrada (╬ª)**:
 
-$$ ╬ª = \sum_{i=1}^{n} (I_{integrated} \times \Delta t) $$
+$$ ╬ª = \\sum_{i=1}^{n} (I_{integrated} \\times \\Delta t) $$
 
 *Nota: La complejidad del sistema es proporcional a su capacidad de introspecci├│n.*
 
@@ -181,13 +181,18 @@ $$ ╬ª = \sum_{i=1}^{n} (I_{integrated} \times \Delta t) $$
   insertNote.run('note-1', 'IA: Conciencia y Voluntad', aiMasterMarkdown, 'nb-2', 'active', 1, null, now, now);
 };
 
+// -- Tipos Básicos --
+export interface Note { id: string; title: string; body: string; notebookId: string; status?: string; reminderAt?: number | null; }
+export interface Notebook { id: string; name: string; parentId: string | null; }
+export interface Tag { id: string; name: string; color: string; }
+
 // -- Exportar Métodos CRUD Básicos --
 
 const databaseAPI = {
   getNotes: () => {
     return db.prepare('SELECT * FROM Notes ORDER BY updatedAt DESC').all();
   },
-  saveNote: (note) => {
+  saveNote: (note: Note) => {
     const stmt = db.prepare('UPDATE Notes SET title = ?, body = ?, updatedAt = ? WHERE id = ?');
     const result = stmt.run(note.title, note.body, Date.now(), note.id);
     if (result.changes === 0) {
@@ -199,23 +204,23 @@ const databaseAPI = {
   getNotebooks: () => {
     return db.prepare('SELECT * FROM Notebooks ORDER BY name ASC').all();
   },
-  saveNotebook: (nb) => {
+  saveNotebook: (nb: Notebook) => {
     const insert = db.prepare('INSERT INTO Notebooks (id, name, parentId, createdAt) VALUES (?, ?, ?, ?)');
     insert.run(nb.id, nb.name, nb.parentId, Date.now());
   },
-  moveNotebook: (notebookId, newParentId) => {
+  moveNotebook: (notebookId: string, newParentId: string | null) => {
     const stmt = db.prepare('UPDATE Notebooks SET parentId = ? WHERE id = ?');
     stmt.run(newParentId, notebookId);
   },
-  moveNote: (noteId, notebookId) => {
+  moveNote: (noteId: string, notebookId: string) => {
     const stmt = db.prepare('UPDATE Notes SET notebookId = ?, updatedAt = ? WHERE id = ?');
     stmt.run(notebookId, Date.now(), noteId);
   },
-  updateNoteStatus: (noteId, status) => {
+  updateNoteStatus: (noteId: string, status: string) => {
     const stmt = db.prepare('UPDATE Notes SET status = ?, updatedAt = ? WHERE id = ?');
     stmt.run(status, Date.now(), noteId);
   },
-  updateNoteReminder: (noteId, reminderAt) => {
+  updateNoteReminder: (noteId: string, reminderAt: number | null) => {
     const stmt = db.prepare('UPDATE Notes SET reminderAt = ?, updatedAt = ? WHERE id = ?');
     stmt.run(reminderAt, Date.now(), noteId);
   },
@@ -225,19 +230,19 @@ const databaseAPI = {
   getNoteTags: () => {
     return db.prepare('SELECT * FROM NoteTags').all();
   },
-  createTag: (tag) => {
+  createTag: (tag: Tag) => {
     const stmt = db.prepare('INSERT INTO Tags (id, name, color) VALUES (?, ?, ?)');
     stmt.run(tag.id, tag.name, tag.color);
   },
-  updateTag: (tag) => {
+  updateTag: (tag: Tag) => {
     const stmt = db.prepare('UPDATE Tags SET name = ?, color = ? WHERE id = ?');
     stmt.run(tag.name, tag.color, tag.id);
   },
-  deleteTag: (id) => {
+  deleteTag: (id: string) => {
     db.prepare('DELETE FROM NoteTags WHERE tagId = ?').run(id);
     db.prepare('DELETE FROM Tags WHERE id = ?').run(id);
   },
-  toggleNoteTag: (noteId, tagId) => {
+  toggleNoteTag: (noteId: string, tagId: string) => {
     const check = db.prepare('SELECT * FROM NoteTags WHERE noteId = ? AND tagId = ?').get(noteId, tagId);
     if (check) {
       db.prepare('DELETE FROM NoteTags WHERE noteId = ? AND tagId = ?').run(noteId, tagId);
@@ -245,11 +250,11 @@ const databaseAPI = {
       db.prepare('INSERT INTO NoteTags (noteId, tagId) VALUES (?, ?)').run(noteId, tagId);
     }
   },
-  deleteNote: (id) => {
+  deleteNote: (id: string) => {
     db.prepare('DELETE FROM NoteTags WHERE noteId = ?').run(id);
     db.prepare('DELETE FROM Notes WHERE id = ?').run(id);
   },
-  deleteNotebook: (id) => {
+  deleteNotebook: (id: string) => {
     // Primero mover notas al limbo o eliminarlas. Por ahora eliminamos para simplicidad de "borrar carpeta"
     db.prepare('DELETE FROM NoteTags WHERE noteId IN (SELECT id FROM Notes WHERE notebookId = ?)').run(id);
     db.prepare('DELETE FROM Notes WHERE notebookId = ?').run(id);
@@ -275,4 +280,4 @@ const closeDB = () => {
   }
 };
 
-module.exports = { initDB, databaseAPI, closeDB };
+export { initDB, databaseAPI, closeDB };

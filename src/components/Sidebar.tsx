@@ -110,9 +110,15 @@ const Sidebar = () => {
 
   return (
     <div className={`flex-1 flex flex-col h-full font-sans relative pb-16 border-r rounded-l-xl ${themeStyle.sidebarBg} ${themeStyle.sidebarText} ${themeStyle.sidebarBorder}`} style={{ WebkitAppRegion: 'drag' } as any} onClick={() => setSettingsOpen(false)}>
-      {/* Top Section / Settings Gear at Top Right */}
-      <div className={`px-4 pt-4 pb-2 flex items-center justify-end no-drag ${themeStyle.sidebarHeader}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
-         <div className="relative">
+      {/* Logo at the very top */}
+      <div className={`px-4 pt-4 pb-1 flex items-center justify-between no-drag ${themeStyle.sidebarHeader}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg overflow-hidden shadow-lg border border-white/10">
+            <img src="./icon.png" alt="M3Flow Logo" className="w-full h-full object-cover" />
+          </div>
+          <span className="font-black text-lg tracking-tighter opacity-90">M3Flow</span>
+        </div>
+        <div className="relative">
             <button onClick={(e) => { e.stopPropagation(); setSettingsOpen(!settingsOpen); }} className="opacity-50 hover:opacity-100 transition-opacity p-1"><Settings size={14} /></button>
             {settingsOpen && (
               <div className={`absolute top-6 right-0 w-48 rounded-md shadow-2xl border overflow-hidden z-50 ${themeStyle.sidebarBg} ${themeStyle.sidebarBorder}`}>
@@ -127,13 +133,7 @@ const Sidebar = () => {
          </div>
       </div>
 
-      <div className="px-3 pt-4 pb-2 no-drag" style={{ WebkitAppRegion: 'no-drag' } as any}>
-        <div className="px-2 mb-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg overflow-hidden shadow-lg border border-white/10">
-            <img src="./icon.png" alt="M3Flow Logo" className="w-full h-full object-cover" />
-          </div>
-          <span className="font-black text-lg tracking-tighter opacity-90">M3Flow</span>
-        </div>
+      <div className="px-3 pt-2 pb-2 no-drag" style={{ WebkitAppRegion: 'no-drag' } as any}>
 
         <div 
           onClick={() => { setActiveNotebook(null); useStore.getState().setActiveStatus(null); useStore.getState().setActiveTag(null); }}
@@ -274,13 +274,41 @@ const Sidebar = () => {
         <select 
           value={themeName} 
           onChange={(e) => useStore.getState().setTheme(e.target.value as any)}
-          className={`bg-transparent text-[10px] uppercase font-bold focus:outline-none cursor-pointer opacity-70 hover:opacity-100 transition-opacity w-[70px] ${themeStyle.sidebarText}`}
+          className={`bg-transparent text-[10px] uppercase font-bold focus:outline-none cursor-pointer opacity-70 hover:opacity-100 transition-opacity w-[90px] ${themeStyle.sidebarText}`}
         >
-          <option value="midnight-indigo" className="bg-[#1b1c28] text-white">Midnight</option>
-          <option value="cloud-nine" className="bg-[#1b1c28] text-white">Cloud9</option>
-          <option value="arctic-night" className="bg-[#1b1c28] text-white">Arctic</option>
-          <option value="cyber-ronin" className="bg-[#1b1c28] text-white">Ronin</option>
-          <option value="custom" className="bg-[#1b1c28] text-white">Custom</option>
+          <optgroup label="── ORIGINAL ──" className="bg-[#1b1c28] text-white">
+            <option value="midnight-indigo" className="bg-[#1b1c28] text-white">Midnight</option>
+            <option value="cloud-nine" className="bg-[#1b1c28] text-white">Cloud9</option>
+            <option value="arctic-night" className="bg-[#1b1c28] text-white">Arctic</option>
+            <option value="cyber-ronin" className="bg-[#1b1c28] text-white">Ronin</option>
+          </optgroup>
+          <optgroup label="── DARK ──" className="bg-[#1b1c28] text-white">
+            <option value="one-dark-pro" className="bg-[#1b1c28] text-white">One Dark Pro</option>
+            <option value="dracula" className="bg-[#1b1c28] text-white">Dracula</option>
+            <option value="tokyo-night" className="bg-[#1b1c28] text-white">Tokyo Night</option>
+            <option value="github-dark" className="bg-[#1b1c28] text-white">GitHub Dark</option>
+            <option value="night-owl" className="bg-[#1b1c28] text-white">Night Owl</option>
+            <option value="monokai-pro" className="bg-[#1b1c28] text-white">Monokai Pro</option>
+            <option value="ayu-dark" className="bg-[#1b1c28] text-white">Ayu Dark</option>
+            <option value="winter-is-coming" className="bg-[#1b1c28] text-white">Winter Coming</option>
+            <option value="shades-of-purple" className="bg-[#1b1c28] text-white">Purple</option>
+            <option value="catppuccin-mocha" className="bg-[#1b1c28] text-white">Catppuccin</option>
+          </optgroup>
+          <optgroup label="── LIGHT ──" className="bg-[#1b1c28] text-white">
+            <option value="github-light" className="bg-[#1b1c28] text-white">GitHub Light</option>
+            <option value="one-light" className="bg-[#1b1c28] text-white">One Light</option>
+            <option value="solarized-light" className="bg-[#1b1c28] text-white">Solarized</option>
+            <option value="quiet-light" className="bg-[#1b1c28] text-white">Quiet Light</option>
+            <option value="ayu-light" className="bg-[#1b1c28] text-white">Ayu Light</option>
+            <option value="catppuccin-latte" className="bg-[#1b1c28] text-white">Latte</option>
+            <option value="rose-pine-dawn" className="bg-[#1b1c28] text-white">Rosé Pine</option>
+            <option value="material-lighter" className="bg-[#1b1c28] text-white">Material</option>
+            <option value="nord-light" className="bg-[#1b1c28] text-white">Nord Light</option>
+            <option value="everforest-light" className="bg-[#1b1c28] text-white">Everforest</option>
+          </optgroup>
+          <optgroup label="── CUSTOM ──" className="bg-[#1b1c28] text-white">
+            <option value="custom" className="bg-[#1b1c28] text-white">Custom</option>
+          </optgroup>
         </select>
            {themeName === 'custom' && (
           <div className="relative">

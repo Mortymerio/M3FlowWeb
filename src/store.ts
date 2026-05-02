@@ -39,6 +39,8 @@ interface AppState {
   isNoteListCollapsed: boolean;
   toggleSidebar: () => void;
   toggleNoteList: () => void;
+  isAiPanelOpen: boolean;
+  toggleAiPanel: () => void;
   activeNotebookId: string | null;
   activeNoteId: string | null;
   activeStatusId: string | null;
@@ -46,7 +48,8 @@ interface AppState {
   searchQuery: string;
   sortOrder: 'default' | 'alphabetical';
   editorMode: 'normal' | 'vim' | 'emacs';
-  theme: 'cyber-ronin' | 'cloud-nine' | 'arctic-night' | 'midnight-indigo' | 'custom';
+  editorType: 'raw' | 'rich';
+  theme: string;
   customColors: {
     sidebarBg: string;
     sidebarHeader: string;
@@ -87,7 +90,8 @@ interface AppState {
   setActiveTag: (tagId: string | null) => void;
   setActiveNote: (id: string | null) => void;
   setEditorMode: (mode: 'normal' | 'vim' | 'emacs') => void;
-  setTheme: (theme: 'cyber-ronin' | 'cloud-nine' | 'arctic-night' | 'midnight-indigo' | 'custom') => void;
+  setEditorType: (type: 'raw' | 'rich') => void;
+  setTheme: (theme: string) => void;
   setCustomColor: (key: string, color: string) => void;
   setCustomMenuOpen: (open: boolean) => void;
   setEditorFontSize: (size: number) => void;
@@ -120,6 +124,12 @@ export const useStore = create<AppState>((set, get) => ({
   isNoteListCollapsed: false,
   toggleSidebar: () => set(state => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
   toggleNoteList: () => set(state => ({ isNoteListCollapsed: !state.isNoteListCollapsed })),
+  isAiPanelOpen: localStorage.getItem('isAiPanelOpen') === 'true',
+  toggleAiPanel: () => set(state => {
+    const newVal = !state.isAiPanelOpen;
+    localStorage.setItem('isAiPanelOpen', newVal ? 'true' : 'false');
+    return { isAiPanelOpen: newVal };
+  }),
   notebooks: [],
   notes: [],
   tags: [],
@@ -131,6 +141,7 @@ export const useStore = create<AppState>((set, get) => ({
   searchQuery: '',
   sortOrder: 'default',
   editorMode: (localStorage.getItem('editorMode') as any) || 'normal',
+  editorType: (localStorage.getItem('editorType') as 'raw' | 'rich') || 'raw',
   theme: (localStorage.getItem('theme') as any) || 'cyber-ronin',
   customColors: JSON.parse(localStorage.getItem('customColors') || '{"sidebarBg":"#1e2329","sidebarHeader":"#171b1f","listBg":"#252b33","listHeader":"#1e2329","editorBg":"#15191e","editorHeader":"#1e2329","previewBg":"#1a1e24"}'),
   isCustomMenuOpen: false,
@@ -164,6 +175,10 @@ export const useStore = create<AppState>((set, get) => ({
   setEditorMode: (mode) => {
     localStorage.setItem('editorMode', mode);
     set({ editorMode: mode });
+  },
+  setEditorType: (type) => {
+    localStorage.setItem('editorType', type);
+    set({ editorType: type });
   },
   setTheme: (theme) => {
     localStorage.setItem('theme', theme);

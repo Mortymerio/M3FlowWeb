@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
-const fs = require('fs');
-const { join, dirname, basename } = require('path');
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import fs from 'fs';
+import { join, basename } from 'path';
+
 
 // Configuración de rutas robusta para CommonJS
 process.env.DIST_ELECTRON = __dirname;
@@ -11,56 +12,44 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
   : process.env.DIST;
 
 // Importar la base de datos usando require
-const { initDB, databaseAPI, closeDB } = require('./database.ts');
+import { initDB, databaseAPI, closeDB } from './database';
+import type { Note, Notebook, Tag } from './database';
 
-// Bloqueo de instancia única para evitar abrir múltiples veces
-const gotTheLock = app.requestSingleInstanceLock();
 
-if (!gotTheLock) {
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    // Si se intenta abrir otra instancia, enfocar la ventana principal
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
-    }
-  });
-}
 
 // Catch unhandled errors to help debug production crashes
 process.on('uncaughtException', (error) => {
   dialog.showErrorBox('Main Process Exception', error.message + '\n' + error.stack);
 });
 process.on('unhandledRejection', (reason) => {
-  dialog.showErrorBox('Main Process Rejection', reason?.message || String(reason));
+  dialog.showErrorBox('Main Process Rejection', (reason as Error)?.message || String(reason));
 });
 
 // Intercomunicación Segura (IPC)
 ipcMain.handle('get-notes', () => databaseAPI.getNotes())
-ipcMain.handle('save-note', (_, note) => databaseAPI.saveNote(note))
+ipcMain.handle('save-note', (_, note: Note) => databaseAPI.saveNote(note))
 ipcMain.handle('get-notebooks', () => databaseAPI.getNotebooks())
-ipcMain.handle('save-notebook', (_, nb) => databaseAPI.saveNotebook(nb))
-ipcMain.handle('delete-notebook', (_, id) => databaseAPI.deleteNotebook(id))
-ipcMain.handle('delete-note', (_, id) => databaseAPI.deleteNote(id))
-ipcMain.handle('db:moveNotebook', (_, id, parentId) => databaseAPI.moveNotebook(id, parentId));
-ipcMain.handle('db:moveNote', (_, noteId, notebookId) => databaseAPI.moveNote(noteId, notebookId));
-ipcMain.handle('db:updateNoteStatus', (_, noteId, status) => databaseAPI.updateNoteStatus(noteId, status));
-ipcMain.handle('db:updateNoteReminder', (_, noteId, reminderAt) => databaseAPI.updateNoteReminder(noteId, reminderAt));
+ipcMain.handle('save-notebook', (_, nb: Notebook) => databaseAPI.saveNotebook(nb))
+ipcMain.handle('delete-notebook', (_, id: string) => databaseAPI.deleteNotebook(id))
+ipcMain.handle('delete-note', (_, id: string) => databaseAPI.deleteNote(id))
+ipcMain.handle('db:moveNotebook', (_, id: string, parentId: string | null) => databaseAPI.moveNotebook(id, parentId));
+ipcMain.handle('db:moveNote', (_, noteId: string, notebookId: string) => databaseAPI.moveNote(noteId, notebookId));
+ipcMain.handle('db:updateNoteStatus', (_, noteId: string, status: string) => databaseAPI.updateNoteStatus(noteId, status));
+ipcMain.handle('db:updateNoteReminder', (_, noteId: string, reminderAt: number | null) => databaseAPI.updateNoteReminder(noteId, reminderAt));
 ipcMain.handle('db:getTags', () => databaseAPI.getTags());
 ipcMain.handle('db:getNoteTags', () => databaseAPI.getNoteTags());
-ipcMain.handle('db:createTag', (_, tag) => databaseAPI.createTag(tag));
-ipcMain.handle('db:updateTag', (_, tag) => databaseAPI.updateTag(tag));
-ipcMain.handle('db:deleteTag', (_, id) => databaseAPI.deleteTag(id));
-ipcMain.handle('db:toggleNoteTag', (_, noteId, tagId) => databaseAPI.toggleNoteTag(noteId, tagId));
+ipcMain.handle('db:createTag', (_, tag: Tag) => databaseAPI.createTag(tag));
+ipcMain.handle('db:updateTag', (_, tag: Tag) => databaseAPI.updateTag(tag));
+ipcMain.handle('db:deleteTag', (_, id: string) => databaseAPI.deleteTag(id));
+ipcMain.handle('db:toggleNoteTag', (_, noteId: string, tagId: string) => databaseAPI.toggleNoteTag(noteId, tagId));
 
 ipcMain.handle('window:close', () => win?.close());
 ipcMain.handle('window:minimize', () => win?.minimize());
 ipcMain.handle('window:maximize', () => {
-    if (win?.isMaximized()) { win?.unmaximize(); } else { win?.maximize(); }
+  if (win?.isMaximized()) { win?.unmaximize(); } else { win?.maximize(); }
 });
 
-ipcMain.handle('export-markdown', async (_, { title, content }) => {
+ipcMain.handle('export-markdown', async (_, { title, content }: { title: string, content: string }) => {
   const result = await dialog.showSaveDialog({
     title: 'Export active note to Markdown',
     defaultPath: `${title || 'untitled'}.md`,
@@ -73,16 +62,16 @@ ipcMain.handle('export-markdown', async (_, { title, content }) => {
   return false;
 });
 
-ipcMain.handle('export-pdf', async (_, { title }) => {
+ipcMain.handle('export-pdf', async (_, { title }: { title: string }) => {
   const result = await dialog.showSaveDialog({
     title: 'Export active note to PDF',
     defaultPath: `${title || 'untitled'}.pdf`,
     filters: [{ name: 'PDF', extensions: ['pdf'] }]
   });
-  
+
   if (!result.canceled && result.filePath) {
     try {
-      const data = await win.webContents.printToPDF({
+      const data = await win!.webContents.printToPDF({
         printBackground: true,
         pageSize: 'A4',
         displayHeaderFooter: false
@@ -102,18 +91,18 @@ ipcMain.handle('import-workspace', async () => {
     title: 'Select Workspace Folder',
     properties: ['openDirectory']
   });
-  
+
   if (result.canceled || result.filePaths.length === 0) return false;
-  
+
   // Limpiar workspace actual para evitar duplicados
   databaseAPI.clearWorkspace();
-  
+
   const rootPath = result.filePaths[0];
   const rootId = 'nb-' + Date.now();
-  
+
   databaseAPI.saveNotebook({ id: rootId, name: basename(rootPath), parentId: null });
-  
-  const scanDir = (dirPath, pid) => {
+
+  const scanDir = (dirPath: string, pid: string) => {
     const items = fs.readdirSync(dirPath);
     for (const item of items) {
       if (item.startsWith('.') || item === 'node_modules') continue;
@@ -130,12 +119,12 @@ ipcMain.handle('import-workspace', async () => {
       }
     }
   };
-  
+
   scanDir(rootPath, rootId);
   return true;
 });
 
-let win = null;
+let win: BrowserWindow | null = null;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -159,7 +148,7 @@ function createWindow() {
     // Si la URL no es la del servidor de desarrollo o el archivo local, abrir externamente
     const isDev = process.env.VITE_DEV_SERVER_URL && url.startsWith(process.env.VITE_DEV_SERVER_URL);
     const isFile = url.startsWith('file://');
-    
+
     if (!isDev && !isFile) {
       event.preventDefault();
       shell.openExternal(url);
@@ -183,16 +172,16 @@ function createWindow() {
   });
 
   if (process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(process.env.VITE_DEV_SERVER_URL)
+    win!.loadURL(process.env.VITE_DEV_SERVER_URL)
   } else {
-    const indexPath = join(process.env.DIST, 'index.html');
-    win.loadFile(indexPath).catch(err => {
+    const indexPath = join(process.env.DIST as string, 'index.html');
+    win!.loadFile(indexPath).catch((err: Error) => {
       dialog.showErrorBox('File Load Error', `Could not load index.html from: ${indexPath}\n${err.message}`);
     });
   }
 }
 
-let splashWin = null;
+let splashWin: BrowserWindow | null = null;
 
 function createSplashWindow() {
   splashWin = new BrowserWindow({
@@ -207,10 +196,10 @@ function createSplashWindow() {
   });
 
   if (process.env.VITE_DEV_SERVER_URL) {
-    splashWin.loadURL(`${process.env.VITE_DEV_SERVER_URL}splash.html`);
+    splashWin!.loadURL(`${process.env.VITE_DEV_SERVER_URL}splash.html`);
   } else {
-    const splashPath = join(process.env.DIST, 'splash.html');
-    splashWin.loadFile(splashPath).catch(err => {
+    const splashPath = join(process.env.DIST as string, 'splash.html');
+    splashWin!.loadFile(splashPath).catch((err: Error) => {
       console.error('Failed to load splash screen:', err);
     });
   }
@@ -220,14 +209,13 @@ function createSplashWindow() {
 async function initializeApp() {
   createSplashWindow();
 
-  const sendLog = (msg) => {
+  const sendLog = (msg: string) => {
     if (splashWin && !splashWin.isDestroyed()) {
       splashWin.webContents.send('loading-log', msg);
     }
     console.log(`[Init] ${msg}`);
   };
 
-  // Simular un pequeño delay para que se vea el splash (opcional, pero ayuda a la experiencia)
   await new Promise(resolve => setTimeout(resolve, 500));
 
   sendLog('Cargando motor de base de datos...');
@@ -235,16 +223,16 @@ async function initializeApp() {
 
   await new Promise(resolve => setTimeout(resolve, 300));
   sendLog('Preparando interfaz de usuario...');
-  
+
   createWindow();
 
   // Esperar a que la ventana principal esté lista para mostrarse
-  win.once('ready-to-show', () => {
+  win!.once('ready-to-show', () => {
     setTimeout(() => {
       if (splashWin && !splashWin.isDestroyed()) {
         splashWin.close();
       }
-      win.show();
+      win!.show();
     }, 800); // Pequeño buffer para una transición suave
   });
 }

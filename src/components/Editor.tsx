@@ -11,8 +11,9 @@ import { emacs } from '@replit/codemirror-emacs';
 import { languages } from '@codemirror/language-data';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { Download, FileText, Layout, Eye, PenTool, Book, Settings2, Plus, ChevronDown, Trash2, Search, Check, Columns, LayoutList, Bell, Calendar, Sparkles, Loader2, Cpu, Globe } from 'lucide-react';
-import { initWebLlm, getEngine } from '../lib/webllm';
+import { Download, FileText, Layout, Eye, PenTool, Book, Settings2, Plus, ChevronDown, Trash2, Search, Check, Columns, LayoutList, Bell, Calendar, Sparkles } from 'lucide-react';
+import RichEditor from './RichEditor';
+import AiChatPanel from './AiChatPanel';
 
 const mdParser = new MarkdownIt({
   html: true,
@@ -55,11 +56,14 @@ const Editor = () => {
   const toggleNoteList = useStore(state => state.toggleNoteList);
   const themeName = useStore(state => state.theme);
   const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
+  const isDark = themeStyle.isDark !== false;
   const editorFontSize = useStore(state => state.editorFontSize);
+  const editorType = useStore(state => state.editorType);
+  const setEditorType = useStore(state => state.setEditorType);
 
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState<'split' | 'edit' | 'preview'>('split');
-  const [dropdownOpen, setDropdownOpen] = useState<'none' | 'notebook' | 'status' | 'tags' | 'settings' | 'reminder' | 'ai' | 'ai_config'>('none');
+  const [dropdownOpen, setDropdownOpen] = useState<'none' | 'notebook' | 'status' | 'tags' | 'settings' | 'reminder'>('none');
   const [tagSearch, setTagSearch] = useState('');
   const [splitRatio, setSplitRatio] = useState(0.5);
   const isResizingSplit = useRef(false);
@@ -72,25 +76,9 @@ const Editor = () => {
   const [totalLines, setTotalLines] = useState(0);
   const [vimMode, setVimMode] = useState('NORMAL');
 
-  // AI State
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const activeAiProvider = useStore(state => state.activeAiProvider);
-  const openAiKey = useStore(state => state.openAiKey);
-  const geminiKey = useStore(state => state.geminiKey);
-  const claudeKey = useStore(state => state.claudeKey);
-  const githubToken = useStore(state => state.githubToken);
-  const azureUrl = useStore(state => state.azureUrl);
-  const azureKey = useStore(state => state.azureKey);
-  const ollamaUrl = useStore(state => state.ollamaUrl);
-  const ollamaModel = useStore(state => state.ollamaModel);
-  const lmStudioUrl = useStore(state => state.lmStudioUrl);
-  const setAiConfig = useStore(state => state.setAiConfig);
-  const setActiveAiProvider = useStore(state => state.setActiveAiProvider);
-  
-  const isWebLlmLoaded = useStore(state => state.isWebLlmLoaded);
-  const webLlmProgress = useStore(state => state.webLlmProgress);
-  const webLlmStatusText = useStore(state => state.webLlmStatusText);
+  // AI Panel State
+  const isAiPanelOpen = useStore(state => state.isAiPanelOpen);
+  const toggleAiPanel = useStore(state => state.toggleAiPanel);
 
   const tags = useStore(state => state.tags);
   const noteTags = useStore(state => state.noteTags);
@@ -102,117 +90,7 @@ const Editor = () => {
   const deleteTag = useStore(state => state.deleteTag);
   const setCustomColor = useStore(state => state.setCustomColor);
   const customColors = useStore(state => state.customColors);
-  const webLlmModelUrl = useStore(state => state.webLlmModelUrl);
 
-  const handleAiAction = async () => {
-    if (!aiPrompt.trim() || isAiLoading) return;
-    setIsAiLoading(true);
-    let resultText = '';
-
-    try {
-      if (activeAiProvider === 'webllm') {
-        const engine = getEngine();
-        if (!engine) throw new Error("WebLLM Engine is not loaded.");
-        const reply = await engine.chat.completions.create({
-          messages: [
-            { role: "system", content: "You are a markdown editor assistant." },
-            { role: "user", content: `Instruction: ${aiPrompt}\n\nDocument:\n${content}\n\nOutput only the resulting markdown.` }
-          ]
-        });
-        resultText = reply.choices[0]?.message.content || '';
-      } else if (activeAiProvider === 'ollama') {
-        const res = await fetch(`${ollamaUrl}/api/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: ollamaModel || "llama3", // Uses the configured model
-            prompt: `Instruction: ${aiPrompt}\n\nNote Document:\n${content}\n\nOutput only the resulting markdown content without conversational fill.`,
-            stream: false
-          })
-        });
-        const data = await res.json();
-        resultText = data.response;
-      } else if (activeAiProvider === 'openai' || activeAiProvider === 'lmstudio' || activeAiProvider === 'github' || activeAiProvider === 'azure') {
-        const isLocal = activeAiProvider === 'lmstudio';
-        const isGithub = activeAiProvider === 'github';
-        const isAzure = activeAiProvider === 'azure';
-        
-        let url = 'https://api.openai.com/v1/chat/completions';
-        if (isLocal) url = `${lmStudioUrl}/v1/chat/completions`;
-        if (isGithub) url = 'https://models.inference.ai.azure.com/chat/completions';
-        if (isAzure) url = azureUrl; // Must be full deployment URL
-        
-        const headers: any = { 'Content-Type': 'application/json' };
-        
-        if (isAzure) {
-           headers['api-key'] = azureKey; // Azure uses api-key header
-        } else {
-           let token = openAiKey;
-           if (isLocal) token = 'lm-studio';
-           if (isGithub) token = githubToken;
-           headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const res = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            model: isLocal ? "local-model" : "gpt-4o",
-            messages: [
-              { role: "system", content: "You are a helpful markdown editor assistant. Obey the user's instructions over the provided document. Output only the requested modified content in raw markdown." },
-              { role: "user", content: `Instruction: ${aiPrompt}\n\nDocument:\n${content}` }
-            ]
-          })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message || 'API Error');
-        resultText = data.choices?.[0]?.message?.content;
-      } else if (activeAiProvider === 'gemini') {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `System: You are a markdown editor assistant. Output only the requested modified content.\nInstruction: ${aiPrompt}\n\nDocument:\n${content}` }] }]
-          })
-        });
-        const data = await res.json();
-        resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      } else if (activeAiProvider === 'claude') {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': claudeKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 4096,
-            system: 'You are a helpful markdown editor assistant. Obey the user\'s instructions over the provided document. Output only the requested modified content in raw markdown.',
-            messages: [
-              { role: 'user', content: `Instruction: ${aiPrompt}\n\nDocument:\n${content}` }
-            ]
-          })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message || 'Claude API Error');
-        resultText = data.content?.[0]?.text;
-      }
-
-      if (resultText) {
-        setContent(resultText);
-        setDropdownOpen('none');
-        setAiPrompt('');
-      } else {
-         alert('AI Provider returned an empty response. Check settings or model.');
-      }
-    } catch (e: any) {
-      alert('AI Request failed: ' + e.message);
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
 
   // Cursor position tracking extension
   const cursorTracker = useCallback(() => EditorView.updateListener.of((update) => {
@@ -726,163 +604,42 @@ const Editor = () => {
               <span onClick={() => applyFormat('h1')} className="cursor-pointer hover:opacity-70 px-1 font-bold">A</span>
               
               <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
-              <div className="relative">
-                 <button 
-                   onClick={(e) => { e.stopPropagation(); setDropdownOpen(dropdownOpen === 'ai' ? 'none' : 'ai'); }} 
-                   className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-blue-500/20 text-blue-500 transition-colors ${dropdownOpen === 'ai' ? 'bg-blue-500/20' : ''}`}
-                 >
-                   <Sparkles size={14} />
-                   <span className="text-[11px] font-bold">AI</span>
-                 </button>
-                 
-                 {dropdownOpen === 'ai' && (
-                   <div 
-                     onClick={(e) => e.stopPropagation()}
-                     className={`absolute top-8 left-0 w-64 p-3 rounded-xl shadow-2xl border z-[999] ${themeStyle.dropdownBg} ${themeStyle.dropdownText} ${themeStyle.editorBorder} animate-in fade-in slide-in-from-top-2 duration-200`}
-                   >
-                     <div className="flex items-center justify-between mb-2 opacity-70">
-                       <div className="flex items-center gap-2">
-                         <Sparkles size={12} className="text-blue-500" />
-                         <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500">Ask {activeAiProvider}</span>
-                       </div>
-                       <button onClick={(e) => { e.stopPropagation(); setDropdownOpen('ai_config'); }} className="hover:text-blue-400 hover:rotate-90 transition-all cursor-pointer p-1" title="Configure AI Provider">
-                         <Settings2 size={12} />
-                       </button>
-                     </div>
-                      
-                      {activeAiProvider === 'webllm' && !isWebLlmLoaded ? (
-                        <div className="flex flex-col gap-3 py-2">
-                           <div className="text-[10px] opacity-70 text-center px-2">
-                             To use the Embedded AI, you must download the Qwen2.5 (400MB) offline model to your browser cache. This happens only once.
-                           </div>
-                           
-                           <div className="mt-2">
-                             <div className="flex items-center gap-1.5 mb-1">
-                               <Globe size={10} className="text-amber-400" />
-                               <span className="text-[9px] font-bold opacity-50 uppercase">Model Mirror URL (optional)</span>
-                             </div>
-                             <input
-                               type="text"
-                               placeholder="https://raw.githubusercontent.com/user/repo/..."
-                               value={webLlmModelUrl}
-                               onChange={(e) => setAiConfig('webLlmModelUrl', e.target.value)}
-                               onClick={(e) => e.stopPropagation()}
-                               className="w-full bg-black/20 border border-white/10 rounded-lg p-1.5 text-[9px] outline-none focus:border-amber-500 transition-colors mb-1"
-                             />
-                             <span className="text-[8px] opacity-30">Use if HuggingFace is blocked (e.g. GitHub raw)</span>
-                           </div>
-
-                           {webLlmStatusText ? (
-                             <div className="flex flex-col gap-1 items-center">
-                               <span className="text-[9px] text-blue-400 font-bold tracking-wider">{webLlmProgress}%</span>
-                               <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden border border-white/5">
-                                 <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${webLlmProgress}%` }}></div>
-                               </div>
-                               <span className="text-[8px] opacity-50 mt-1">{webLlmStatusText}</span>
-                             </div>
-                           ) : (
-                             <button
-                               onClick={(e) => { e.stopPropagation(); initWebLlm(); }}
-                               className="w-full py-2 rounded-lg bg-indigo-600/80 text-white text-[10px] font-bold hover:bg-indigo-500 transition-colors shadow-lg flex justify-center items-center gap-2 border border-indigo-400/30"
-                             >
-                               <Cpu size={12} /> DOWNLOAD MODEL
-                             </button>
-                          )}
-                        </div>
-                      ) : (
-                        <>
-                          <textarea
-                            ref={(el) => { if (el) setTimeout(() => el.focus(), 50); }}
-                            className={`w-full bg-black/20 border border-white/10 rounded-lg p-2 text-xs outline-none focus:border-blue-500 transition-colors mb-2 resize-none h-16 shadow-inner`}
-                            placeholder="e.g. Translate to Spanish, fix grammar, make it sound professional..."
-                            value={aiPrompt}
-                            onChange={(e) => setAiPrompt(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleAiAction();
-                              }
-                            }}
-                          />
-                          <button
-                            onClick={handleAiAction}
-                            disabled={isAiLoading || !aiPrompt.trim()}
-                            className="w-full py-1.5 rounded-lg bg-blue-500 text-white text-[10px] font-bold hover:bg-blue-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                          >
-                            {isAiLoading ? <><Loader2 size={12} className="animate-spin" /> GENERATING...</> : 'MAGIC'}
-                          </button>
-                        </>
-                      )}
-                   </div>
-                 )}
-
-                 {dropdownOpen === 'ai_config' && (
-                    <div 
-                      onClick={(e) => e.stopPropagation()}
-                      className={`absolute top-8 left-0 w-64 p-3 rounded-xl shadow-2xl border z-[999] ${themeStyle.dropdownBg} ${themeStyle.dropdownText} ${themeStyle.editorBorder} animate-in fade-in slide-in-from-top-2 duration-200`}
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <Settings2 size={12} className="text-blue-500" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500">Configure AI Engine</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mb-2">
-                        <select 
-                          value={activeAiProvider} 
-                          onChange={(e) => setActiveAiProvider(e.target.value as any)}
-                          className="bg-black/20 w-full rounded p-1.5 text-[11px] outline-none border border-white/5"
-                        >
-                          <option value="webllm">M3Flow Embedded Beta</option>
-                          <option value="ollama">Ollama (Local)</option>
-
-                          <option value="lmstudio">LM Studio (Local)</option>
-                          <option value="openai">OpenAI (GPT)</option>
-                          <option value="azure">MS Copilot (Azure OpenAI)</option>
-                          <option value="github">GitHub Copilot Models</option>
-                          <option value="gemini">Google Gemini</option>
-                          <option value="claude">Anthropic Claude</option>
-                        </select>
-                      </div>
-                      
-                      {activeAiProvider === 'ollama' && (
-                        <div className="flex flex-col gap-1.5">
-                          <input type="text" placeholder="URL (ej: http://localhost:11434)" value={ollamaUrl} onChange={(e) => setAiConfig('ollamaUrl', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                          <input type="text" placeholder="Model Name (ej: llama3, gemma)" value={ollamaModel} onChange={(e) => setAiConfig('ollamaModel', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                        </div>
-                      )}
-                      {activeAiProvider === 'lmstudio' && (
-                        <input type="text" placeholder="LM Studio URL" value={lmStudioUrl} onChange={(e) => setAiConfig('lmStudioUrl', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                      )}
-                      {activeAiProvider === 'openai' && (
-                        <input type="password" placeholder="sk-..." value={openAiKey} onChange={(e) => setAiConfig('openAiKey', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                      )}
-                      {activeAiProvider === 'azure' && (
-                        <div className="flex flex-col gap-1.5">
-                          <input type="text" placeholder="Azure URL (ej: https://...)" value={azureUrl} onChange={(e) => setAiConfig('azureUrl', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                          <input type="password" placeholder="Azure API Key" value={azureKey} onChange={(e) => setAiConfig('azureKey', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                        </div>
-                      )}
-                      {activeAiProvider === 'github' && (
-                        <input type="password" placeholder="GitHub Token (ghp_...)" value={githubToken} onChange={(e) => setAiConfig('githubToken', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                      )}
-                      {activeAiProvider === 'gemini' && (
-                        <input type="password" placeholder="Gemini API Key" value={geminiKey} onChange={(e) => setAiConfig('geminiKey', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                      )}
-                      {activeAiProvider === 'claude' && (
-                        <input type="password" placeholder="sk-ant-..." value={claudeKey} onChange={(e) => setAiConfig('claudeKey', e.target.value)} className="bg-black/20 text-[10px] p-2 rounded w-full border border-white/5" />
-                      )}
-                    </div>
-                  )}
-               </div>
+               <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
+               <button 
+                  onClick={(e) => { e.stopPropagation(); toggleAiPanel(); }} 
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-blue-500/20 text-blue-500 transition-colors ${isAiPanelOpen ? 'bg-blue-500/20' : ''}`}
+                >
+                  <Sparkles size={14} />
+                  <span className="text-[11px] font-bold">AI</span>
+                </button>
 
                <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
                 
                 {/* Font Size Setup */}
                 <div className="flex items-center gap-2">
                    <span className="text-[10px] opacity-50 font-bold">Aa</span>
-                   <input type="range" min="12" max="24" value={editorFontSize} onChange={(e) => useStore.getState().setEditorFontSize(parseInt(e.target.value))} className="w-16 h-1 accent-blue-500 rounded-lg appearance-none bg-black/20 cursor-pointer" />
+                   <input type="range" min="12" max="24" value={editorFontSize} onChange={(e) => useStore.getState().setEditorFontSize(parseInt(e.target.value))} className={`w-16 h-1 accent-blue-500 rounded-lg appearance-none ${isDark ? "bg-black/20" : "bg-black/10"} cursor-pointer`} />
                 </div>
            </div>
+
+
+            {/* Editor Type Toggle (RAW / RICH) */}
+            <div className="flex items-center">
+              <div className={`flex items-center p-0.5 rounded-lg border shadow-inner ${themeStyle.editorBorder} ${isDark ? "bg-black/15" : "bg-white/50 shadow-sm"} backdrop-blur-sm`}>
+                <button
+                  onClick={() => setEditorType('raw')}
+                  className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-all duration-200 ${editorType === 'raw' ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30' : 'opacity-40 hover:opacity-80'}`}
+                >
+                  RAW
+                </button>
+                <button
+                  onClick={() => setEditorType('rich')}
+                  className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-all duration-200 ${editorType === 'rich' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'opacity-40 hover:opacity-80'}`}
+                >
+                  RICH
+                </button>
+              </div>
+            </div>
 
            <div className={`flex items-center p-0.5 rounded-lg border relative z-[50] ${themeStyle.editorBorder} ${themeStyle.sidebarHover.replace('hover:', '')}`}>
              <div className="flex items-center gap-1 border-r border-white/5 pr-1 mr-1">
@@ -901,79 +658,115 @@ const Editor = () => {
                  <LayoutList size={14} />
                </button>
              </div>
-             <button onClick={() => setViewMode('edit')} className={`p-1.5 rounded-md transition-colors ${viewMode==='edit'?'bg-blue-600/20 text-blue-500':''}`}><PenTool size={14} /></button>
-             <button onClick={() => setViewMode('split')} className={`p-1.5 rounded-md transition-colors ${viewMode==='split'?'bg-blue-600/20 text-blue-500':''}`}><Layout size={14} /></button>
-             <button onClick={() => setViewMode('preview')} className={`p-1.5 rounded-md transition-colors ${viewMode==='preview'?'bg-blue-600/20 text-blue-500':''}`}><Eye size={14} /></button>
+             {editorType === 'raw' && (
+                <>
+                  <button onClick={() => setViewMode('edit')} className={`p-1.5 rounded-md transition-colors ${viewMode==='edit'?'bg-blue-600/20 text-blue-500':''}`}><PenTool size={14} /></button>
+                  <button onClick={() => setViewMode('split')} className={`p-1.5 rounded-md transition-colors ${viewMode==='split'?'bg-blue-600/20 text-blue-500':''}`}><Layout size={14} /></button>
+                  <button onClick={() => setViewMode('preview')} className={`p-1.5 rounded-md transition-colors ${viewMode==='preview'?'bg-blue-600/20 text-blue-500':''}`}><Eye size={14} /></button>
+                </>
+              )}
            </div>
         </div>
 
         <div id="editor-content-area" className={`flex-1 flex overflow-hidden relative ${dropdownOpen !== 'none' ? 'pointer-events-none' : ''}`}>
-          {/* CodeMirror */}
-          {(viewMode === 'split' || viewMode === 'edit') && (
-            <div 
-              style={{ flex: viewMode === 'split' ? splitRatio : 1 }}
-              className={`h-full overflow-y-auto ${themeStyle.editorBg} ${viewMode === 'split' ? `border-r ${themeStyle.editorBorder}` : ''} print:hidden`} 
-            >
-              <div className="h-full" style={{ fontSize: `${editorFontSize}px` }}>
-                <CodeMirror
-                  ref={editorRef}
-                  value={content}
-                  height="100%"
-                  theme={themeStyle.codeTheme as 'light' | 'dark'}
-                  extensions={editorExtensions}
-                  onChange={(val) => setContent(val)}
-                  autoFocus={true}
-                  className="h-full"
-                  basicSetup={{
-                    lineNumbers: true,
-                    highlightActiveLineGutter: true,
-                    highlightActiveLine: true,
-                    foldGutter: true,
-                  }}
-                />
-              </div>
-            </div>
-          )}
 
-          {/* Draggable Divider for Split Mode */}
-          {viewMode === 'split' && (
-            <div 
-              className="absolute top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-blue-500/40 z-50 transition-colors"
-              style={{ left: `calc(${splitRatio * 100}% - 3px)` }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                isResizingSplit.current = true;
-                document.body.style.cursor = 'col-resize';
-              }}
+          {/* RICH MODE: BlockNote replaces everything */}
+          {editorType === 'rich' && (
+            <RichEditor
+              content={content}
+              onChange={(md) => setContent(md)}
+              fontSize={editorFontSize}
+              themeName={themeName}
             />
           )}
 
-          {/* Markdown-It */}
-          {(viewMode === 'split' || viewMode === 'preview') && (
-            <div 
-              id="preview-area-wrapper"
-              key={`${activeNoteId}-${viewMode}-${editorFontSize}-${themeName}`}
-              className={`h-full overflow-y-auto p-8 print:!bg-white print:!text-black ${themeStyle.previewBg}`} 
-              style={{ 
-                flex: viewMode === 'split' ? (1 - splitRatio) : 1,
-                fontSize: `${editorFontSize}px` 
-              }}
-            >
-              <div 
-                id="preview-area"
-                className={`${themeStyle.prose} prose-custom-size max-w-3xl mx-auto block print:!text-black`}
-                dangerouslySetInnerHTML={{ __html: mdParser.render(content) }} 
-              />
-            </div>
+          {/* RAW MODE: Original CodeMirror + Preview */}
+          {editorType === 'raw' && (
+            <>
+              {/* CodeMirror */}
+              {(viewMode === 'split' || viewMode === 'edit') && (
+                <div 
+                  style={{ flex: viewMode === 'split' ? splitRatio : 1 }}
+                  className={`h-full overflow-y-auto ${themeStyle.editorBg} ${viewMode === 'split' ? `border-r ${themeStyle.editorBorder}` : ''} print:hidden`} 
+                >
+                  <div className="h-full" style={{ fontSize: `${editorFontSize}px` }}>
+                    <CodeMirror
+                      ref={editorRef}
+                      value={content}
+                      height="100%"
+                      theme={themeStyle.codeTheme as 'light' | 'dark'}
+                      extensions={editorExtensions}
+                      onChange={(val) => setContent(val)}
+                      autoFocus={true}
+                      className="h-full"
+                      basicSetup={{
+                        lineNumbers: true,
+                        highlightActiveLineGutter: true,
+                        highlightActiveLine: true,
+                        foldGutter: true,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Draggable Divider for Split Mode */}
+              {viewMode === 'split' && (
+                <div 
+                  className="absolute top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-blue-500/40 z-50 transition-colors"
+                  style={{ left: `calc(${splitRatio * 100}% - 3px)` }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    isResizingSplit.current = true;
+                    document.body.style.cursor = 'col-resize';
+                  }}
+                />
+              )}
+
+              {/* Markdown-It Preview */}
+              {(viewMode === 'split' || viewMode === 'preview') && (
+                <div 
+                  id="preview-area-wrapper"
+                  key={`${activeNoteId}-${viewMode}-${editorFontSize}-${themeName}`}
+                  className={`h-full overflow-y-auto p-8 print:!bg-white print:!text-black ${themeStyle.previewBg}`} 
+                  style={{ 
+                    flex: viewMode === 'split' ? (1 - splitRatio) : 1,
+                    fontSize: `${editorFontSize}px` 
+                  }}
+                >
+                  <div 
+                    id="preview-area"
+                    className={`${themeStyle.prose} prose-custom-size max-w-3xl mx-auto block print:!text-black`}
+                    dangerouslySetInnerHTML={{ __html: mdParser.render(content) }} 
+                  />
+                </div>
+              )}
+            </>
           )}
+
+          {/* AI Chat Panel — slides in from right */}
+          <AiChatPanel
+            isOpen={isAiPanelOpen}
+            onClose={() => toggleAiPanel()}
+            content={content}
+            noteTitle={(() => {
+              const lines = content.split('\n');
+              return (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled').replace(/^#+\s*/, '').trim().substring(0, 60);
+            })()}
+            onContentChange={(md) => setContent(md)}
+          />
         </div>
       </div>
 
       {/* Status Bar — Vim/VS Code style */}
-      <div className={`status-bar h-6 flex items-center justify-between px-3 border-t ${themeStyle.editorBorder} bg-black/20 backdrop-blur-sm print:hidden`}>
+      <div className={`status-bar h-6 flex items-center justify-between px-3 border-t ${themeStyle.editorBorder} ${isDark ? "bg-black/20" : "bg-black/5"} backdrop-blur-sm print:hidden`}>
         <div className="flex items-center gap-3">
-          {/* Vim mode indicator (only in vim mode) */}
-          {editorMode === 'vim' && (
+          {/* Editor type indicator */}
+          <span className={`px-1.5 py-0.5 rounded text-[10px] font-black tracking-wider ${editorType === 'rich' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-blue-500/20 text-blue-400'}`}>
+            {editorType === 'rich' ? 'RICH' : 'RAW'}
+          </span>
+          {/* Vim mode indicator (only in vim mode + raw mode) */}
+          {editorMode === 'vim' && editorType === 'raw' && (
             <span className={`px-1.5 py-0.5 rounded text-[10px] font-black tracking-wider ${
               vimMode === 'INSERT' ? 'bg-emerald-500/20 text-emerald-400' :
               vimMode === 'VISUAL' || vimMode === 'V-LINE' || vimMode === 'V-BLOCK' ? 'bg-purple-500/20 text-purple-400' :
@@ -983,13 +776,19 @@ const Editor = () => {
             </span>
           )}
           {/* Editor mode badge */}
-          <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
-            {editorMode === 'vim' ? 'VIM' : editorMode === 'emacs' ? 'EMACS' : 'NORMAL'}
-          </span>
+          {editorType === 'raw' && (
+            <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
+              {editorMode === 'vim' ? 'VIM' : editorMode === 'emacs' ? 'EMACS' : 'NORMAL'}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4 opacity-60">
-          <span className="text-[10px]">Ln {cursorLine}, Col {cursorCol}</span>
-          <span className="text-[10px]">{totalLines} lines</span>
+          {editorType === 'raw' && (
+            <>
+              <span className="text-[10px]">Ln {cursorLine}, Col {cursorCol}</span>
+              <span className="text-[10px]">{totalLines} lines</span>
+            </>
+          )}
           <span className="text-[10px]">{content.length} chars</span>
           <span className="text-[10px] uppercase">UTF-8</span>
           <span className="text-[10px] uppercase">Markdown</span>
@@ -1019,7 +818,6 @@ const Editor = () => {
             <Download size={14} /> PDF
           </button>
       </div>
-
     </div>
   );
 };
