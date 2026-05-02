@@ -31,12 +31,24 @@ M3Flow es una plataforma de escritura de alto rendimiento diseñada para la clar
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🛠️ Arquitectura y Stack Tecnológico
 
-- **Core:** `React 19` + `Vite` + `Tailwind CSS 4`.
-- **Backend:** `Better-SQLite3` con optimización de persistencia asíncrona.
-- **UI/UX:** `Lucide React` + `Framer Motion` (animaciones) + `Zustand` (estado global).
-- **Editor:** `CodeMirror 6` con extensiones personalizadas de Markdown y Lenguajes.
+M3Flow está construido bajo la filosofía *Local-First*, asegurando que el software sea increíblemente rápido, privado y tolerante a fallos. Seleccionamos cuidadosamente cada pieza para maximizar el rendimiento:
+
+### 🧠 Core y Base de Datos
+- **Framework & Interfaz:** `React 19` + `Vite` + `Tailwind CSS 4`. Proporcionan una experiencia fluida, sin bloqueos de renderizado y con una interfaz ultra-personalizable.
+- **Persistencia (Backend):** `Better-SQLite3`. Funciona como el corazón del sistema. Al usar SQLite localmente, logramos búsquedas y filtrados instantáneos sobre miles de notas. Incluye un robusto **"Modo Supervivencia"** capaz de redirigir la base de datos a entornos seguros en caso de bloqueos por el sistema operativo o OneDrive.
+
+### 📝 Motores de Edición Dual
+Para cubrir todos los espectros de escritura, M3Flow implementa un enfoque de **Dual Engine**:
+- **Editor RAW (`CodeMirror 6`):** Pensado para los "power users" y programadores. Permite una interacción cruda con el texto, ofreciendo atajos de terminal (nativos VIM / Emacs), y un control absoluto sobre la sintaxis Markdown pura y bloques de código.
+- **Editor RICH (`BlockNote`):** Pensado para el flujo creativo visual. Un editor WYSIWYG basado en bloques que te libera de la sintaxis, permitiéndote estructurar pensamientos rápidamente con formato enriquecido (drag & drop, menús slash), ideal para quienes prefieren la experiencia tipo Notion.
+
+### ☁️ Sincronización en la Nube
+- **GitHub Trees API Integration:** M3Flow rechaza la dependencia de servidores propietarios opacos. Utiliza llamadas atómicas a la API de GitHub para inyectar respaldos directamente a repositorios privados en formato SQLite o como archivos `.md` planos legibles en cualquier celular. Se integra de manera asíncrona ("auto-sync"), cuidando el rendimiento del hilo principal.
+
+### 🎨 UI/UX y Orquestación
+- El estado de la aplicación es orquestado por `Zustand` (minimalista y asíncrono), con iconografía de `Lucide React`. Todo envuelto en un **Motor de Temas Dinámicos** capaz de aplicar más de 20 paletas de colores populares (VS Code style) sin degradar el rendimiento visual.
 
 ---
 
