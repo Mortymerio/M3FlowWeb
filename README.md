@@ -117,12 +117,30 @@ npm run build
 
 ---
 
-## 🤖 Guía Práctica de Inteligencia Artificial
+## 🤖 Inteligencia Artificial: Tu Cerebro Digital Potenciado
 
-M3Flow te ofrece total libertad para dictar qué debe hacer la IA con tu documento. Presiona el botón "Sparkles" y dale una orden.
+M3Flow integra la IA no como un simple plugin, sino como una extensión profunda de tu propia base de conocimientos. Nuestra arquitectura está diseñada para maximizar la utilidad de los LLMs sin comprometer tu privacidad.
 
-- **Vault Context**: Usa `@vault` en el chat para que la IA consulte toda tu base de notas.
-- **Proveedores**: Soporte para OpenAI, Anthropic, Gemini, Ollama y WebLLM (local en browser).
+### 🧠 El Logro: @vault (Local Mini-RAG)
+La característica más potente de M3Flow es el comando **`@vault`**. Hemos implementado un sistema **RAG (Retrieval-Augmented Generation)** ligero y ultra-eficiente que vive dentro de la aplicación:
+
+- **Búsqueda Semántica Local**: M3Flow utiliza el motor SQLite FTS5 para realizar una recuperación de información instantánea en toda tu bóveda de notas.
+- **Inyección de Contexto**: Al invocar `@vault` en el chat, el sistema identifica y recupera los fragmentos de conocimiento más relevantes para tu pregunta y los inyecta automáticamente en el contexto del modelo.
+- **Privacidad Absoluta**: A diferencia de las soluciones basadas en la nube, el proceso de búsqueda y filtrado de contexto ocurre íntegramente en tu máquina. La IA responde basándose específicamente en *tus* datos, *tus* proyectos y *tu* estilo de pensamiento.
+
+### 🔌 Filosofía BYOM (Bring Your Own Model)
+M3Flow es un orquestador agnóstico que te permite elegir el cerebro que prefieras:
+
+- **Proveedores en la Nube**: Conecta con **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini** o **DeepSeek** utilizando tus propias API Keys almacenadas de forma segura.
+- **Privacidad Total con Ollama**: Integración nativa con **Ollama** y **LM Studio**. Ejecuta modelos como Llama 3 o Mistral localmente y mantén tus datos 100% offline.
+- **Modelos Embebidos (WebLLM)**: Aprovecha la aceleración por GPU de tu hardware para ejecutar modelos directamente en el navegador/Electron sin dependencias externas.
+
+### ✨ Ejemplos de Potencia
+> *"@vault Resume mis notas sobre el proyecto 'Nexus' y genera una lista de tareas pendientes."*
+
+> *"¿Qué conexiones existen en mi vault (@vault) entre los conceptos de 'Arquitectura Resiliente' y 'SQLite'?"*
+
+> *"Actúa como un editor crítico y busca contradicciones en mis notas de investigación usando @vault."*
 
 ---
 
