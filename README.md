@@ -35,7 +35,13 @@ M3Flow está construido bajo la filosofía *Local-First*, asegurando que el soft
 
 ### 🧠 Core y Base de Datos
 - **Framework & Interfaz:** `React 19` + `Vite` + `Tailwind CSS 4`. Proporcionan una experiencia fluida, sin bloqueos de renderizado y con una interfaz ultra-personalizable.
-- **Persistencia (Backend):** `Better-SQLite3`. Funciona como el corazón del sistema. Al usar SQLite localmente, logramos búsquedas y filtrados instantáneos sobre miles de notas. Incluye un robusto **"Modo Supervivencia"** capaz de redirigir la base de datos a entornos seguros en caso de bloqueos por el sistema operativo o OneDrive.
+- **Persistencia (Backend):** `Better-SQLite3`. Funciona como el corazón del sistema. Al usar SQLite localmente, logramos búsquedas y filtrados instantáneos sobre miles de notas.
+
+### 🛡️ Arquitectura Resiliente y Fallbacks
+M3Flow está diseñado para ser virtualmente indestructible en cuanto a integridad de datos:
+- **Modo Supervivencia (Database Fallback):** Si la carpeta `userData` predeterminada es inaccesible o está bloqueada por servicios de nube (como OneDrive), M3Flow redirige automáticamente la persistencia a una ubicación local segura o habilita un modo de contingencia para evitar la pérdida de información.
+- **Integridad Atómica (WAL Mode):** Implementamos SQLite con **Write-Ahead Logging**, asegurando que las operaciones sean atómicas y resistentes a cierres inesperados o fallos de energía.
+- **Sincronización Tolerante a Fallos:** El motor de backup en GitHub opera de forma aislada, permitiendo que la aplicación siga funcionando incluso sin conexión o con errores de API.
 
 ### 📝 Motores de Edición Dual
 Para cubrir todos los espectros de escritura, M3Flow implementa un enfoque de **Dual Engine**:
