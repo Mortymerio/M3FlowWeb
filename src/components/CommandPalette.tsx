@@ -6,9 +6,12 @@ const CommandPalette = () => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   
-  const notes = useStore(state => state.notes);
   const setActiveNote = useStore(state => state.setActiveNote);
   const setActiveNotebook = useStore(state => state.setActiveNotebook);
+  const setSearchQuery = useStore(state => state.setSearchQuery);
+  const searchResults = useStore(state => state.searchResults);
+  const clearSearchResults = useStore(state => state.clearSearchResults);
+  const notes = useStore(state => state.notes);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -18,6 +21,7 @@ const CommandPalette = () => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
         e.preventDefault();
         setQuery('');
+        clearSearchResults();
         setIsOpen(true);
       } else if (e.key === 'Escape' && isOpen) {
         setIsOpen(false);
@@ -37,7 +41,7 @@ const CommandPalette = () => {
   if (!isOpen) return null;
 
   const filteredNotes = query 
-    ? notes.filter(n => n.title.toLowerCase().includes(query.toLowerCase()) || (n.body && n.body.toLowerCase().includes(query.toLowerCase())))
+    ? (searchResults.length > 0 ? searchResults : notes.filter(n => n.title.toLowerCase().includes(query.toLowerCase())))
     : notes.slice(0, 10); // Mostrar recientes si está vacío
 
   const handleSelect = (noteId: string, notebookId: string) => {
@@ -75,7 +79,9 @@ const CommandPalette = () => {
             type="text"
             value={query}
             onChange={e => {
-              setQuery(e.target.value);
+              const val = e.target.value;
+              setQuery(val);
+              setSearchQuery(val); // Disparar FTS
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
@@ -100,7 +106,15 @@ const CommandPalette = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span>📄</span>
-                    <span className="font-medium">{note.title || 'Untitled'}</span>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{note.title || 'Untitled'}</span>
+                      {note.highlight && (
+                        <span 
+                          className="text-xs text-gray-500 line-clamp-1 italic"
+                          dangerouslySetInnerHTML={{ __html: note.highlight.replace(/==/g, '<mark class="bg-yellow-500/30 text-yellow-200 rounded px-0.5">').replace(/==/g, '</mark>') }}
+                        />
+                      )}
+                    </div>
                   </div>
                   <span className="text-xs opacity-50 px-2 py-0.5 bg-black/20 rounded">
                     Jump ↵

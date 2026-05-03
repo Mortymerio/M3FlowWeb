@@ -76,6 +76,23 @@ const initDB = (onProgress?: (msg: string) => void) => {
       FOREIGN KEY(noteId) REFERENCES Notes(id),
       FOREIGN KEY(tagId) REFERENCES Tags(id)
     );
+
+    -- Fase 1: Full-Text Search (FTS5)
+    CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
+      id UNINDEXED,
+      title,
+      content,
+      tokenize='unicode61'
+    );
+
+    -- Fase 1: Backlinks (Tabla relacional)
+    CREATE TABLE IF NOT EXISTS note_links (
+      source_id TEXT,
+      target_id TEXT,
+      PRIMARY KEY(source_id, target_id),
+      FOREIGN KEY(source_id) REFERENCES Notes(id) ON DELETE CASCADE,
+      FOREIGN KEY(target_id) REFERENCES Notes(id) ON DELETE CASCADE
+    );
   `;
   
   db.exec(initScript);
@@ -219,12 +236,44 @@ const databaseAPI = {
     return db.prepare('SELECT * FROM Notes ORDER BY updatedAt DESC').all();
   },
   saveNote: (note: Note) => {
+    // 1. Guardar/Actualizar la nota principal
     const stmt = db.prepare('UPDATE Notes SET title = ?, body = ?, updatedAt = ? WHERE id = ?');
     const result = stmt.run(note.title, note.body, Date.now(), note.id);
     if (result.changes === 0) {
-      // Si no existe, insertar
       const insert = db.prepare('INSERT INTO Notes (id, title, body, notebookId, status, reminderAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
       insert.run(note.id, note.title, note.body, note.notebookId, note.status || 'none', note.reminderAt || null, Date.now(), Date.now());
+    }
+
+    // 2. Sincronizar FTS5 (Búsqueda Full-Text)
+    db.prepare('DELETE FROM notes_fts WHERE id = ?').run(note.id);
+    db.prepare('INSERT INTO notes_fts (id, title, content) VALUES (?, ?, ?)').run(note.id, note.title, note.body);
+
+    // 3. Extraer y Guardar Backlinks ([[Note Title]])
+    try {
+      // Limpiar enlaces viejos originados por esta nota
+      db.prepare('DELETE FROM note_links WHERE source_id = ?').run(note.id);
+      
+      // Regex para encontrar [[Título]]
+      const linkRegex = /\[\[(.*?)\]\]/g;
+      let match;
+      const uniqueLinks = new Set<string>();
+      
+      while ((match = linkRegex.exec(note.body)) !== null) {
+        uniqueLinks.add(match[1].trim());
+      }
+
+      // Buscar IDs de las notas vinculadas y guardar relación
+      const findNoteId = db.prepare('SELECT id FROM Notes WHERE title = ? COLLATE NOCASE');
+      const insertLink = db.prepare('INSERT OR IGNORE INTO note_links (source_id, target_id) VALUES (?, ?)');
+
+      for (const targetTitle of uniqueLinks) {
+        const target = findNoteId.get(targetTitle) as { id: string } | undefined;
+        if (target) {
+          insertLink.run(note.id, target.id);
+        }
+      }
+    } catch (e) {
+      console.error('[DB] Error procesando backlinks:', e);
     }
   },
   getNotebooks: () => {
@@ -278,6 +327,8 @@ const databaseAPI = {
   },
   deleteNote: (id: string) => {
     db.prepare('DELETE FROM NoteTags WHERE noteId = ?').run(id);
+    db.prepare('DELETE FROM notes_fts WHERE id = ?').run(id);
+    db.prepare('DELETE FROM note_links WHERE source_id = ? OR target_id = ?').run(id, id);
     db.prepare('DELETE FROM Notes WHERE id = ?').run(id);
   },
   deleteNotebook: (id: string) => {
@@ -291,7 +342,35 @@ const databaseAPI = {
       DELETE FROM NoteTags;
       DELETE FROM Notes;
       DELETE FROM Notebooks;
+      DELETE FROM notes_fts;
+      DELETE FROM note_links;
     `);
+  },
+
+  // Fase 1: Métodos de consulta
+  searchNotes: (query: string) => {
+    // Usamos FTS5 para buscar con relevancia
+    // El snippet rodea la coincidencia con etiquetas para resaltado visual
+    const stmt = db.prepare(`
+      SELECT n.*, snippet(notes_fts, 2, '==', '==', '...', 10) as highlight
+      FROM notes_fts f
+      JOIN Notes n ON f.id = n.id
+      WHERE notes_fts MATCH ?
+      ORDER BY rank
+    `);
+    // Preparamos la query para soportar prefijos (búsqueda mientras escribes)
+    const sanitizedQuery = query.trim().split(/\s+/).map(q => `${q}*`).join(' ');
+    return stmt.all(sanitizedQuery);
+  },
+
+  getBacklinks: (noteId: string) => {
+    const stmt = db.prepare(`
+      SELECT n.id, n.title, n.updatedAt
+      FROM note_links l
+      JOIN Notes n ON l.source_id = n.id
+      WHERE l.target_id = ?
+    `);
+    return stmt.all(noteId);
   }
 };
 

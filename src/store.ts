@@ -79,6 +79,13 @@ interface AppState {
   hasUnsyncedChanges: boolean;
   lastSyncTime: number | null;
   
+  // Fase 1: Búsqueda y Backlinks
+  ftsQuery: string;
+  searchResults: any[];
+  currentBacklinks: any[];
+  loadBacklinks: (noteId: string) => Promise<void>;
+  clearSearchResults: () => void;
+  
   setGithubSyncConfig: (config: Partial<{githubSyncToken: string, githubSyncRepo: string, githubSyncMarkdown: boolean, githubSyncDb: boolean}>) => void;
   setSyncStatus: (status: 'idle' | 'pending' | 'syncing' | 'error' | 'success', errorMsg?: string | null) => void;
   setSyncProgress: (progress: { current: number; total: number; message: string } | null) => void;
@@ -201,7 +208,40 @@ export const useStore = create<AppState>((set, get) => ({
   webLlmProgress: 0,
   webLlmStatusText: '',
 
-  setSearchQuery: (query) => set({ searchQuery: query }),
+  ftsQuery: '',
+  searchResults: [],
+  currentBacklinks: [],
+
+  setSearchQuery: async (query) => {
+    set({ searchQuery: query });
+    const dbAPI = (window as any).dbAPI;
+    if (dbAPI && dbAPI.searchNotes && query.trim().length > 1) {
+      try {
+        const results = await dbAPI.searchNotes(query);
+        set({ searchResults: results });
+      } catch (e) {
+        console.error('FTS Search error:', e);
+        set({ searchResults: [] });
+      }
+    } else {
+      set({ searchResults: [] });
+    }
+  },
+
+  clearSearchResults: () => set({ searchResults: [], searchQuery: '' }),
+
+  loadBacklinks: async (noteId) => {
+    const dbAPI = (window as any).dbAPI;
+    if (dbAPI && dbAPI.getBacklinks) {
+      try {
+        const links = await dbAPI.getBacklinks(noteId);
+        set({ currentBacklinks: links });
+      } catch (e) {
+        console.error('Load Backlinks error:', e);
+        set({ currentBacklinks: [] });
+      }
+    }
+  },
   setSortOrder: (order) => set({ sortOrder: order }),
   setActiveNotebook: (id) => set({ activeNotebookId: id, activeStatusId: null, activeTagId: null, activeNoteId: null }),
   setActiveStatus: (id) => set({ activeStatusId: id, activeNotebookId: null, activeTagId: null, activeNoteId: null }),

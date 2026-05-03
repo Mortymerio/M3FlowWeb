@@ -60,6 +60,10 @@ const Editor = () => {
   const editorFontSize = useStore(state => state.editorFontSize);
   const editorType = useStore(state => state.editorType);
   const setEditorType = useStore(state => state.setEditorType);
+  const loadBacklinks = useStore(state => state.loadBacklinks);
+  const currentBacklinks = useStore(state => state.currentBacklinks);
+  const setActiveNote = useStore(state => state.setActiveNote);
+  const setActiveNotebook = useStore(state => state.setActiveNotebook);
 
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState<'split' | 'edit' | 'preview'>('split');
@@ -131,6 +135,7 @@ const Editor = () => {
       const activeNote = notes.find(n => n.id === activeNoteId);
       if (activeNote) {
         setContent(activeNote.body);
+        loadBacklinks(activeNoteId); // Fase 1: Cargar menciones vinculadas
       }
     } else {
       setContent('');
@@ -739,6 +744,41 @@ const Editor = () => {
                     className={`${themeStyle.prose} prose-custom-size max-w-3xl mx-auto block print:!text-black`}
                     dangerouslySetInnerHTML={{ __html: mdParser.render(content) }} 
                   />
+
+                  {/* Fase 1: Sección de Backlinks al final de la nota */}
+                  {currentBacklinks.length > 0 && (
+                    <div className="mt-16 pt-8 border-t border-white/5 max-w-3xl mx-auto mb-20">
+                      <h3 className="text-[11px] font-black uppercase tracking-[0.2em] opacity-30 mb-6 flex items-center gap-2">
+                        <Columns size={12} />
+                        Linked Mentions ({currentBacklinks.length})
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {currentBacklinks.map(link => (
+                          <div 
+                            key={link.id}
+                            onClick={() => {
+                              const note = notes.find(n => n.id === link.id);
+                              if (note) {
+                                setActiveNotebook(note.notebookId);
+                                setTimeout(() => setActiveNote(link.id), 50);
+                              }
+                            }}
+                            className={`group p-4 rounded-xl border ${themeStyle.editorBorder} hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-bold text-[13px] group-hover:text-blue-400 transition-colors">{link.title}</span>
+                              <span className="text-[10px] opacity-30">
+                                {new Date(link.updatedAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="text-[11px] opacity-40 line-clamp-1 italic">
+                              Click to navigate to this reference
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </>

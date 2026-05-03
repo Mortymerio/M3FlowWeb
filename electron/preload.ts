@@ -49,6 +49,8 @@ try {
     githubTestConnection: (token: string) => ipcRenderer.invoke('github:testConnection', token),
     githubSync: (opts: any) => ipcRenderer.invoke('github:sync', opts),
     githubImportDb: (opts: any) => ipcRenderer.invoke('github:importDb', opts),
+    searchNotes: (query: string) => ipcRenderer.invoke('db:search', query),
+    getBacklinks: (noteId: string) => ipcRenderer.invoke('db:getBacklinks', noteId),
     onGithubProgress: (callback: (data: { current: number; total: number; message: string }) => void) => {
       ipcRenderer.on('github:progress', (_, data) => callback(data));
     },
