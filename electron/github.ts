@@ -101,6 +101,7 @@ export const syncToGithub = async (
         // Inyectar metadatos en la parte superior del archivo
         const yamlMetadata = `---
 id: ${note.id}
+title: ${note.title}
 notebookId: ${note.notebookId}
 status: ${note.status || 'none'}
 updatedAt: ${Date.now()}
@@ -113,7 +114,8 @@ updatedAt: ${Date.now()}
           method: 'POST',
           body: JSON.stringify({ content: fullContent, encoding: 'utf-8' })
         });
-        treePayload.push({ path: `notes/${safeTitle}.md`, mode: '100644', type: 'blob', sha: blob.sha });
+        // Usar note.id como nombre de archivo es mucho más robusto para evitar duplicados
+        treePayload.push({ path: `notes/${note.id}.md`, mode: '100644', type: 'blob', sha: blob.sha });
       }
 
       // 2. Sincronizar Estructura de Notebooks (Contextos)
@@ -202,38 +204,39 @@ export const importNotesFromGithub = async (token: string, repoName: string, onP
     const existingNotes = databaseAPI.getNotes() as any[];
 
     for (const [index, file] of mdFiles.entries()) {
-      const title = file.name.replace('.md', '').replace(/__/g, ' - ').replace(/_/g, ' ');
-      if (onProgress) onProgress({ current: 10 + (index / mdFiles.length) * 90, total: 100, message: `Recovering: ${title}` });
-      if (existingNotes.find((n: any) => n.title === title)) continue;
-
       const res = await fetch(file.download_url, { headers: { 'Authorization': `Bearer ${token}` } });
       let body = await res.text();
 
+      let noteTitle = file.name.replace('.md', '').replace(/__/g, ' - ').replace(/_/g, ' ');
       let noteNotebookId = targetNotebookId;
       let noteStatus = 'active';
-      let noteId = `recovered-${Date.now()}-${index}`;
+      let noteId = file.name.replace('.md', ''); // Usar nombre de archivo como ID inicial
 
-      // Lógica robusta de Frontmatter: Debe empezar con ---
+      // Lógica robusta de Frontmatter
       if (body.startsWith('---')) {
         const parts = body.split('---');
         if (parts.length >= 3) {
           const fmContent = parts[1];
-          // El cuerpo es todo lo que viene después del segundo ---
           body = parts.slice(2).join('---').trim();
 
           const idMatch = fmContent.match(/id:\s*(.*)/);
+          const titleMatch = fmContent.match(/title:\s*(.*)/);
           const nbMatch = fmContent.match(/notebookId:\s*(.*)/);
           const stMatch = fmContent.match(/status:\s*(.*)/);
 
           if (idMatch) noteId = idMatch[1].trim();
+          if (titleMatch) noteTitle = titleMatch[1].trim();
           if (nbMatch) noteNotebookId = nbMatch[1].trim();
           if (stMatch) noteStatus = stMatch[1].trim();
         }
       }
 
+      if (onProgress) onProgress({ current: 10 + (index / mdFiles.length) * 90, total: 100, message: `Recovering: ${noteTitle}` });
+      
+      // EVITAR DUPLICADOS: Si el ID ya existe, sobreescribir. Si no, crear.
       databaseAPI.saveNote({
         id: noteId,
-        title: title,
+        title: noteTitle,
         body: body,
         notebookId: noteNotebookId,
         status: noteStatus
