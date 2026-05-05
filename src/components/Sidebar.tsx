@@ -4,6 +4,9 @@ import { THEMES } from '../themes';
 import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Download, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon } from 'lucide-react';
 
 const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(notebook.name);
+
   const children = notebooks.filter((nb: any) => nb.parentId === notebook.id);
   const hasChildren = children.length > 0;
   const isExpanded = expanded.has(notebook.id);
@@ -16,6 +19,13 @@ const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activ
       else next.add(notebook.id);
       return next;
     });
+  };
+
+  const handleSave = () => {
+    if (editName.trim() && editName !== notebook.name) {
+      useStore.getState().updateNotebook(notebook.id, editName, notebook.parentId, notebook.config);
+    }
+    setIsEditing(false);
   };
 
   return (
@@ -50,44 +60,63 @@ const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activ
           ) : (
             <div className="w-5" /> 
           )}
-          <span className="truncate flex-1 text-[13px]">{notebook.name}</span>
+          
+          {isEditing ? (
+            <input
+              autoFocus
+              className="bg-white/10 border border-blue-500/50 rounded px-1 text-[13px] w-full outline-none text-white"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave();
+                if (e.key === 'Escape') { setEditName(notebook.name); setIsEditing(false); }
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span className="truncate flex-1 text-[13px]">{notebook.name}</span>
+          )}
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-          <button 
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              const newName = window.prompt('Nuevo nombre para la carpeta:', notebook.name);
-              if (newName && newName !== notebook.name) {
-                useStore.getState().updateNotebook(notebook.id, newName, notebook.parentId, notebook.config);
-              }
-            }}
-            title="Rename Notebook"
-            className={`p-1 rounded transition-all hover:text-blue-400 ${themeStyle.sidebarHover}`}
-          >
-            <Edit2 size={12} />
-          </button>
-          <button 
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              useStore.getState().setNotebookContextModal(true, notebook.id);
-            }}
-            title="Notebook Context & Dashboard"
-            className={`p-1 rounded transition-all hover:text-purple-400 ${themeStyle.sidebarHover}`}
-          >
-            <LayoutDashboard size={12} />
-          </button>
-          <button 
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              if (window.confirm(`¿Eliminar la carpeta "${notebook.name}" y todas sus notas?`)) {
-                useStore.getState().deleteNotebook(notebook.id);
-              }
-            }}
-            className={`p-1 rounded transition-all hover:text-red-500 ${themeStyle.sidebarHover}`}
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
+        
+        {!isEditing && (
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setIsEditing(true);
+              }}
+              title="Rename Notebook"
+              className={`p-1 rounded transition-all hover:text-blue-400 ${themeStyle.sidebarHover}`}
+            >
+              <Edit2 size={12} />
+            </button>
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                useStore.getState().setNotebookContextModal(true, notebook.id);
+              }}
+              title="Notebook Context & Dashboard"
+              className={`p-1 rounded transition-all hover:text-purple-400 ${themeStyle.sidebarHover}`}
+            >
+              <LayoutDashboard size={12} />
+            </button>
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                // Usamos un pequeño delay para evitar problemas con el drag
+                setTimeout(() => {
+                  if (confirm(`¿Eliminar la carpeta "${notebook.name}"?`)) {
+                    useStore.getState().deleteNotebook(notebook.id);
+                  }
+                }, 10);
+              }}
+              className={`p-1 rounded transition-all hover:text-red-500 ${themeStyle.sidebarHover}`}
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
+        )}
       </li>
       
       {isExpanded && hasChildren && (
@@ -195,8 +224,7 @@ const Sidebar = () => {
             title="New Folder"
             onClick={(e) => {
               e.stopPropagation();
-              const name = window.prompt('Nombre de la nueva carpeta:');
-              if (name) useStore.getState().createNotebook(name, null);
+              useStore.getState().createNotebook('Nueva Carpeta', null);
             }}
           >
             <Plus size={16} strokeWidth={3} />
