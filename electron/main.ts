@@ -50,6 +50,10 @@ ipcMain.handle('db:isFallbackMode', () => getFallbackStatus());
 // Fase 1: Handlers de Búsqueda y Conexiones
 ipcMain.handle('db:search', (_, query: string) => databaseAPI.searchNotes(query));
 ipcMain.handle('db:getBacklinks', (_, noteId: string) => databaseAPI.getBacklinks(noteId));
+ipcMain.handle('move-notebook', (_, { notebookId, parentId }) => databaseAPI.moveNotebook(notebookId, parentId));
+ipcMain.handle('move-note', (_, { noteId, notebookId }) => databaseAPI.moveNote(noteId, notebookId));
+ipcMain.handle('db:updateNoteStatus', (_, noteId: string, status: string) => databaseAPI.updateNoteStatus(noteId, status));
+ipcMain.handle('db:updateNoteReminder', (_, noteId: string, reminderAt: number | null) => databaseAPI.updateNoteReminder(noteId, reminderAt));
 
 // GitHub Sync Handlers
 ipcMain.handle('github:testConnection', (_, token: string) => testConnection(token));
