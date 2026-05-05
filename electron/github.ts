@@ -2,8 +2,11 @@ import fs from 'fs';
 import { databaseAPI } from './database';
 
 interface GithubNote {
+  id: string;
   title: string;
   body: string;
+  notebookId: string;
+  status?: string;
 }
 
 interface SyncProgress {
