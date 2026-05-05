@@ -38,8 +38,6 @@ const App = () => {
   const isSyncModalOpen = useStore(state => state.isSyncModalOpen);
   const setSyncModalOpen = useStore(state => state.setSyncModalOpen);
   
-  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // Auto-sync Watchdog (DISABLED per user request)
   useEffect(() => {
     // Solo mantenemos el listener del progreso para la UI

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Download, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon } from 'lucide-react';
+import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon } from 'lucide-react';
 
 const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
   const [isEditing, setIsEditing] = useState(false);

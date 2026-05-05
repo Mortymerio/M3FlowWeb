@@ -99,7 +99,7 @@ export const syncToGithub = async (
         // Inyectar metadatos en la parte superior del archivo
         const yamlMetadata = `---
 id: ${note.id}
-title: ${note.title}
+title: "${note.title.replace(/"/g, '\\"')}"
 notebookId: ${note.notebookId}
 status: ${note.status || 'none'}
 updatedAt: ${Date.now()}
@@ -209,12 +209,18 @@ export const importNotesFromGithub = async (token: string, repoName: string, onP
       let noteStatus = 'active';
       let noteId = file.name.replace('.md', ''); // Usar nombre de archivo como ID inicial
 
-      // Lógica robusta de Frontmatter
-      if (body.startsWith('---')) {
-        const parts = body.split('---');
-        if (parts.length >= 3) {
-          const fmContent = parts[1];
-          body = parts.slice(2).join('---').trim();
+      // Lógica ultra-robusta de Frontmatter (usando índices, no split)
+      if (body.trim().startsWith('---')) {
+        const firstDash = body.indexOf('---');
+        const secondDash = body.indexOf('---', firstDash + 3);
+        
+        if (secondDash !== -1) {
+          const fmContent = body.substring(firstDash + 3, secondDash);
+          // El cuerpo es todo lo que hay DESPUÉS del segundo ---
+          const actualBody = body.substring(secondDash + 3).trim();
+          
+          // Solo actualizamos el cuerpo si realmente hay algo después del frontmatter
+          body = actualBody;
 
           const idMatch = fmContent.match(/id:\s*(.*)/);
           const titleMatch = fmContent.match(/title:\s*(.*)/);
@@ -222,15 +228,24 @@ export const importNotesFromGithub = async (token: string, repoName: string, onP
           const stMatch = fmContent.match(/status:\s*(.*)/);
 
           if (idMatch) noteId = idMatch[1].trim();
-          if (titleMatch) noteTitle = titleMatch[1].trim();
+          if (titleMatch) {
+            noteTitle = titleMatch[1].trim().replace(/^"(.*)"$/, '$1').replace(/\\"/g, '"');
+          }
           if (nbMatch) noteNotebookId = nbMatch[1].trim();
           if (stMatch) noteStatus = stMatch[1].trim();
         }
       }
 
+      // FALLBACK DE TÍTULO: Si el título sigue siendo genérico, buscamos el primer #
+      if (!noteTitle || noteTitle.toLowerCase().includes('untitled') || noteTitle.match(/note-[\w-]{8,}/)) {
+        const h1Match = body.match(/^#\s+(.*)/m);
+        if (h1Match) {
+          noteTitle = h1Match[1].trim();
+        }
+      }
+
       if (onProgress) onProgress({ current: 10 + (index / mdFiles.length) * 90, total: 100, message: `Recovering: ${noteTitle}` });
       
-      // EVITAR DUPLICADOS: Si el ID ya existe, sobreescribir. Si no, crear.
       databaseAPI.saveNote({
         id: noteId,
         title: noteTitle,

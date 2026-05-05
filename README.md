@@ -30,7 +30,7 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 Novedades (Update 0.1.9)](#-novedades-de-esta-versión-update-019)
+- [🔥 Novedades (Update 0.1.10)](#-novedades-de-esta-versión-update-0110)
 - [✨ Características Principales](#-características-principales)
 - [🛡️ Arquitectura y Fallbacks](#-arquitectura-resiliente-y-fallbacks)
 - [📝 Motores de Edición](#-motores-de-edición-dual)
@@ -42,13 +42,14 @@
 
 ---
 
-## 🔥 Novedades de esta Versión (Update 0.1.9)
+## 🔥 Novedades de esta Versión (Update 0.1.10)
 
-- **🔍 Full-Text Search (FTS5):** Búsqueda ultra-rápida en toda la base de conocimientos. Ahora `Ctrl+P` busca dentro del contenido de todas tus notas con fragmentos resaltados.
-- **🔗 Bidirectional Backlinks:** Sistema automático de detección de enlaces `[[Nota]]`. M3Flow rastrea qué notas mencionan a la actual, permitiendo una navegación orgánica.
-- **🚀 Mejoras en Command Palette:** Interfaz optimizada con previsualización de fragmentos (snippets) y resaltado visual.
-- **🛠️ Refactor de Base de Datos:** Optimización de esquemas para soportar grafos de conocimiento y futura visualización espacial.
-- **☁️ Cloud Sync & Backup:** Integración con GitHub Trees API para respaldos atómicos en repositorios privados.
+- **📂 Dynamic Contexts & Portability:** Nueva arquitectura de libretas basada en `notebooks.json` y metadatos YAML. Tu base de conocimientos ahora es 100% portable y reconstruible solo desde GitHub.
+- **🛠️ Hardened Sync Engine:** Sincronización por ID único en lugar de títulos. Adiós a las notas duplicadas y conflictos de nombres.
+- **🔍 Notebook Dashboards:** Cada libreta tiene ahora su propio panel de contexto con prompts personalizados, notas rápidas y visualización de progreso.
+- **🎨 Universal Font Scaling:** El control "Aa" ahora es global. Afecta al editor RAW (CodeMirror), al editor RICH (BlockNote) y a la previsualización Markdown simultáneamente.
+- **🚀 Instant-On Architecture:** Eliminación de pantallas de bienvenida obligatorias. La app se auto-inicializa y está lista para escribir en milisegundos.
+- **✏️ UX Refined:** Edición de nombres de carpetas en línea, creación instantánea de notebooks y mejor visibilidad de controles en el Sidebar.
 
 ---
 
@@ -57,11 +58,11 @@
 | Característica | Detalle |
 | :--- | :--- |
 | **🏠 Local-First** | Privacidad total. SQLite local con rendimiento de grado empresarial. |
+| **🔄 Contextos Dinámicos** | Organiza tu cerebro en Notebooks con configuraciones de IA y vistas personalizadas. |
 | **🤖 IA & Vault** | Chat lateral con comandos `@vault` para extraer contexto semántico de tus notas locales. |
 | **🔄 Dual Mode** | Intercambia entre un Editor WYSIWYG (BlockNote) y un Editor RAW (CodeMirror). |
 | **⌨️ Power Users** | Soporte profundo de modos **VIM** y **Emacs** en el editor RAW. |
-| **🎨 Personalización** | Más de 20 temas dinámicos (VS Code Style) y modo **Custom**. |
-| **📊 Diagramas** | Soporte nativo para `Mermaid`, resaltado `hljs` y renders de Markdown. |
+| **🎨 Personalización** | Más de 20 temas dinámicos (VS Code Style) y escalado de fuente universal. |
 
 ---
 
@@ -72,6 +73,7 @@ M3Flow está construido bajo la filosofía *Local-First*, asegurando que el soft
 ### 🧠 Core y Base de Datos
 - **Framework & Interfaz:** `React 19` + `Vite` + `Tailwind CSS 4`.
 - **Persistencia (Backend):** `Better-SQLite3`. El corazón del sistema para búsquedas instantáneas sobre miles de notas.
+- **Sincronización:** GitHub Trees API con inyección de metadatos YAML (id, title, notebookId, status).
 
 ### 🛡️ Arquitectura Resiliente y Fallbacks
 M3Flow está diseñado para ser virtualmente indestructible en cuanto a integridad de datos:
@@ -110,7 +112,7 @@ npm run build
 
 ## ⌨️ Comandos Clave
 
-- `Ctrl + P`: Abrir buscador global de notas.
+- `Ctrl + P`: Abrir buscador global de notas (FTS5).
 - `Ctrl + N`: Crear nueva nota.
 - `Ctrl + B`: Mostrar / Ocultar Sidebar.
 - `Ctrl + F`: Buscar dentro de la nota actual.
@@ -127,20 +129,6 @@ La característica más potente de M3Flow es el comando **`@vault`**. Hemos impl
 - **Búsqueda Semántica Local**: M3Flow utiliza el motor SQLite FTS5 para realizar una recuperación de información instantánea en toda tu bóveda de notas.
 - **Inyección de Contexto**: Al invocar `@vault` en el chat, el sistema identifica y recupera los fragmentos de conocimiento más relevantes para tu pregunta y los inyecta automáticamente en el contexto del modelo.
 - **Privacidad Absoluta**: A diferencia de las soluciones basadas en la nube, el proceso de búsqueda y filtrado de contexto ocurre íntegramente en tu máquina. La IA responde basándose específicamente en *tus* datos, *tus* proyectos y *tu* estilo de pensamiento.
-
-### 🔌 Filosofía BYOM (Bring Your Own Model)
-M3Flow es un orquestador agnóstico que te permite elegir el cerebro que prefieras:
-
-- **Proveedores en la Nube**: Conecta con **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini** o **DeepSeek** utilizando tus propias API Keys almacenadas de forma segura.
-- **Privacidad Total con Ollama**: Integración nativa con **Ollama** y **LM Studio**. Ejecuta modelos como Llama 3 o Mistral localmente y mantén tus datos 100% offline.
-- **Modelos Embebidos (WebLLM)**: Aprovecha la aceleración por GPU de tu hardware para ejecutar modelos directamente en el navegador/Electron sin dependencias externas.
-
-### ✨ Ejemplos de Potencia
-> *"@vault Resume mis notas sobre el proyecto 'Nexus' y genera una lista de tareas pendientes."*
-
-> *"¿Qué conexiones existen en mi vault (@vault) entre los conceptos de 'Arquitectura Resiliente' y 'SQLite'?"*
-
-> *"Actúa como un editor crítico y busca contradicciones en mis notas de investigación usando @vault."*
 
 ---
 

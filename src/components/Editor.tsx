@@ -11,7 +11,7 @@ import { emacs } from '@replit/codemirror-emacs';
 import { languages } from '@codemirror/language-data';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { Download, FileText, Layout, Eye, PenTool, Book, Settings2, Plus, ChevronDown, Trash2, Search, Check, Columns, LayoutList, Bell, Calendar, Sparkles } from 'lucide-react';
+import { Download, Layout, Eye, PenTool, Book, Settings2, Plus, ChevronDown, Trash2, Search, Check, Columns, LayoutList, Bell, Calendar, Sparkles } from 'lucide-react';
 import RichEditor from './RichEditor';
 import AiChatPanel from './AiChatPanel';
 import NotebookDashboard from './NotebookDashboard';
@@ -65,7 +65,6 @@ const Editor = () => {
   const currentBacklinks = useStore(state => state.currentBacklinks);
   const setActiveNote = useStore(state => state.setActiveNote);
   const setActiveNotebook = useStore(state => state.setActiveNotebook);
-  const activeNotebookId = useStore(state => state.activeNotebookId);
 
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState<'split' | 'edit' | 'preview'>('split');
