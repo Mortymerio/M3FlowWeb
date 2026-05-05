@@ -123,12 +123,25 @@ npm run build
 
 M3Flow integra la IA no como un simple plugin, sino como una extensión profunda de tu propia base de conocimientos. Nuestra arquitectura está diseñada para maximizar la utilidad de los LLMs sin comprometer tu privacidad.
 
-### 🧠 El Logro: @vault (Local Mini-RAG)
-La característica más potente de M3Flow es el comando **`@vault`**. Hemos implementado un sistema **RAG (Retrieval-Augmented Generation)** ligero y ultra-eficiente que vive dentro de la aplicación:
+### 📂 El Logro: @vault & Contextos Dinámicos (RAG Evolucionado)
+La característica más potente de M3Flow es cómo combina el comando **`@vault`** con los **Contextos Dinámicos**:
 
-- **Búsqueda Semántica Local**: M3Flow utiliza el motor SQLite FTS5 para realizar una recuperación de información instantánea en toda tu bóveda de notas.
-- **Inyección de Contexto**: Al invocar `@vault` en el chat, el sistema identifica y recupera los fragmentos de conocimiento más relevantes para tu pregunta y los inyecta automáticamente en el contexto del modelo.
-- **Privacidad Absoluta**: A diferencia de las soluciones basadas en la nube, el proceso de búsqueda y filtrado de contexto ocurre íntegramente en tu máquina. La IA responde basándose específicamente en *tus* datos, *tus* proyectos y *tu* estilo de pensamiento.
+- **Bóvedas Temáticas**: A diferencia de una IA genérica, M3Flow permite definir **Prompts de Contexto** por cada Notebook. Esto significa que si estás en tu libreta de "Programación", la IA ya sabe que debe responder con código y documentación técnica, mientras que en "Escritura Creativa" se enfocará en estilo y narrativa.
+- **Búsqueda Semántica Local (RAG)**: M3Flow utiliza el motor SQLite FTS5 para realizar una recuperación de información instantánea. Al invocar `@vault`, el sistema no solo busca en todas tus notas, sino que prioriza el conocimiento del **Notebook activo**, inyectando ese contexto especializado en el modelo.
+- **Memoria de Trabajo**: Cada notebook actúa como un silo de conocimiento curado. La IA no solo "lee" tus notas, sino que "razona" dentro del marco conceptual que tú has definido para ese proyecto específico.
+- **Privacidad Absoluta**: Todo el procesamiento de contexto (filtrado, ranking y selección de fragmentos) ocurre localmente. Tus datos nunca se envían para ser entrenados, solo se usan para responderte en el momento.
+
+### 🔌 Filosofía BYOM (Bring Your Own Model)
+M3Flow es un orquestador agnóstico que te permite elegir el cerebro que prefieras:
+
+- **Proveedores en la Nube**: Conecta con **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini** o **DeepSeek**.
+- **Privacidad Total con Ollama**: Ejecuta modelos locales y mantén tus datos 100% offline.
+- **Modelos Embebidos (WebLLM)**: Aprovecha la aceleración por GPU de tu hardware para ejecutar modelos directamente sin dependencias externas.
+
+### ✨ Ejemplos de Potencia
+> *"@vault Analiza las contradicciones entre mis notas de este proyecto y las referencias externas."*
+
+> *"Actúa según el contexto de este notebook (@vault) y redacta la introducción del documento técnico."*
 
 ---
 
