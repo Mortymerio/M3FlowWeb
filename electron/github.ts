@@ -199,7 +199,6 @@ export const importNotesFromGithub = async (token: string, repoName: string, onP
     if (!Array.isArray(files)) throw new Error('No se encontraron notas.');
 
     const mdFiles = files.filter(f => f.name.endsWith('.md'));
-    const existingNotes = databaseAPI.getNotes() as any[];
 
     for (const [index, file] of mdFiles.entries()) {
       const res = await fetch(file.download_url, { headers: { 'Authorization': `Bearer ${token}` } });
