@@ -102,9 +102,13 @@ const initDB = (onProgress?: (msg: string) => void) => {
   try {
     db.prepare('ALTER TABLE Notes ADD COLUMN reminderAt INTEGER').run();
     log('Migración: Columna reminderAt añadida.');
-  } catch {
-    // Si ya existe, fallará silenciosamente lo cual está bien
-  }
+  } catch {}
+
+  // Migración: Añadir columna config a Notebooks para Contextos Dinámicos
+  try {
+    db.prepare('ALTER TABLE Notebooks ADD COLUMN config TEXT').run();
+    log('Migración: Columna config añadida a Notebooks.');
+  } catch {}
 
   log('Configurando parámetros de rendimiento...');
   db.pragma('journal_mode = WAL');
@@ -226,7 +230,7 @@ $$ ╬ª = \\sum_{i=1}^{n} (I_{integrated} \\times \\Delta t) $$
 
 // -- Tipos Básicos --
 export interface Note { id: string; title: string; body: string; notebookId: string; status?: string; reminderAt?: number | null; }
-export interface Notebook { id: string; name: string; parentId: string | null; }
+export interface Notebook { id: string; name: string; parentId: string | null; config?: string; }
 export interface Tag { id: string; name: string; color: string; }
 
 // -- Exportar Métodos CRUD Básicos --
@@ -280,8 +284,8 @@ const databaseAPI = {
     return db.prepare('SELECT * FROM Notebooks ORDER BY name ASC').all();
   },
   saveNotebook: (nb: Notebook) => {
-    const insert = db.prepare('INSERT INTO Notebooks (id, name, parentId, createdAt) VALUES (?, ?, ?, ?)');
-    insert.run(nb.id, nb.name, nb.parentId, Date.now());
+    const insert = db.prepare('INSERT OR REPLACE INTO Notebooks (id, name, parentId, config, createdAt) VALUES (?, ?, ?, ?, ?)');
+    insert.run(nb.id, nb.name, nb.parentId, nb.config || null, Date.now());
   },
   moveNotebook: (notebookId: string, newParentId: string | null) => {
     const stmt = db.prepare('UPDATE Notebooks SET parentId = ? WHERE id = ?');

@@ -14,6 +14,7 @@ import { THEMES } from '../themes';
 import { Download, FileText, Layout, Eye, PenTool, Book, Settings2, Plus, ChevronDown, Trash2, Search, Check, Columns, LayoutList, Bell, Calendar, Sparkles } from 'lucide-react';
 import RichEditor from './RichEditor';
 import AiChatPanel from './AiChatPanel';
+import NotebookDashboard from './NotebookDashboard';
 
 const mdParser = new MarkdownIt({
   html: true,
@@ -64,6 +65,7 @@ const Editor = () => {
   const currentBacklinks = useStore(state => state.currentBacklinks);
   const setActiveNote = useStore(state => state.setActiveNote);
   const setActiveNotebook = useStore(state => state.setActiveNotebook);
+  const activeNotebookId = useStore(state => state.activeNotebookId);
 
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState<'split' | 'edit' | 'preview'>('split');
@@ -261,14 +263,7 @@ const Editor = () => {
   };
 
   if (!activeNoteId) {
-    return (
-      <div className={`flex-[2_2_0%] flex items-center justify-center flex-col font-sans ${themeStyle.editorBg} ${themeStyle.editorText}`}>
-        <div className="opacity-50 flex flex-col items-center">
-          <FileText size={48} className="mb-4" />
-          <p className="text-sm font-medium">Select a note to view</p>
-        </div>
-      </div>
-    );
+    return <NotebookDashboard />;
   }
 
   const activeNote = notes.find(n => n.id === activeNoteId)!;

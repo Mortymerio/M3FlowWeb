@@ -15,7 +15,7 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
 
 // Importar la base de datos usando require
 import { initDB, databaseAPI, closeDB, getFallbackStatus } from './database';
-import { testConnection, syncToGithub, importDbFromGithub } from './github';
+import { testConnection, syncToGithub, importDbFromGithub, importNotesFromGithub } from './github';
 import type { Note, Notebook, Tag } from './database';
 
 
@@ -53,11 +53,11 @@ ipcMain.handle('db:getBacklinks', (_, noteId: string) => databaseAPI.getBacklink
 
 // GitHub Sync Handlers
 ipcMain.handle('github:testConnection', (_, token: string) => testConnection(token));
-ipcMain.handle('github:sync', async (_, { token, repoName, notes, syncMarkdown, syncDb }) => {
+ipcMain.handle('github:sync', async (_, { token, repoName, notes, notebooks, syncMarkdown, syncDb }) => {
   const dbPath = getFallbackStatus() 
     ? join(process.cwd(), 'm3flow-fallback.db') 
     : join(app.getPath('userData'), 'm3flow.db');
-  return syncToGithub(token, repoName, notes, dbPath, syncMarkdown, syncDb, (progress) => {
+  return syncToGithub(token, repoName, notes, notebooks, dbPath, syncMarkdown, syncDb, (progress) => {
     if (win) win.webContents.send('github:progress', progress);
   });
 });
@@ -75,6 +75,12 @@ ipcMain.handle('github:importDb', async (_, { token, repoName }) => {
     win.reload();
   }
   return result;
+});
+
+ipcMain.handle('github:recoverNotes', async (_, { token, repoName }) => {
+  return importNotesFromGithub(token, repoName, (progress) => {
+    if (win) win.webContents.send('github:progress', progress);
+  });
 });
 
 ipcMain.handle('window:close', () => win?.close());

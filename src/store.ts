@@ -4,6 +4,7 @@ interface Notebook {
   id: string;
   name: string;
   parentId: string | null;
+  config?: string; // JSON string con prompt, tema, etc.
   createdAt: number;
 }
 
@@ -67,6 +68,9 @@ interface AppState {
   isBrowserMode: boolean;
   isSyncModalOpen: boolean;
   setSyncModalOpen: (val: boolean) => void;
+  isNotebookContextModalOpen: boolean;
+  contextNotebookId: string | null;
+  setNotebookContextModal: (isOpen: boolean, notebookId?: string | null) => void;
   
   // GitHub Sync State
   githubSyncToken: string;
@@ -142,7 +146,8 @@ interface AppState {
   deleteTag: (id: string) => Promise<void>;
   toggleNoteTag: (noteId: string, tagId: string) => Promise<void>;
   updateNoteReminder: (noteId: string, reminderAt: number | null) => Promise<void>;
-  createNotebook: (name: string, parentId: string | null) => Promise<void>;
+  createNotebook: (name: string, parentId: string | null, config?: any) => Promise<void>;
+  updateNotebook: (id: string, name: string, parentId: string | null, config?: any) => Promise<void>;
   deleteNote: (id: string | null) => Promise<void>;
   deleteNotebook: (id: string) => Promise<void>;
 }
@@ -179,6 +184,9 @@ export const useStore = create<AppState>((set, get) => ({
   isFallbackMode: false,
   isBrowserMode: false,
   isSyncModalOpen: false,
+  isNotebookContextModalOpen: false,
+  contextNotebookId: null,
+  setNotebookContextModal: (isOpen, notebookId = null) => set({ isNotebookContextModalOpen: isOpen, contextNotebookId: notebookId }),
 
   // GitHub Sync Defaults
   githubSyncToken: localStorage.getItem('githubSyncToken') || '',
@@ -314,6 +322,7 @@ export const useStore = create<AppState>((set, get) => ({
         token: state.githubSyncToken,
         repoName: state.githubSyncRepo,
         notes: state.notes,
+        notebooks: state.notebooks,
         syncMarkdown: state.githubSyncMarkdown,
         syncDb: state.githubSyncDb
       });
@@ -402,11 +411,24 @@ export const useStore = create<AppState>((set, get) => ({
     const defaultNbId = notebooks.length > 0 ? notebooks[0].id : null;
     const targetNbId = activeNotebookId || defaultNbId;
 
+    const activeNotebook = notebooks.find(nb => nb.id === targetNbId);
+    let initialBody = '# Untitled Note\n\nStart typing here...';
+    let initialTitle = 'Untitled Note';
+
+    if (activeNotebook?.config) {
+      try {
+        const nbConfig = JSON.parse(activeNotebook.config);
+        if (nbConfig.template) {
+          initialBody = nbConfig.template.replace(/\{\{title\}\}/g, initialTitle);
+        }
+      } catch {}
+    }
+
     const newNote = {
       id: newId,
-      title: 'Untitled Note',
-      body: '# Untitled Note\n\nStart typing here...',
-      notebookId: targetNbId as any, // fallback a null si no hay notebooks
+      title: initialTitle,
+      body: initialBody,
+      notebookId: targetNbId as any,
       status: 'none',
       isPinned: 0,
       reminderAt: null,
@@ -497,14 +519,26 @@ export const useStore = create<AppState>((set, get) => ({
       if ((window as any).dbAPI.toggleNoteTag) await (window as any).dbAPI.toggleNoteTag(noteId, tagId);
     } catch(e) { console.error('[store] toggleNoteTag error:', e); }
   },
-  createNotebook: async (name, parentId) => {
+  createNotebook: async (name, parentId, config) => {
     const id = 'nb-' + Date.now();
-    const newNB = { id, name, parentId, createdAt: Date.now() };
+    const configStr = config ? JSON.stringify(config) : null;
+    const newNB = { id, name, parentId, config: configStr as any, createdAt: Date.now() };
     set(state => ({ notebooks: [...state.notebooks, newNB] }));
     try {
       const dbAPI = (window as any).dbAPI;
       if (dbAPI && dbAPI.saveNotebook) await dbAPI.saveNotebook(newNB);
     } catch(e) { console.error('[store] createNotebook error:', e); }
+  },
+  updateNotebook: async (id, name, parentId, config) => {
+    const configStr = config ? (typeof config === 'string' ? config : JSON.stringify(config)) : null;
+    const updatedNB = { id, name, parentId, config: configStr as any };
+    set(state => ({
+      notebooks: state.notebooks.map(nb => nb.id === id ? { ...nb, name, parentId, config: configStr as any } : nb)
+    }));
+    try {
+      const dbAPI = (window as any).dbAPI;
+      if (dbAPI && dbAPI.saveNotebook) await dbAPI.saveNotebook(updatedNB);
+    } catch(e) { console.error('[store] updateNotebook error:', e); }
   },
   deleteNote: async (id) => {
     if (!id) return;

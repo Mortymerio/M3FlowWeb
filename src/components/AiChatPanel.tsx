@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, Settings2, X, Send, Loader2, Cpu, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { Sparkles, Settings2, X, Send, Loader2, Cpu, ChevronDown, ChevronRight, Trash2, Brain } from 'lucide-react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
 import { initWebLlm, getEngine } from '../lib/webllm';
@@ -108,6 +108,19 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
       }
     }
 
+    // Obtener contexto de la libreta actual
+    const activeNotebookId = useStore.getState().activeNotebookId;
+    const activeNotebook = useStore.getState().notebooks.find(nb => nb.id === activeNotebookId);
+    let notebookSystemPrompt = "";
+    if (activeNotebook?.config) {
+      try {
+        const nbConfig = JSON.parse(activeNotebook.config);
+        notebookSystemPrompt = nbConfig.systemPrompt || "";
+      } catch {}
+    }
+
+    const baseSystemMessage = `You are a helpful markdown editor assistant. ${notebookSystemPrompt ? `Context for this notebook: ${notebookSystemPrompt}` : ''} Obey the user's instructions over the provided document. Output only the requested modified content in raw markdown.`;
+
     let resultText = '';
 
     try {
@@ -116,7 +129,7 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
         if (!engine) throw new Error("WebLLM Engine is not loaded.");
         const reply = await engine.chat.completions.create({
           messages: [
-            { role: "system", content: "You are a markdown editor assistant." },
+            { role: "system", content: baseSystemMessage },
             { role: "user", content: `Instruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}\n\nOutput only the resulting markdown.` }
           ]
         });
@@ -159,7 +172,7 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
           body: JSON.stringify({
             model: isLocal ? "local-model" : "gpt-4o",
             messages: [
-              { role: "system", content: "You are a helpful markdown editor assistant. Obey the user's instructions over the provided document. Output only the requested modified content in raw markdown." },
+              { role: "system", content: baseSystemMessage },
               { role: "user", content: `Instruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}` }
             ]
           })
@@ -172,7 +185,7 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `System: You are a markdown editor assistant. Output only the requested modified content.\nInstruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}` }] }]
+            contents: [{ parts: [{ text: `System: ${baseSystemMessage}\nInstruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}` }] }]
           })
         });
         const data = await res.json();
@@ -189,7 +202,7 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
             max_tokens: 4096,
-            system: 'You are a helpful markdown editor assistant. Obey the user\'s instructions over the provided document. Output only the requested modified content in raw markdown.',
+            system: baseSystemMessage,
             messages: [
               { role: 'user', content: `Instruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}` }
             ]
@@ -257,6 +270,16 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
         <div className="flex items-center gap-2">
           <Sparkles size={16} className="text-blue-500" />
           <span className={`text-sm font-bold ${themeStyle.editorText}`}>AI Chat</span>
+          {(() => {
+            const activeNotebookId = useStore.getState().activeNotebookId;
+            const nb = useStore.getState().notebooks.find(n => n.id === activeNotebookId);
+            const hasContext = nb?.config && JSON.parse(nb.config).systemPrompt;
+            return hasContext ? (
+              <div className="flex items-center gap-1 bg-purple-500/20 text-purple-400 text-[9px] px-2 py-0.5 rounded-full font-black border border-purple-500/30 ml-2 animate-pulse">
+                <Brain size={8} /> CONTEXT ACTIVE
+              </div>
+            ) : null;
+          })()}
         </div>
         <div className="flex items-center gap-1">
           <button

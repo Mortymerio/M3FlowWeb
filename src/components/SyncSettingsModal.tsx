@@ -26,6 +26,7 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; msg: string } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
 
   useEffect(() => {
     if (!isOpen) setTestResult(null);
@@ -67,6 +68,27 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
       alert(`Import failed: ${e.message}`);
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const handleRecoverNotes = async () => {
+    if (!githubSyncToken || !githubSyncRepo) return;
+    if (!confirm('This will download all .md files from GitHub and insert them into your current database. Proceed?')) return;
+    
+    setIsRecovering(true);
+    try {
+      const dbAPI = (window as any).dbAPI;
+      const res = await dbAPI.githubRecoverNotes({ token: githubSyncToken, repoName: githubSyncRepo });
+      if (res.success) {
+        alert(`Successfully recovered ${res.count} notes!`);
+        window.location.reload();
+      } else {
+        alert(`Recovery failed: ${res.error}`);
+      }
+    } catch (e: any) {
+      alert(`Recovery failed: ${e.message}`);
+    } finally {
+      setIsRecovering(false);
     }
   };
 
@@ -188,23 +210,34 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
               </div>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button 
+                  onClick={triggerManualSync}
+                  disabled={!githubSyncToken || syncStatus === 'syncing'}
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                >
+                  {syncStatus === 'syncing' ? <Loader2 size={14} className="animate-spin" /> : <Cloud size={14} />}
+                  Push Backup Now
+                </button>
+                
+                <button 
+                  onClick={handleImport}
+                  disabled={!githubSyncToken || !githubSyncRepo || isImporting}
+                  className="flex-1 py-2 bg-red-900/50 hover:bg-red-800/80 border border-red-500/30 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                >
+                  {isImporting ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+                  Import DB from Cloud
+                </button>
+              </div>
+
               <button 
-                onClick={triggerManualSync}
-                disabled={!githubSyncToken || syncStatus === 'syncing'}
-                className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                onClick={handleRecoverNotes}
+                disabled={!githubSyncToken || !githubSyncRepo || isRecovering}
+                className="w-full py-2 bg-green-600/20 hover:bg-green-600/40 border border-green-500/30 text-green-400 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
               >
-                {syncStatus === 'syncing' ? <Loader2 size={14} className="animate-spin" /> : <Cloud size={14} />}
-                Push Backup Now
-              </button>
-              
-              <button 
-                onClick={handleImport}
-                disabled={!githubSyncToken || !githubSyncRepo || isImporting}
-                className="flex-1 py-2 bg-red-900/50 hover:bg-red-800/80 border border-red-500/30 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
-              >
-                {isImporting ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
-                Import DB from Cloud
+                {isRecovering ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                Recover Notes (.md) from Cloud
               </button>
             </div>
             {syncErrorMsg && (

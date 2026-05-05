@@ -8,6 +8,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import HelpOverlay from './components/HelpOverlay';
 import AboutModal from './components/AboutModal';
 import SyncSettingsModal from './components/SyncSettingsModal';
+import NotebookContextModal from './components/NotebookContextModal';
 import { useStore } from './store';
 import { THEMES } from './themes';
 
@@ -39,37 +40,15 @@ const App = () => {
   
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-sync Watchdog (5 minutes idle)
+  // Auto-sync Watchdog (DISABLED per user request)
   useEffect(() => {
-    // Escuchar el progreso
+    // Solo mantenemos el listener del progreso para la UI
     const dbAPI = (window as any).dbAPI;
     if (dbAPI?.onGithubProgress) {
       dbAPI.onGithubProgress((data: any) => {
         useStore.getState().setSyncProgress(data);
       });
     }
-
-    const resetIdleTimer = () => {
-      if (idleTimer.current) clearTimeout(idleTimer.current);
-      idleTimer.current = setTimeout(() => {
-        const state = useStore.getState();
-        if (state.hasUnsyncedChanges && state.githubSyncToken && state.syncStatus !== 'syncing') {
-          state.triggerManualSync();
-        }
-      }, 5 * 60 * 1000);
-    };
-
-    window.addEventListener('mousemove', resetIdleTimer);
-    window.addEventListener('keydown', resetIdleTimer);
-    window.addEventListener('click', resetIdleTimer);
-    resetIdleTimer();
-
-    return () => {
-      window.removeEventListener('mousemove', resetIdleTimer);
-      window.removeEventListener('keydown', resetIdleTimer);
-      window.removeEventListener('click', resetIdleTimer);
-      if (idleTimer.current) clearTimeout(idleTimer.current);
-    };
   }, []);
 
   useEffect(() => {
@@ -282,6 +261,7 @@ const App = () => {
       <AboutModal />
       <CommandPalette />
       <SyncSettingsModal isOpen={isSyncModalOpen} onClose={() => setSyncModalOpen(false)} />
+      <NotebookContextModal />
     </div>
   );
 };

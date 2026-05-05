@@ -52,17 +52,29 @@ const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activ
           )}
           <span className="truncate flex-1 text-[13px]">{notebook.name}</span>
         </div>
-        <button 
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            if (window.confirm(`¿Eliminar la carpeta "${notebook.name}" y todas sus notas?`)) {
-              useStore.getState().deleteNotebook(notebook.id);
-            }
-          }}
-          className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-all hover:text-red-500 ${themeStyle.sidebarHover}`}
-        >
-          <Trash2 size={12} />
-        </button>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+          <button 
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              useStore.getState().setNotebookContextModal(true, notebook.id);
+            }}
+            title="Notebook Context & Dashboard"
+            className={`p-1 rounded transition-all hover:text-blue-500 ${themeStyle.sidebarHover}`}
+          >
+            <LayoutDashboard size={12} />
+          </button>
+          <button 
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (window.confirm(`¿Eliminar la carpeta "${notebook.name}" y todas sus notas?`)) {
+                useStore.getState().deleteNotebook(notebook.id);
+              }
+            }}
+            className={`p-1 rounded transition-all hover:text-red-500 ${themeStyle.sidebarHover}`}
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
       </li>
       
       {isExpanded && hasChildren && (
@@ -166,7 +178,7 @@ const Sidebar = () => {
              }}>
           <span className="flex items-center gap-2"><LayoutDashboard size={14}/> Notebooks</span>
           <button 
-            className={`opacity-0 group-hover:opacity-100 transition-all rounded-md p-1 ${themeStyle.sidebarHover}`}
+            className={`opacity-0 group-hover:opacity-100 transition-all rounded-md p-1 ${themeStyle.sidebarHover} hover:text-blue-500`}
             title="New Folder"
             onClick={(e) => {
               e.stopPropagation();
@@ -175,19 +187,6 @@ const Sidebar = () => {
             }}
           >
             <Plus size={14} />
-          </button>
-          <button 
-            className={`opacity-0 group-hover:opacity-100 transition-all rounded-md p-1 ${themeStyle.sidebarHover}`}
-            title="Import Workspace"
-            onClick={async () => {
-              const dbAPI = (window as any).dbAPI;
-              const result = await dbAPI.importWorkspace();
-              if (result) {
-                await useStore.getState().loadInitialData(); // refetch state
-              }
-            }}
-          >
-            <Download size={14} className="rotate-180" />
           </button>
         </div>
         

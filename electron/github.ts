@@ -1,17 +1,24 @@
 import fs from 'fs';
+import { databaseAPI } from './database';
 
 interface GithubNote {
   title: string;
   body: string;
 }
 
+interface SyncProgress {
+  current: number;
+  total: number;
+  message: string;
+}
+
+// 1. Definir Headers y Helper primero
 const githubHeaders = (token: string) => ({
-  'Authorization': `token ${token}`,
+  'Authorization': `Bearer ${token}`,
   'Accept': 'application/vnd.github.v3+json',
   'Content-Type': 'application/json',
 });
 
-// Helper para hacer peticiones a GitHub
 const fetchGithub = async (url: string, token: string, options: RequestInit = {}): Promise<any> => {
   const res = await fetch(url, {
     ...options,
@@ -25,6 +32,7 @@ const fetchGithub = async (url: string, token: string, options: RequestInit = {}
   return res.json();
 };
 
+// 2. Funciones exportadas
 export const testConnection = async (token: string) => {
   try {
     const user = await fetchGithub('https://api.github.com/user', token);
@@ -34,24 +42,18 @@ export const testConnection = async (token: string) => {
   }
 };
 
-const ensureRepoExists = async (token: string, repoName: string, username: string, isPrivate: boolean = true) => {
+const ensureRepoExists = async (token: string, repoName: string, username: string) => {
   try {
     await fetchGithub(`https://api.github.com/repos/${username}/${repoName}`, token);
-    return true; // Existe
   } catch (err: any) {
     if (err.message.includes('404')) {
-      // Crear repositorio
       await fetchGithub(`https://api.github.com/user/repos`, token, {
         method: 'POST',
-        body: JSON.stringify({
-          name: repoName,
-          private: isPrivate,
-          auto_init: true // Para que tenga una rama principal
-        })
+        body: JSON.stringify({ name: repoName, private: true, auto_init: true })
       });
-      return true;
+    } else {
+      throw err;
     }
-    throw err;
   }
 };
 
@@ -59,116 +61,83 @@ export const syncToGithub = async (
   token: string,
   repoName: string,
   notes: GithubNote[],
+  notebooks: any[],
   dbPath: string,
   syncMarkdown: boolean,
   syncDb: boolean,
-  onProgress?: (progress: { current: number; total: number; message: string }) => void
+  onProgress?: (progress: SyncProgress) => void
 ) => {
   try {
-    if (onProgress) onProgress({ current: 0, total: 100, message: 'Validating GitHub connection...' });
-    
-    // 1. Obtener usuario
+    if (onProgress) onProgress({ current: 0, total: 100, message: 'Connecting...' });
     const user = await fetchGithub('https://api.github.com/user', token);
     const username = user.login;
+    await ensureRepoExists(token, repoName, username);
 
-    if (onProgress) onProgress({ current: 5, total: 100, message: 'Ensuring repository exists...' });
-    // 2. Asegurar que el repo existe
-    await ensureRepoExists(token, repoName, username, true);
-
-    if (onProgress) onProgress({ current: 10, total: 100, message: 'Fetching latest commit...' });
-    // 3. Obtener el commit y tree actual de main/master
-    let refData;
+    let latestCommitSha: string | null = null;
+    let baseTreeSha: string | null = null;
     let branch = 'main';
+
     try {
-      refData = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/refs/heads/main`, token);
+      const refData = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/refs/heads/main`, token);
+      latestCommitSha = refData.object.sha;
     } catch {
       branch = 'master';
-      refData = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/refs/heads/master`, token);
+      const refData = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/refs/heads/master`, token);
+      latestCommitSha = refData.object.sha;
     }
     
-    const latestCommitSha = refData.object.sha;
     const commitData = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/commits/${latestCommitSha}`, token);
-    const baseTreeSha = commitData.tree.sha;
+    baseTreeSha = commitData.tree.sha;
 
-    // 4. Crear Blobs para cada archivo
     const treePayload: any[] = [];
-    
-    let totalFiles = (syncMarkdown ? notes.length : 0) + (syncDb ? 1 : 0);
-    let processedFiles = 0;
-
-    if (syncMarkdown && notes.length > 0) {
-      for (const note of notes) {
-        if (onProgress) onProgress({ current: 10 + (processedFiles / totalFiles) * 70, total: 100, message: `Uploading: ${note.title}.md` });
-        // Normalizar título para nombre de archivo
+    if (syncMarkdown) {
+      // 1. Sincronizar Notas
+      for (const [index, note] of notes.entries()) {
         const safeTitle = note.title.replace(/[^a-zA-Z0-9_-]/g, '_') || 'Untitled';
         const blob = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/blobs`, token, {
           method: 'POST',
           body: JSON.stringify({ content: note.body, encoding: 'utf-8' })
         });
-        treePayload.push({
-          path: `notes/${safeTitle}.md`,
-          mode: '100644',
-          type: 'blob',
-          sha: blob.sha
-        });
-        processedFiles++;
+        treePayload.push({ path: `notes/${safeTitle}.md`, mode: '100644', type: 'blob', sha: blob.sha });
       }
+
+      // 2. Sincronizar Estructura de Notebooks (Contextos)
+      const notebooksJson = JSON.stringify(notebooks, null, 2);
+      const nbBlob = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/blobs`, token, {
+        method: 'POST',
+        body: JSON.stringify({ content: notebooksJson, encoding: 'utf-8' })
+      });
+      treePayload.push({ path: `system/notebooks.json`, mode: '100644', type: 'blob', sha: nbBlob.sha });
     }
 
     if (syncDb && fs.existsSync(dbPath)) {
-      if (onProgress) onProgress({ current: 10 + (processedFiles / totalFiles) * 70, total: 100, message: 'Uploading Database (m3flow.db)...' });
       const dbContent = fs.readFileSync(dbPath).toString('base64');
       const blob = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/blobs`, token, {
         method: 'POST',
         body: JSON.stringify({ content: dbContent, encoding: 'base64' })
       });
-      treePayload.push({
-        path: `system/m3flow.db`,
-        mode: '100644',
-        type: 'blob',
-        sha: blob.sha
-      });
+      treePayload.push({ path: `system/m3flow.db`, mode: '100644', type: 'blob', sha: blob.sha });
     }
 
-    if (treePayload.length === 0) {
-      if (onProgress) onProgress({ current: 100, total: 100, message: 'Nothing to sync' });
-      return { success: true, message: 'Nothing to sync' };
-    }
+    if (treePayload.length === 0) return { success: true };
 
-    if (onProgress) onProgress({ current: 85, total: 100, message: 'Creating Git Tree...' });
-    // 5. Crear el Tree
     const newTree = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/trees`, token, {
       method: 'POST',
-      body: JSON.stringify({
-        base_tree: baseTreeSha,
-        tree: treePayload
-      })
+      body: JSON.stringify({ base_tree: baseTreeSha, tree: treePayload })
     });
 
-    if (onProgress) onProgress({ current: 90, total: 100, message: 'Creating Commit...' });
-    // 6. Crear el Commit
-    const dateStr = new Date().toISOString();
     const newCommit = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/commits`, token, {
       method: 'POST',
-      body: JSON.stringify({
-        message: `Auto-sync: ${dateStr}`,
-        tree: newTree.sha,
-        parents: [latestCommitSha]
-      })
+      body: JSON.stringify({ message: `Sync ${new Date().toISOString()}`, tree: newTree.sha, parents: [latestCommitSha] })
     });
 
-    if (onProgress) onProgress({ current: 95, total: 100, message: 'Updating reference branch...' });
-    // 7. Actualizar la referencia
     await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/refs/heads/${branch}`, token, {
       method: 'PATCH',
       body: JSON.stringify({ sha: newCommit.sha })
     });
 
-    if (onProgress) onProgress({ current: 100, total: 100, message: 'Sync complete!' });
-    return { success: true, message: 'Synced successfully' };
-
+    return { success: true };
   } catch (error: any) {
-    console.error('GitHub Sync Error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -177,21 +146,64 @@ export const importDbFromGithub = async (token: string, repoName: string, localD
   try {
     const user = await fetchGithub('https://api.github.com/user', token);
     const username = user.login;
-
-    // Buscar el archivo usando Contents API
     const contentData = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/contents/system/m3flow.db`, token);
-    
-    if (contentData.encoding !== 'base64') {
-      throw new Error('Formato de archivo no soportado por la API.');
-    }
-
-    // Sobrescribir localmente
-    const buffer = Buffer.from(contentData.content, 'base64');
+    const response = await fetch(contentData.download_url, { headers: { 'Authorization': `Bearer ${token}` } });
+    const buffer = Buffer.from(await response.arrayBuffer());
     fs.writeFileSync(localDbPath, buffer);
-
     return { success: true };
   } catch (error: any) {
-    console.error('GitHub Import Error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const importNotesFromGithub = async (token: string, repoName: string, onProgress?: (p: SyncProgress) => void) => {
+  try {
+    const user = await fetchGithub('https://api.github.com/user', token);
+    const username = user.login;
+
+    // 1. Intentar recuperar estructura de Notebooks (Contextos)
+    let targetNotebookId = 'nb-recovered';
+    try {
+      const nbFile = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/contents/system/notebooks.json`, token);
+      if (nbFile && nbFile.content) {
+        const decodedNb = Buffer.from(nbFile.content, 'base64').toString('utf-8');
+        const notebooksData = JSON.parse(decodedNb);
+        if (onProgress) onProgress({ current: 5, total: 100, message: 'Restoring structure...' });
+        
+        for (const nb of notebooksData) {
+          databaseAPI.saveNotebook(nb);
+        }
+        if (notebooksData.length > 0) targetNotebookId = notebooksData[0].id;
+      }
+    } catch (e) {
+      console.log('[Sync] No system/notebooks.json found, creating default recovery folder.');
+      databaseAPI.saveNotebook({ id: 'nb-recovered', name: 'Recovered Notes', parentId: null });
+    }
+
+    const files = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/contents/notes`, token);
+    if (!Array.isArray(files)) throw new Error('No se encontraron notas.');
+
+    const mdFiles = files.filter(f => f.name.endsWith('.md'));
+    const existingNotes = databaseAPI.getNotes() as any[];
+
+    for (const [index, file] of mdFiles.entries()) {
+      const title = file.name.replace('.md', '').replace(/__/g, ' - ').replace(/_/g, ' ');
+      if (onProgress) onProgress({ current: 10 + (index / mdFiles.length) * 90, total: 100, message: `Recovering: ${title}` });
+      if (existingNotes.find((n: any) => n.title === title)) continue;
+
+      const res = await fetch(file.download_url, { headers: { 'Authorization': `Bearer ${token}` } });
+      const body = await res.text();
+
+      databaseAPI.saveNote({
+        id: `recovered-${Date.now()}-${index}`,
+        title: title,
+        body: body,
+        notebookId: targetNotebookId,
+        status: 'active'
+      });
+    }
+    return { success: true, count: mdFiles.length };
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 };
