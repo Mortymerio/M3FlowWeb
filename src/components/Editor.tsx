@@ -280,6 +280,20 @@ const Editor = () => {
       className={`flex-[2_2_0%] flex flex-col h-full font-sans relative shadow-[-5px_0_15px_rgba(0,0,0,0.02)] ${themeStyle.editorBg} ${themeStyle.editorText}`}
       onClick={() => setDropdownOpen('none')}
     >
+      {/* Dynamic Font Size Injector */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .cm-editor .cm-content, 
+        .cm-editor .cm-gutter,
+        .bn-editor,
+        .prose-custom-size {
+          font-size: ${editorFontSize}px !important;
+          line-height: 1.6 !important;
+        }
+        .prose-custom-size h1 { font-size: ${editorFontSize * 2}px !important; }
+        .prose-custom-size h2 { font-size: ${editorFontSize * 1.5}px !important; }
+        .prose-custom-size h3 { font-size: ${editorFontSize * 1.25}px !important; }
+      `}} />
+
       {/* Top Header / minimal draggable area */}
       <div 
         id="editor-header"
@@ -672,12 +686,14 @@ const Editor = () => {
 
           {/* RICH MODE: BlockNote replaces everything */}
           {editorType === 'rich' && (
-            <RichEditor
-              content={content}
-              onChange={(md) => setContent(md)}
-              fontSize={editorFontSize}
-              themeName={themeName}
-            />
+            <div className="flex-1 h-full overflow-hidden" style={{ fontSize: `${editorFontSize}px` }}>
+              <RichEditor
+                content={content}
+                onChange={(md) => setContent(md)}
+                fontSize={editorFontSize}
+                themeName={themeName}
+              />
+            </div>
           )}
 
           {/* RAW MODE: Original CodeMirror + Preview */}
