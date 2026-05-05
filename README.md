@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  M3Flow es una plataforma de escritura de alto rendimiento diseñada para la claridad mental y el flujo creativo constante. A diferencia de otros editores, M3Flow vive en tu máquina, vuela con SQLite y se adapta a tu estilo visual mediante un motor de temas reactivo de última generación.
+  M3Flow is a high-performance writing platform designed for mental clarity and constant creative flow. Unlike other editors, M3Flow lives on your machine, flies with SQLite, and adapts to your visual style through a next-generation reactive theme engine.
 </p>
 
 ---
@@ -30,75 +30,75 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 Novedades (Update 0.1.10)](#-novedades-de-esta-versión-update-0110)
-- [✨ Características Principales](#-características-principales)
-- [🛡️ Arquitectura y Fallbacks](#-arquitectura-resiliente-y-fallbacks)
-- [📝 Motores de Edición](#-motores-de-edición-dual)
-- [🚀 Guía de Inicio](#-guía-rápida-para-desarrolladores)
-- [⌨️ Comandos Clave](#-comandos-clave)
-- [🤖 Inteligencia Artificial](#-guía-práctica-de-inteligencia-artificial)
-- [👤 Créditos](#-créditos-y-visión)
+- [🔥 What's New (Update 0.1.10)](#-whats-new-this-version-update-0110)
+- [✨ Core Features](#-core-features)
+- [🛡️ Architecture and Fallbacks](#-resilient-architecture-and-fallbacks)
+- [📝 Editing Engines](#-dual-editing-engines)
+- [🚀 Quick Start Guide](#-quick-start-guide-for-developers)
+- [⌨️ Key Commands](#-key-commands)
+- [🤖 Artificial Intelligence](#-artificial-intelligence-your-powered-digital-brain)
+- [👤 Credits](#-credits-and-vision)
 </details>
 
 ---
 
-## 🔥 Novedades de esta Versión (Update 0.1.10)
+## 🔥 What's New this Version (Update 0.1.10)
 
-- **📂 Dynamic Contexts & Portability:** Nueva arquitectura de libretas basada en `notebooks.json` y metadatos YAML. Tu base de conocimientos ahora es 100% portable y reconstruible solo desde GitHub.
-- **🛠️ Hardened Sync Engine:** Sincronización por ID único en lugar de títulos. Adiós a las notas duplicadas y conflictos de nombres.
-- **🔍 Notebook Dashboards:** Cada libreta tiene ahora su propio panel de contexto con prompts personalizados, notas rápidas y visualización de progreso.
-- **🎨 Universal Font Scaling:** El control "Aa" ahora es global. Afecta al editor RAW (CodeMirror), al editor RICH (BlockNote) y a la previsualización Markdown simultáneamente.
-- **🚀 Instant-On Architecture:** Eliminación de pantallas de bienvenida obligatorias. La app se auto-inicializa y está lista para escribir en milisegundos.
-- **✏️ UX Refined:** Edición de nombres de carpetas en línea, creación instantánea de notebooks y mejor visibilidad de controles en el Sidebar.
+- **📂 Dynamic Contexts & Portability:** New notebook architecture based on `notebooks.json` and YAML metadata. Your knowledge base is now 100% portable and reconstructible solely from GitHub.
+- **🛠️ Hardened Sync Engine:** Synchronization via unique ID instead of titles. Say goodbye to duplicate notes and naming conflicts.
+- **🔍 Notebook Dashboards:** Each notebook now has its own context panel with custom prompts, quick notes, and progress visualization.
+- **🎨 Universal Font Scaling:** The "Aa" control is now global. It affects the RAW editor (CodeMirror), the RICH editor (BlockNote), and the Markdown preview simultaneously.
+- **🚀 Instant-On Architecture:** Removal of mandatory splash screens. The app auto-initializes and is ready to write in milliseconds.
+- **✏️ UX Refined:** Inline folder name editing, instant notebook creation, and improved control visibility in the Sidebar.
 
 ---
 
-## ✨ Características Principales
+## ✨ Core Features
 
-| Característica | Detalle |
+| Feature | Detail |
 | :--- | :--- |
-| **🏠 Local-First** | Privacidad total. SQLite local con rendimiento de grado empresarial. |
-| **🔄 Contextos Dinámicos** | Organiza tu cerebro en Notebooks con configuraciones de IA y vistas personalizadas. |
-| **🤖 IA & Vault** | Chat lateral con comandos `@vault` para extraer contexto semántico de tus notas locales. |
-| **🔄 Dual Mode** | Intercambia entre un Editor WYSIWYG (BlockNote) y un Editor RAW (CodeMirror). |
-| **⌨️ Power Users** | Soporte profundo de modos **VIM** y **Emacs** en el editor RAW. |
-| **🎨 Personalización** | Más de 20 temas dinámicos (VS Code Style) y escalado de fuente universal. |
+| **🏠 Local-First** | Full privacy. Local SQLite with enterprise-grade performance. |
+| **🔄 Dynamic Contexts** | Organize your brain into Notebooks with AI configurations and custom views. |
+| **🤖 AI & Vault** | Side chat with `@vault` commands to extract semantic context from your local notes. |
+| **🔄 Dual Mode** | Swap between a WYSIWYG Editor (BlockNote) and a RAW Editor (CodeMirror). |
+| **⌨️ Power Users** | Deep support for **VIM** and **Emacs** modes in the RAW editor. |
+| **🎨 Customization** | 20+ dynamic themes (VS Code Style) and universal font scaling. |
 
 ---
 
-## 🛠️ Arquitectura y Stack Tecnológico
+## 🛠️ Architecture and Tech Stack
 
-M3Flow está construido bajo la filosofía *Local-First*, asegurando que el software sea increíblemente rápido, privado y tolerante a fallos.
+M3Flow is built under the *Local-First* philosophy, ensuring the software is incredibly fast, private, and fault-tolerant.
 
-### 🧠 Core y Base de Datos
-- **Framework & Interfaz:** `React 19` + `Vite` + `Tailwind CSS 4`.
-- **Persistencia (Backend):** `Better-SQLite3`. El corazón del sistema para búsquedas instantáneas sobre miles de notas.
-- **Sincronización:** GitHub Trees API con inyección de metadatos YAML (id, title, notebookId, status).
+### 🧠 Core and Database
+- **Framework & Interface:** `React 19` + `Vite` + `Tailwind CSS 4`.
+- **Persistence (Backend):** `Better-SQLite3`. The heart of the system for instant searches across thousands of notes.
+- **Synchronization:** GitHub Trees API with YAML metadata injection (id, title, notebookId, status).
 
-### 🛡️ Arquitectura Resiliente y Fallbacks
-M3Flow está diseñado para ser virtualmente indestructible en cuanto a integridad de datos:
-- **Modo Supervivencia:** Si la carpeta `userData` es inaccesible, la app redirige automáticamente la persistencia a una ubicación local segura.
-- **Integridad Atómica (WAL Mode):** SQLite configurado con **Write-Ahead Logging** para prevenir corrupción de datos ante fallos.
-- **Sync Tolerante a Fallos:** El motor de backup opera de forma asíncrona y aislada del hilo principal.
+### 🛡️ Resilient Architecture and Fallbacks
+M3Flow is designed to be virtually indestructible regarding data integrity:
+- **Survival Mode:** If the `userData` folder is inaccessible, the app automatically redirects persistence to a secure local location.
+- **Atomic Integrity (WAL Mode):** SQLite configured with **Write-Ahead Logging** to prevent data corruption during failures.
+- **Fault-Tolerant Sync:** The backup engine operates asynchronously and isolated from the main thread.
 
-### 📝 Motores de Edición Dual
-- **Editor RAW (`CodeMirror 6`):** Control absoluto, sintaxis Markdown pura y atajos de terminal.
-- **Editor RICH (`BlockNote`):** Experiencia WYSIWYG basada en bloques, ideal para estructuración visual rápida.
+### 📝 Dual Editing Engines
+- **RAW Editor (`CodeMirror 6`):** Absolute control, pure Markdown syntax, and terminal shortcuts.
+- **RICH Editor (`BlockNote`):** Block-based WYSIWYG experience, ideal for rapid visual structuring.
 
 ---
 
-## 🚀 Guía Rápida para Desarrolladores
+## 🚀 Quick Start Guide for Developers
 
-### 1. Preparar el entorno
+### 1. Prepare the Environment
 ```bash
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Configurar binarios nativos de Electron
+# Configure Electron native binaries
 npm run postinstall
 ```
 
-### 2. Lanzar en Desarrollo
+### 2. Launch in Development
 ```bash
 npm run dev
 ```
@@ -110,48 +110,48 @@ npm run build
 
 ---
 
-## ⌨️ Comandos Clave
+## ⌨️ Key Commands
 
-- `Ctrl + P`: Abrir buscador global de notas (FTS5).
-- `Ctrl + N`: Crear nueva nota.
-- `Ctrl + B`: Mostrar / Ocultar Sidebar.
-- `Ctrl + F`: Buscar dentro de la nota actual.
-
----
-
-## 🤖 Inteligencia Artificial: Tu Cerebro Digital Potenciado
-
-M3Flow integra la IA no como un simple plugin, sino como una extensión profunda de tu propia base de conocimientos. Nuestra arquitectura está diseñada para maximizar la utilidad de los LLMs sin comprometer tu privacidad.
-
-### 📂 El Logro: @vault & Contextos Dinámicos (RAG Evolucionado)
-La característica más potente de M3Flow es cómo combina el comando **`@vault`** con los **Contextos Dinámicos**:
-
-- **Bóvedas Temáticas**: A diferencia de una IA genérica, M3Flow permite definir **Prompts de Contexto** por cada Notebook. Esto significa que si estás en tu libreta de "Programación", la IA ya sabe que debe responder con código y documentación técnica, mientras que en "Escritura Creativa" se enfocará en estilo y narrativa.
-- **Búsqueda Semántica Local (RAG)**: M3Flow utiliza el motor SQLite FTS5 para realizar una recuperación de información instantánea. Al invocar `@vault`, el sistema no solo busca en todas tus notas, sino que prioriza el conocimiento del **Notebook activo**, inyectando ese contexto especializado en el modelo.
-- **Memoria de Trabajo**: Cada notebook actúa como un silo de conocimiento curado. La IA no solo "lee" tus notas, sino que "razona" dentro del marco conceptual que tú has definido para ese proyecto específico.
-- **Privacidad Absoluta**: Todo el procesamiento de contexto (filtrado, ranking y selección de fragmentos) ocurre localmente. Tus datos nunca se envían para ser entrenados, solo se usan para responderte en el momento.
-
-### 🔌 Filosofía BYOM (Bring Your Own Model)
-M3Flow es un orquestador agnóstico que te permite elegir el cerebro que prefieras:
-
-- **Proveedores en la Nube**: Conecta con **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini** o **DeepSeek**.
-- **Privacidad Total con Ollama**: Ejecuta modelos locales y mantén tus datos 100% offline.
-- **Modelos Embebidos (WebLLM)**: Aprovecha la aceleración por GPU de tu hardware para ejecutar modelos directamente sin dependencias externas.
-
-### ✨ Ejemplos de Potencia
-> *"@vault Analiza las contradicciones entre mis notas de este proyecto y las referencias externas."*
-
-> *"Actúa según el contexto de este notebook (@vault) y redacta la introducción del documento técnico."*
+- `Ctrl + P`: Open global note search (FTS5).
+- `Ctrl + N`: Create new note.
+- `Ctrl + B`: Toggle Sidebar.
+- `Ctrl + F`: Search within the current note.
 
 ---
 
-## 👤 Créditos y Visión
+## 🤖 Artificial Intelligence: Your Powered Digital Brain
 
-Diseñado y desarrollado por **Mariano**.
-*M3Flow nació de la necesidad de una herramienta que no solo guarde texto, sino que facilite el pensamiento estructurado sin distracciones externas ni latencia de red.*
+M3Flow integrates AI not as a simple plugin, but as a deep extension of your own knowledge base. Our architecture is designed to maximize the utility of LLMs without compromising your privacy.
+
+### 📂 The Achievement: @vault & Dynamic Contexts (Evolved RAG)
+M3Flow's most powerful feature is how it combines the **`@vault`** command with **Dynamic Contexts**:
+
+- **Thematic Vaults**: Unlike a generic AI, M3Flow allows defining **Context Prompts** for each Notebook. This means if you are in your "Programming" notebook, the AI already knows it should respond with code and technical documentation, while in "Creative Writing" it will focus on style and narrative.
+- **Local Semantic Search (RAG)**: M3Flow uses the SQLite FTS5 engine for instant information retrieval. When invoking `@vault`, the system not only searches through all your notes but prioritizes knowledge from the **active Notebook**, injecting that specialized context into the model.
+- **Working Memory**: Each notebook acts as a curated knowledge silo. The AI doesn't just "read" your notes; it "reasons" within the conceptual framework you've defined for that specific project.
+- **Absolute Privacy**: All context processing (filtering, ranking, and fragment selection) occurs locally. Your data is never sent for training; it's only used to answer you in the moment.
+
+### 🔌 BYOM (Bring Your Own Model) Philosophy
+M3Flow is an agnostic orchestrator that lets you choose the brain you prefer:
+
+- **Cloud Providers**: Connect with **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini**, or **DeepSeek**.
+- **Total Privacy with Ollama**: Run local models and keep your data 100% offline.
+- **Embedded Models (WebLLM)**: Leverage your hardware's GPU acceleration to run models directly without external dependencies.
+
+### ✨ Power Examples
+> *"@vault Analyze the contradictions between my notes for this project and external references."*
+
+> *"Act according to the context of this notebook (@vault) and draft the introduction for the technical document."*
 
 ---
 
-## 📄 Licencia
+## 👤 Credits and Vision
 
-Este proyecto es de código abierto bajo la licencia **MIT**.
+Designed and developed by **Mariano**.
+*M3Flow was born from the need for a tool that doesn't just store text, but facilitates structured thinking without external distractions or network latency.*
+
+---
+
+## 📄 License
+
+This project is open-source under the **MIT** license.
