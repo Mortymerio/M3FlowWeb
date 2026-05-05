@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Download, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Loader2 as SpinnerIcon } from 'lucide-react';
+import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Download, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon } from 'lucide-react';
 
 const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
   const children = notebooks.filter((nb: any) => nb.parentId === notebook.id);
@@ -56,10 +56,23 @@ const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activ
           <button 
             onClick={(e) => { 
               e.stopPropagation(); 
+              const newName = window.prompt('Nuevo nombre para la carpeta:', notebook.name);
+              if (newName && newName !== notebook.name) {
+                useStore.getState().updateNotebook(notebook.id, newName, notebook.parentId, notebook.config);
+              }
+            }}
+            title="Rename Notebook"
+            className={`p-1 rounded transition-all hover:text-blue-400 ${themeStyle.sidebarHover}`}
+          >
+            <Edit2 size={12} />
+          </button>
+          <button 
+            onClick={(e) => { 
+              e.stopPropagation(); 
               useStore.getState().setNotebookContextModal(true, notebook.id);
             }}
             title="Notebook Context & Dashboard"
-            className={`p-1 rounded transition-all hover:text-blue-500 ${themeStyle.sidebarHover}`}
+            className={`p-1 rounded transition-all hover:text-purple-400 ${themeStyle.sidebarHover}`}
           >
             <LayoutDashboard size={12} />
           </button>
@@ -169,16 +182,16 @@ const Sidebar = () => {
 
       {/* Notebooks Section */}
       <div className="px-3 flex-1 overflow-y-auto no-drag" style={{ WebkitAppRegion: 'no-drag' } as any}>
-        <div className="text-[11px] font-semibold uppercase tracking-wider mt-4 mb-2 px-1 flex justify-between items-center group opacity-80"
+        <div className="text-[11px] font-semibold uppercase tracking-wider mt-4 mb-2 px-1 flex justify-between items-center opacity-100"
              onDragOver={(e) => e.preventDefault()}
              onDrop={(e) => {
                e.preventDefault();
                const notebookId = e.dataTransfer.getData('notebookId');
                if (notebookId) useStore.getState().moveNotebook(notebookId, null);
              }}>
-          <span className="flex items-center gap-2"><LayoutDashboard size={14}/> Notebooks</span>
+          <span className="flex items-center gap-2 opacity-60"><LayoutDashboard size={14}/> Notebooks</span>
           <button 
-            className={`opacity-0 group-hover:opacity-100 transition-all rounded-md p-1 ${themeStyle.sidebarHover} hover:text-blue-500`}
+            className={`transition-all rounded-md p-1 ${themeStyle.sidebarHover} hover:text-blue-500 text-blue-500 bg-blue-500/10 shadow-sm`}
             title="New Folder"
             onClick={(e) => {
               e.stopPropagation();
@@ -186,7 +199,7 @@ const Sidebar = () => {
               if (name) useStore.getState().createNotebook(name, null);
             }}
           >
-            <Plus size={14} />
+            <Plus size={16} strokeWidth={3} />
           </button>
         </div>
         
