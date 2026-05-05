@@ -29,7 +29,7 @@ const fetchGithub = async (url: string, token: string, options: RequestInit = {}
   });
   if (!res.ok) {
     let errorMsg = res.statusText;
-    try { const data = await res.json() as any; errorMsg = data.message || errorMsg; } catch (e) {}
+    try { const data = await res.json() as any; errorMsg = data.message || errorMsg; } catch (e) { }
     throw new Error(`GitHub API Error: ${res.status} - ${errorMsg}`);
   }
   return res.json();
@@ -88,7 +88,7 @@ export const syncToGithub = async (
       const refData = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/refs/heads/master`, token);
       latestCommitSha = refData.object.sha;
     }
-    
+
     const commitData = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/commits/${latestCommitSha}`, token);
     baseTreeSha = commitData.tree.sha;
 
@@ -97,7 +97,7 @@ export const syncToGithub = async (
       // 1. Sincronizar Notas con Metadatos (YAML Frontmatter)
       for (const [index, note] of notes.entries()) {
         const safeTitle = note.title.replace(/[^a-zA-Z0-9_-]/g, '_') || 'Untitled';
-        
+
         // Inyectar metadatos en la parte superior del archivo
         const yamlMetadata = `---
 id: ${note.id}
@@ -184,7 +184,7 @@ export const importNotesFromGithub = async (token: string, repoName: string, onP
         const decodedNb = Buffer.from(nbFile.content, 'base64').toString('utf-8');
         const notebooksData = JSON.parse(decodedNb);
         if (onProgress) onProgress({ current: 5, total: 100, message: 'Restoring structure...' });
-        
+
         for (const nb of notebooksData) {
           databaseAPI.saveNotebook(nb);
         }
@@ -208,7 +208,7 @@ export const importNotesFromGithub = async (token: string, repoName: string, onP
 
       const res = await fetch(file.download_url, { headers: { 'Authorization': `Bearer ${token}` } });
       let body = await res.text();
-      
+
       let noteNotebookId = targetNotebookId;
       let noteStatus = 'active';
       let noteId = `recovered-${Date.now()}-${index}`;
