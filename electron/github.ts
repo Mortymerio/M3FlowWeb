@@ -96,8 +96,6 @@ export const syncToGithub = async (
     if (syncMarkdown) {
       // 1. Sincronizar Notas con Metadatos (YAML Frontmatter)
       for (const note of notes) {
-        const safeTitle = note.title.replace(/[^a-zA-Z0-9_-]/g, '_') || 'Untitled';
-
         // Inyectar metadatos en la parte superior del archivo
         const yamlMetadata = `---
 id: ${note.id}
