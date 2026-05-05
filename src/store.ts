@@ -358,12 +358,20 @@ export const useStore = create<AppState>((set, get) => ({
       const isFallback = await dbAPI.isFallbackMode();
       set({ isFallbackMode: isFallback });
 
-      const [notebooks, notes, tags, noteTags] = await Promise.all([
+      let [notebooks, notes, tags, noteTags] = await Promise.all([
         dbAPI.getNotebooks(),
         dbAPI.getNotes(),
         dbAPI.getTags ? dbAPI.getTags() : [],
         dbAPI.getNoteTags ? dbAPI.getNoteTags() : []
       ]);
+
+      // AUTO-INITIALIZE: Si no hay libretas, crear una 'General' para evitar el WelcomeScreen
+      if (notebooks.length === 0) {
+        const defaultNb = { id: 'nb-default', name: 'General', parentId: null, createdAt: Date.now() };
+        await dbAPI.saveNotebook(defaultNb);
+        notebooks = [defaultNb];
+      }
+
       set({ notebooks, notes, tags, noteTags });
       
       // Auto-seleccionar primer elemento
@@ -408,7 +416,14 @@ export const useStore = create<AppState>((set, get) => ({
   createNote: async () => {
     const { activeNotebookId, notes, notebooks } = get();
     const newId = 'note-' + Date.now();
-    const defaultNbId = notebooks.length > 0 ? notebooks[0].id : null;
+    
+    // Si no hay libretas (teóricamente imposible ahora), abortar o crear una
+    if (notebooks.length === 0) {
+      await get().createNotebook('General', null);
+    }
+    
+    const currentNotebooks = get().notebooks;
+    const defaultNbId = currentNotebooks.length > 0 ? currentNotebooks[0].id : null;
     const targetNbId = activeNotebookId || defaultNbId;
 
     const activeNotebook = notebooks.find(nb => nb.id === targetNbId);
@@ -523,7 +538,11 @@ export const useStore = create<AppState>((set, get) => ({
     const id = 'nb-' + Date.now();
     const configStr = config ? JSON.stringify(config) : null;
     const newNB = { id, name, parentId, config: configStr as any, createdAt: Date.now() };
-    set(state => ({ notebooks: [...state.notebooks, newNB] }));
+    set(state => ({ 
+      notebooks: [...state.notebooks, newNB],
+      activeNotebookId: id, // Activar inmediatamente
+      activeNoteId: null    // Limpiar nota activa para mostrar el dashboard
+    }));
     try {
       const dbAPI = (window as any).dbAPI;
       if (dbAPI && dbAPI.saveNotebook) await dbAPI.saveNotebook(newNB);
