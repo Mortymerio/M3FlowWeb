@@ -91,12 +91,24 @@ export const syncToGithub = async (
 
     const treePayload: any[] = [];
     if (syncMarkdown) {
-      // 1. Sincronizar Notas
+      // 1. Sincronizar Notas con Metadatos (YAML Frontmatter)
       for (const [index, note] of notes.entries()) {
         const safeTitle = note.title.replace(/[^a-zA-Z0-9_-]/g, '_') || 'Untitled';
+        
+        // Inyectar metadatos en la parte superior del archivo
+        const yamlMetadata = `---
+id: ${note.id}
+notebookId: ${note.notebookId}
+status: ${note.status || 'none'}
+updatedAt: ${Date.now()}
+---
+
+`;
+        const fullContent = yamlMetadata + note.body;
+
         const blob = await fetchGithub(`https://api.github.com/repos/${username}/${repoName}/git/blobs`, token, {
           method: 'POST',
-          body: JSON.stringify({ content: note.body, encoding: 'utf-8' })
+          body: JSON.stringify({ content: fullContent, encoding: 'utf-8' })
         });
         treePayload.push({ path: `notes/${safeTitle}.md`, mode: '100644', type: 'blob', sha: blob.sha });
       }
@@ -192,14 +204,36 @@ export const importNotesFromGithub = async (token: string, repoName: string, onP
       if (existingNotes.find((n: any) => n.title === title)) continue;
 
       const res = await fetch(file.download_url, { headers: { 'Authorization': `Bearer ${token}` } });
-      const body = await res.text();
+      let body = await res.text();
+      
+      let noteNotebookId = targetNotebookId;
+      let noteStatus = 'active';
+      let noteId = `recovered-${Date.now()}-${index}`;
+
+      // Lógica robusta de Frontmatter: Debe empezar con ---
+      if (body.startsWith('---')) {
+        const parts = body.split('---');
+        if (parts.length >= 3) {
+          const fmContent = parts[1];
+          // El cuerpo es todo lo que viene después del segundo ---
+          body = parts.slice(2).join('---').trim();
+
+          const idMatch = fmContent.match(/id:\s*(.*)/);
+          const nbMatch = fmContent.match(/notebookId:\s*(.*)/);
+          const stMatch = fmContent.match(/status:\s*(.*)/);
+
+          if (idMatch) noteId = idMatch[1].trim();
+          if (nbMatch) noteNotebookId = nbMatch[1].trim();
+          if (stMatch) noteStatus = stMatch[1].trim();
+        }
+      }
 
       databaseAPI.saveNote({
-        id: `recovered-${Date.now()}-${index}`,
+        id: noteId,
         title: title,
         body: body,
-        notebookId: targetNotebookId,
-        status: 'active'
+        notebookId: noteNotebookId,
+        status: noteStatus
       });
     }
     return { success: true, count: mdFiles.length };
