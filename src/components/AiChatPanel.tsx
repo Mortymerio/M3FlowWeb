@@ -33,6 +33,8 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
   const activeAiProvider = useStore(state => state.activeAiProvider);
   const openAiKey = useStore(state => state.openAiKey);
   const geminiKey = useStore(state => state.geminiKey);
+  const geminiModel = useStore(state => state.geminiModel);
+  const geminiApiVersion = useStore(state => state.geminiApiVersion);
   const claudeKey = useStore(state => state.claudeKey);
   const githubToken = useStore(state => state.githubToken);
   const azureUrl = useStore(state => state.azureUrl);
@@ -56,6 +58,34 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
   const [configOpen, setConfigOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Gemini model discovery
+  const [availableGeminiModels, setAvailableGeminiModels] = useState<{ name: string, displayName: string }[]>([]);
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
+
+  const fetchGeminiModels = useCallback(async () => {
+    if (!geminiKey) return;
+    setIsFetchingModels(true);
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/${geminiApiVersion || 'v1'}/models?key=${geminiKey}`);
+      const data = await res.json();
+      if (data.models) {
+        const models = data.models
+          .filter((m: any) => m.supportedGenerationMethods.includes('generateContent'))
+          .map((m: any) => ({
+            name: m.name.replace('models/', ''),
+            displayName: m.displayName
+          }));
+        setAvailableGeminiModels(models);
+      } else if (data.error) {
+        console.error("Gemini ListModels Error:", data.error);
+      }
+    } catch (e) {
+      console.error("Fetch models failed:", e);
+    } finally {
+      setIsFetchingModels(false);
+    }
+  }, [geminiKey, geminiApiVersion]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -82,11 +112,11 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
 
     let vaultContext = '';
     let retrievedNotes: { title: string }[] = [];
-    
+
     if (userMsg.text.toLowerCase().includes('@vault')) {
       const query = userMsg.text.replace(/@vault/ig, '').trim().toLowerCase();
       const keywords = query.split(/\s+/).filter(w => w.length > 2);
-      
+
       if (keywords.length > 0) {
         const scoredNotes = notes.map(note => {
           let score = 0;
@@ -100,7 +130,7 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
         }).filter(n => n.score > 0)
           .sort((a, b) => b.score - a.score)
           .slice(0, 3);
-          
+
         if (scoredNotes.length > 0) {
           retrievedNotes = scoredNotes.map(sn => ({ title: sn.note.title }));
           vaultContext = "\n\nAdditional Vault Context:\n" + scoredNotes.map(sn => `--- Note: ${sn.note.title} ---\n${sn.note.body.substring(0, 2000)}`).join('\n\n');
@@ -116,10 +146,14 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
       try {
         const nbConfig = JSON.parse(activeNotebook.config);
         notebookSystemPrompt = nbConfig.systemPrompt || "";
-      } catch {}
+      } catch { }
     }
 
-    const baseSystemMessage = `You are a helpful markdown editor assistant. ${notebookSystemPrompt ? `Context for this notebook: ${notebookSystemPrompt}` : ''} Obey the user's instructions over the provided document. Output only the requested modified content in raw markdown.`;
+    const baseSystemMessage = `You are a helpful AI writing assistant for M3Flow. ${notebookSystemPrompt ? `Context for this notebook: ${notebookSystemPrompt}` : ''}
+Analyze the user's instruction:
+- If the user wants to chat, ask a question, or greet you, start your response with 'REPLY: ' followed by your answer.
+- If the user wants to edit, rewrite, or transform the current note, output ONLY the new markdown content for the entire note, without any prefix.
+- Never output both a reply and markdown unless specifically asked.`;
 
     let resultText = '';
 
@@ -181,15 +215,37 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
         if (data.error) throw new Error(data.error.message || 'API Error');
         resultText = data.choices?.[0]?.message?.content;
       } else if (activeAiProvider === 'gemini') {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${geminiKey}`, {
+        const isBeta = geminiApiVersion === 'v1beta';
+        const payload: any = {
+          contents: [{
+            parts: [{
+              text: isBeta
+                ? `Instruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}`
+                : `System: ${baseSystemMessage}\n\nInstruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}`
+            }]
+          }]
+        };
+
+        if (isBeta) {
+          payload.system_instruction = { parts: [{ text: baseSystemMessage }] };
+        }
+
+        const res = await fetch(`https://generativelanguage.googleapis.com/${geminiApiVersion || 'v1'}/models/${geminiModel || 'gemini-3.1-pro'}:generateContent?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `System: ${baseSystemMessage}\nInstruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}` }] }]
-          })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
-        resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (data.error) throw new Error(data.error.message || 'Gemini API Error');
+
+        if (data.candidates && data.candidates.length > 0) {
+          const cand = data.candidates[0];
+          if (cand.content?.parts?.[0]?.text) {
+            resultText = cand.content.parts[0].text;
+          } else if (cand.finishReason && cand.finishReason !== 'STOP') {
+            throw new Error(`Gemini blocked response. Reason: ${cand.finishReason}`);
+          }
+        }
       } else if (activeAiProvider === 'claude') {
         const res = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -214,23 +270,33 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
       }
 
       if (resultText) {
-        onContentChange(resultText);
-        let aiResponseText = '✅ Document updated successfully.';
-        if (retrievedNotes.length > 0) {
-          aiResponseText += `\n\n🔍 Searched vault context:\n${retrievedNotes.map(n => `- ${n.title}`).join('\n')}`;
+        if (resultText.trim().startsWith('REPLY:')) {
+          const aiMsg: ChatMessage = {
+            id: `a-${Date.now()}`,
+            role: 'ai',
+            text: resultText.replace(/^REPLY:\s*/i, '').trim(),
+            timestamp: Date.now(),
+          };
+          setMessages(prev => [...prev, aiMsg]);
+        } else {
+          onContentChange(resultText);
+          let aiResponseText = '✅ Document updated successfully.';
+          if (retrievedNotes.length > 0) {
+            aiResponseText += `\n\n🔍 Searched vault context:\n${retrievedNotes.map(n => `- ${n.title}`).join('\n')}`;
+          }
+          const aiMsg: ChatMessage = {
+            id: `a-${Date.now()}`,
+            role: 'ai',
+            text: aiResponseText,
+            timestamp: Date.now(),
+          };
+          setMessages(prev => [...prev, aiMsg]);
         }
-        const aiMsg: ChatMessage = {
-          id: `a-${Date.now()}`,
-          role: 'ai',
-          text: aiResponseText,
-          timestamp: Date.now(),
-        };
-        setMessages(prev => [...prev, aiMsg]);
       } else {
         const errMsg: ChatMessage = {
           id: `a-${Date.now()}`,
           role: 'ai',
-          text: '⚠️ AI returned an empty response. Check your settings.',
+          text: `⚠️ AI returned an empty response. This can happen if the prompt is too short, the content is filtered, or the API key is incorrect. Try a more specific instruction. (Provider: ${activeAiProvider})`,
           timestamp: Date.now(),
         };
         setMessages(prev => [...prev, errMsg]);
@@ -247,7 +313,7 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, isLoading, activeAiProvider, content, ollamaUrl, ollamaModel, openAiKey, lmStudioUrl, githubToken, azureUrl, azureKey, geminiKey, claudeKey, onContentChange]);
+  }, [prompt, isLoading, activeAiProvider, content, ollamaUrl, ollamaModel, openAiKey, lmStudioUrl, githubToken, azureUrl, azureKey, geminiKey, geminiModel, geminiApiVersion, claudeKey, onContentChange]);
 
   const clearChat = () => setMessages([]);
 
@@ -318,13 +384,12 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
         {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
-                msg.role === 'user'
+              className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${msg.role === 'user'
                   ? 'bg-blue-600 text-white rounded-br-sm'
                   : isDark
                     ? 'bg-white/10 text-white/90 rounded-bl-sm'
                     : 'bg-black/5 text-black/80 rounded-bl-sm'
-              }`}
+                }`}
             >
               {msg.text}
             </div>
@@ -414,7 +479,38 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
               <input type="password" placeholder="GitHub Token (ghp_...)" value={githubToken} onChange={(e) => setAiConfig('githubToken', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
             )}
             {activeAiProvider === 'gemini' && (
-              <input type="password" placeholder="Gemini API Key" value={geminiKey} onChange={(e) => setAiConfig('geminiKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+              <div className="space-y-1.5">
+                <div className="flex gap-1.5">
+                  <select value={geminiApiVersion} onChange={(e) => setAiConfig('geminiApiVersion', e.target.value)} className={`text-[10px] p-2 rounded-lg w-24 border ${fieldBg}`}>
+                    <option value="v1">v1 (Stable)</option>
+                    <option value="v1beta">v1beta</option>
+                  </select>
+                  <div className="flex-1 flex gap-1 items-center">
+                    {availableGeminiModels.length > 0 ? (
+                      <select
+                        value={geminiModel}
+                        onChange={(e) => setAiConfig('geminiModel', e.target.value)}
+                        className={`text-[10px] p-2 rounded-lg flex-1 border ${fieldBg}`}
+                      >
+                        {availableGeminiModels.map(m => (
+                          <option key={m.name} value={m.name}>{m.displayName}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input type="text" placeholder="Model (ej: gemini-3.1-pro)" value={geminiModel} onChange={(e) => setAiConfig('geminiModel', e.target.value)} className={`text-[10px] p-2 rounded-lg flex-1 border ${fieldBg}`} />
+                    )}
+                    <button
+                      onClick={fetchGeminiModels}
+                      disabled={isFetchingModels || !geminiKey}
+                      className={`p-2 rounded-lg border ${fieldBg} ${hoverBg} transition-colors disabled:opacity-30`}
+                      title="Refresh models from API"
+                    >
+                      {isFetchingModels ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} className="rotate-90" />}
+                    </button>
+                  </div>
+                </div>
+                <input type="password" placeholder="Gemini API Key" value={geminiKey} onChange={(e) => setAiConfig('geminiKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+              </div>
             )}
             {activeAiProvider === 'claude' && (
               <input type="password" placeholder="sk-ant-..." value={claudeKey} onChange={(e) => setAiConfig('claudeKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />

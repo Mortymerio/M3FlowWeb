@@ -30,7 +30,7 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 What's New (Update 0.1.11)](#-whats-new-this-version-update-0111)
+- [🔥 What's New (Update 0.1.12)](#-whats-new-this-version-update-0112)
 - [✨ Core Features](#-core-features)
 - [🛡️ Architecture and Fallbacks](#-resilient-architecture-and-fallbacks)
 - [📝 Editing Engines](#-dual-editing-engines)
@@ -42,7 +42,16 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.1.11)
+## 🔥 What's New this Version (Update 0.1.12)
+
+- **🤖 Intent-Aware AI Chat:** The AI now intelligently distinguishes between a request to edit the note and a simple question or greeting. No more accidental note overwrites!
+- **🔍 Gemini Model Discovery:** Added a 'Refresh' button to the Gemini config that automatically lists all available models for your API key.
+- **🛡️ Gemini Stable API (v1):** Added support for the stable `v1` endpoint and improved JSON payload handling for better compatibility with Gemini 3.1 Pro.
+- **⚙️ Configurable AI Versioning:** Toggle between `v1` and `v1beta` directly from the UI to ensure access to the latest experimental features.
+
+---
+
+## 🔥 What's New in Previous Version (Update 0.1.11)
 
 - **🛡️ Critical Bug Fix (Note Erasure):** Resolved a high-priority race condition where the first note opened upon app launch could be overwritten with empty content. Implemented a robust 'Load-Before-Save' validation system.
 

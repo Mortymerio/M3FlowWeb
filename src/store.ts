@@ -99,6 +99,8 @@ interface AppState {
   // AI Config
   openAiKey: string;
   geminiKey: string;
+  geminiModel: string;
+  geminiApiVersion: 'v1' | 'v1beta';
   claudeKey: string;
   githubToken: string;
   azureUrl: string;
@@ -202,6 +204,8 @@ export const useStore = create<AppState>((set, get) => ({
   // AI Defaults
   openAiKey: localStorage.getItem('openAiKey') || '',
   geminiKey: localStorage.getItem('geminiKey') || '',
+  geminiModel: localStorage.getItem('geminiModel') || 'gemini-3.1-pro',
+  geminiApiVersion: (localStorage.getItem('geminiApiVersion') as 'v1' | 'v1beta') || 'v1',
   claudeKey: localStorage.getItem('claudeKey') || '',
   githubToken: localStorage.getItem('githubToken') || '',
   azureUrl: localStorage.getItem('azureUrl') || '',
