@@ -90,6 +90,10 @@ interface AppState {
   loadBacklinks: (noteId: string) => Promise<void>;
   clearSearchResults: () => void;
   
+  // History System (Part 1)
+  noteHistory: Record<string, { body: string; timestamp: number }[]>;
+  revertToHistory: (noteId: string, index: number) => void;
+  
   setGithubSyncConfig: (config: Partial<{githubSyncToken: string, githubSyncRepo: string, githubSyncMarkdown: boolean, githubSyncDb: boolean}>) => void;
   setSyncStatus: (status: 'idle' | 'pending' | 'syncing' | 'error' | 'success', errorMsg?: string | null) => void;
   setSyncProgress: (progress: { current: number; total: number; message: string } | null) => void;
@@ -138,7 +142,7 @@ interface AppState {
   setWebLlmState: (state: Partial<{isWebLlmLoaded: boolean, webLlmProgress: number, webLlmStatusText: string}>) => void;
 
   loadInitialData: () => Promise<void>;
-  saveNote: (id: string, title: string, body: string) => Promise<void>;
+  saveNote: (id: string, title: string, body: string, skipHistory?: boolean) => Promise<void>;
   createNote: () => void;
   moveNotebook: (notebookId: string, newParentId: string | null) => Promise<void>;
   moveNote: (noteId: string, notebookId: string) => Promise<void>;
@@ -223,6 +227,20 @@ export const useStore = create<AppState>((set, get) => ({
   ftsQuery: '',
   searchResults: [],
   currentBacklinks: [],
+  
+  noteHistory: {},
+  revertToHistory: (noteId, index) => {
+    const { noteHistory, notes, saveNote } = get();
+    const history = noteHistory[noteId];
+    if (!history || !history[index]) return;
+    
+    const version = history[index];
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+
+    // Al revertir, el contenido actual pasará al historial en el próximo saveNote
+    saveNote(noteId, note.title, version.body, true);
+  },
 
   setSearchQuery: async (query) => {
     set({ searchQuery: query });
@@ -390,7 +408,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  saveNote: async (id, title, body) => {
+  saveNote: async (id, title, body, skipHistory = false) => {
     const { notes } = get();
     const existingNote = notes.find(n => n.id === id);
     let targetNbId = existingNote ? existingNote.notebookId : null;
@@ -408,11 +426,36 @@ export const useStore = create<AppState>((set, get) => ({
       notebookId: targetNbId,
     });
     
-    // Actualizar estado local
-    set({
-      notes: notes.map((n) => n.id === id ? { ...n, title, body, updatedAt: Date.now() } : n),
-      hasUnsyncedChanges: true,
-      syncStatus: get().syncStatus !== 'error' ? 'pending' : 'error'
+    // Update local state & history (Part 1)
+    set((state) => {
+      const currentHistory = state.noteHistory[id] || [];
+      
+      // Capturamos el estado PREVIO en el historial antes de actualizar
+      // Solo si el cuerpo cambió respecto a lo que había en memoria
+      const historyUpdate: any = {};
+      if (!skipHistory && existingNote && existingNote.body !== body && existingNote.body.trim() !== '') {
+        const newVersion = { body: existingNote.body, timestamp: Date.now() };
+        historyUpdate.noteHistory = { 
+          ...state.noteHistory, 
+          [id]: [newVersion, ...currentHistory].slice(0, 3) 
+        };
+      }
+
+      // ANTI-ERASURE GUARD (Part 2)
+      // Si el contenido nuevo es vacío pero el viejo tenía mucho texto (>50 chars), 
+      // probablemente sea un bug de carga. Bloqueamos el guardado para proteger integridad.
+      if (body.trim() === '' && existingNote && existingNote.body.length > 50) {
+        console.warn('[M3Flow Guard] Intento de borrado masivo detectado. Bloqueando guardado.');
+        return state;
+      }
+
+      return {
+        ...state,
+        ...historyUpdate,
+        notes: state.notes.map((n) => n.id === id ? { ...n, title, body, updatedAt: Date.now() } : n),
+        hasUnsyncedChanges: true,
+        syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
+      };
     });
   },
 

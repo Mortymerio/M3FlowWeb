@@ -11,7 +11,7 @@ import { emacs } from '@replit/codemirror-emacs';
 import { languages } from '@codemirror/language-data';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { Download, Layout, Eye, PenTool, Book, Settings2, Plus, ChevronDown, Trash2, Search, Check, Columns, LayoutList, Bell, Calendar, Sparkles } from 'lucide-react';
+import { Download, Layout, Eye, PenTool, Book, Settings2, Plus, ChevronDown, Trash2, Search, Check, Columns, LayoutList, Bell, Calendar, Sparkles, History } from 'lucide-react';
 import RichEditor from './RichEditor';
 import AiChatPanel from './AiChatPanel';
 import NotebookDashboard from './NotebookDashboard';
@@ -68,13 +68,14 @@ const Editor = () => {
 
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState<'split' | 'edit' | 'preview'>('split');
-  const [dropdownOpen, setDropdownOpen] = useState<'none' | 'notebook' | 'status' | 'tags' | 'settings' | 'reminder'>('none');
+  const [dropdownOpen, setDropdownOpen] = useState<'none' | 'notebook' | 'status' | 'tags' | 'settings' | 'reminder' | 'history'>('none');
   const [tagSearch, setTagSearch] = useState('');
   const [splitRatio, setSplitRatio] = useState(0.5);
   const isResizingSplit = useRef(false);
   const editorRef = useRef<any>(null);
   const [tempReminder, setTempReminder] = useState<number | null>(null);
   const lastLoadedNoteId = useRef<string | null>(null);
+  const lastRenderedContent = useRef<string>('');
 
   // Status bar state
   const [cursorLine, setCursorLine] = useState(1);
@@ -96,6 +97,11 @@ const Editor = () => {
   const deleteTag = useStore(state => state.deleteTag);
   const setCustomColor = useStore(state => state.setCustomColor);
   const customColors = useStore(state => state.customColors);
+  
+  const noteHistory = useStore(state => state.noteHistory);
+  const revertToHistory = useStore(state => state.revertToHistory);
+  
+  const myHistory = activeNoteId ? (noteHistory[activeNoteId] || []) : [];
 
 
   // Cursor position tracking extension
@@ -158,28 +164,36 @@ const Editor = () => {
     });
   }, [themeStyle.codeTheme]);
 
+  // MERMAID RENDERER: Solo si cambia el contenido o el tema visual
   useEffect(() => {
+    if (viewMode === 'edit') return;
+    if (content === lastRenderedContent.current) return;
+
     const renderMermaid = async () => {
-      if (viewMode !== 'edit') {
-        try { 
-          const elements = document.querySelectorAll('.mermaid');
-          if (elements.length > 0) {
-            elements.forEach(el => {
-              const src = el.getAttribute('data-mermaid-src');
-              if (src) {
-                el.innerHTML = src;
-                el.removeAttribute('data-processed');
-              }
-            });
-            await mermaid.run({ querySelector: '.mermaid' }); 
-          }
-        } catch (e) {
-          console.error('Mermaid error:', e);
+      try { 
+        const elements = document.querySelectorAll('.mermaid');
+        if (elements.length > 0) {
+          elements.forEach(el => {
+            const src = el.getAttribute('data-mermaid-src');
+            if (src) {
+              el.innerHTML = src;
+              el.removeAttribute('data-processed');
+            }
+          });
+          await mermaid.run({ querySelector: '.mermaid' }); 
+          lastRenderedContent.current = content;
         }
+      } catch (e) {
+        console.error('Mermaid error:', e);
       }
     };
 
     const timeout = setTimeout(renderMermaid, 50);
+    return () => clearTimeout(timeout);
+  }, [content, viewMode, themeStyle.codeTheme]);
+
+  // GLOBAL LISTENERS: Resize, Splitters, etc (Sin disparar Mermaid innecesariamente)
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isResizingSplit.current) {
         const container = document.getElementById('editor-content-area');
@@ -194,25 +208,16 @@ const Editor = () => {
     const handleMouseUp = () => {
       isResizingSplit.current = false;
       document.body.style.cursor = 'default';
-      renderMermaid();
-    };
-
-    const debounceResize = () => {
-      clearTimeout(timeout);
-      setTimeout(renderMermaid, 250);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('resize', debounceResize);
     
     return () => {
-      clearTimeout(timeout);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('resize', debounceResize);
     };
-  }, [content, viewMode, editorMode, themeStyle.codeTheme, editorFontSize, dropdownOpen, isSidebarCollapsed, isNoteListCollapsed]);
+  }, []);
 
   useEffect(() => {
     // IMPORTANTE: Solo guardar si el ID activo coincide con lo que cargamos en el editor.
@@ -410,9 +415,15 @@ const Editor = () => {
               {dropdownOpen === 'tags' && (
                 <div 
                   onClick={(e) => e.stopPropagation()}
-                  className={`absolute top-9 left-0 w-64 rounded-xl shadow-2xl border overflow-hidden z-[9999] ${themeStyle.dropdownBg} ${themeStyle.dropdownText} ${themeStyle.editorBorder} animate-in fade-in slide-in-from-top-2 duration-200`}
+                  className={`absolute top-9 left-0 w-64 rounded-xl shadow-2xl border overflow-hidden z-[9999] ${themeStyle.dropdownText} ${themeStyle.editorBorder} animate-in fade-in slide-in-from-top-2 duration-200`}
+                  style={{ 
+                    backgroundColor: themeStyle.isDark ? '#1e2329' : '#ffffff', 
+                    opacity: 1, 
+                    backdropFilter: 'none',
+                    WebkitBackdropFilter: 'none'
+                  }}
                 >
-                  <div className={`px-4 py-3 border-b flex items-center gap-3 bg-white/5 backdrop-blur-md ${themeStyle.editorBorder}`}>
+                  <div className={`px-4 py-3 border-b flex items-center gap-3 bg-black/10 ${themeStyle.editorBorder}`}>
                     <div className="bg-white/10 p-1.5 rounded-lg">
                       <Search size={14} className="opacity-60 text-blue-400" />
                     </div>
@@ -638,10 +649,72 @@ const Editor = () => {
 
                <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
                 
-                {/* Font Size Setup */}
                 <div className="flex items-center gap-2">
                    <span className="text-[10px] opacity-50 font-bold">Aa</span>
                    <input type="range" min="12" max="24" value={editorFontSize} onChange={(e) => useStore.getState().setEditorFontSize(parseInt(e.target.value))} className={`w-16 h-1 accent-blue-500 rounded-lg appearance-none ${isDark ? "bg-black/20" : "bg-black/10"} cursor-pointer`} />
+                </div>
+
+                <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
+
+                {/* History Button (Part 3) */}
+                <div className="relative">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setDropdownOpen(dropdownOpen === 'history' ? 'none' : 'history'); }}
+                    disabled={myHistory.length === 0}
+                    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-colors ${dropdownOpen === 'history' ? 'bg-amber-500/20 text-amber-500' : 'opacity-40 hover:opacity-100 hover:text-amber-500'} disabled:opacity-10`}
+                    title="Note History"
+                  >
+                    <History size={14} />
+                    {myHistory.length > 0 && <span className="text-[10px] font-black">{myHistory.length}</span>}
+                  </button>
+
+                  {dropdownOpen === 'history' && (
+                    <div 
+                      onClick={(e) => e.stopPropagation()}
+                      className={`absolute top-8 left-0 w-64 rounded-xl shadow-2xl border z-[9999] ${themeStyle.dropdownText} ${themeStyle.editorBorder} animate-in fade-in slide-in-from-top-2 duration-200`}
+                      style={{ 
+                        backgroundColor: themeStyle.isDark ? '#1e2329' : '#ffffff', 
+                        opacity: 1, 
+                        backdropFilter: 'none',
+                        WebkitBackdropFilter: 'none'
+                      }}
+                    >
+                      <div className={`px-4 py-3 border-b flex items-center justify-between bg-black/10 ${themeStyle.editorBorder}`}>
+                        <span className="text-[10px] uppercase font-bold opacity-60 tracking-widest">Version History</span>
+                        <History size={12} className="opacity-40" />
+                      </div>
+                      <div className="max-h-60 overflow-y-auto py-1">
+                        {myHistory.map((version, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={() => { 
+                              if(activeNoteId) {
+                                setContent(version.body); // Actualizar UI local inmediatamente
+                                revertToHistory(activeNoteId, idx); // Actualizar Store/DB sin sumar snapshot
+                              }
+                              setDropdownOpen('none'); 
+                            }}
+                            className={`px-4 py-3 cursor-pointer transition-all border-b last:border-0 ${themeStyle.editorBorder} ${themeStyle.sidebarHover} group/hist`}
+                          >
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[11px] font-bold group-hover/hist:text-amber-500 transition-colors">
+                                {idx === 0 ? 'Last Auto-Snapshot' : `Version ${idx + 1}`}
+                              </span>
+                              <span className="text-[9px] opacity-40 font-mono">
+                                {new Date(version.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <div className="text-[10px] opacity-50 line-clamp-1 italic truncate">
+                              {version.body.substring(0, 50).replace(/\n/g, ' ') || '(Empty content)'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="p-3 bg-black/5">
+                        <p className="text-[9px] opacity-40 leading-tight">Click to restore content. Snapshots are captured automatically when changes are detected.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
            </div>
 
@@ -711,7 +784,10 @@ const Editor = () => {
               {/* CodeMirror */}
               {(viewMode === 'split' || viewMode === 'edit') && (
                 <div 
-                  style={{ flex: viewMode === 'split' ? splitRatio : 1 }}
+                  style={{ 
+                    width: viewMode === 'split' ? `${splitRatio * 100}%` : '100%',
+                    flexShrink: 0
+                  }}
                   className={`h-full overflow-y-auto ${themeStyle.editorBg} ${viewMode === 'split' ? `border-r ${themeStyle.editorBorder}` : ''} print:hidden`} 
                 >
                   <div className="h-full" style={{ fontSize: `${editorFontSize}px` }}>
@@ -755,7 +831,8 @@ const Editor = () => {
                   key={`${activeNoteId}-${viewMode}-${editorFontSize}-${themeName}`}
                   className={`h-full overflow-y-auto p-8 print:!bg-white print:!text-black ${themeStyle.previewBg}`} 
                   style={{ 
-                    flex: viewMode === 'split' ? (1 - splitRatio) : 1,
+                    flex: 1,
+                    minWidth: 0,
                     fontSize: `${editorFontSize}px` 
                   }}
                 >
