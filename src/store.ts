@@ -372,15 +372,14 @@ export const useStore = create<AppState>((set, get) => ({
         notebooks = [defaultNb];
       }
 
-      set({ notebooks, notes, tags, noteTags });
-      
-      // Auto-seleccionar primer elemento
-      if (notebooks.length > 0) {
-        set({ activeNotebookId: notebooks[0].id });
-      }
-      if (notes.length > 0) {
-        set({ activeNoteId: notes[0].id });
-      }
+      set({ 
+        notebooks, 
+        notes, 
+        tags, 
+        noteTags,
+        activeNotebookId: notebooks.length > 0 ? notebooks[0].id : null,
+        activeNoteId: notes.length > 0 ? notes[0].id : null
+      });
     } catch (e) {
       console.error('Error cargando SQLite, activando Modo Navegador', e);
       set({ isBrowserMode: true });

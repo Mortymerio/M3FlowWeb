@@ -30,7 +30,7 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 What's New (Update 0.1.10)](#-whats-new-this-version-update-0110)
+- [🔥 What's New (Update 0.1.11)](#-whats-new-this-version-update-0111)
 - [✨ Core Features](#-core-features)
 - [🛡️ Architecture and Fallbacks](#-resilient-architecture-and-fallbacks)
 - [📝 Editing Engines](#-dual-editing-engines)
@@ -42,7 +42,9 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.1.10)
+## 🔥 What's New this Version (Update 0.1.11)
+
+- **🛡️ Critical Bug Fix (Note Erasure):** Resolved a high-priority race condition where the first note opened upon app launch could be overwritten with empty content. Implemented a robust 'Load-Before-Save' validation system.
 
 - **📂 Dynamic Contexts & Portability:** New notebook architecture based on `notebooks.json` and YAML metadata. Your knowledge base is now 100% portable and reconstructible solely from GitHub.
 - **🛠️ Hardened Sync Engine:** Synchronization via unique ID instead of titles. Say goodbye to duplicate notes and naming conflicts.

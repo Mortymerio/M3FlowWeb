@@ -74,6 +74,7 @@ const Editor = () => {
   const isResizingSplit = useRef(false);
   const editorRef = useRef<any>(null);
   const [tempReminder, setTempReminder] = useState<number | null>(null);
+  const lastLoadedNoteId = useRef<string | null>(null);
 
   // Status bar state
   const [cursorLine, setCursorLine] = useState(1);
@@ -133,15 +134,20 @@ const Editor = () => {
 
   useEffect(() => {
     if (activeNoteId) {
-      const activeNote = notes.find(n => n.id === activeNoteId);
-      if (activeNote) {
-        setContent(activeNote.body);
-        loadBacklinks(activeNoteId); // Fase 1: Cargar menciones vinculadas
+      // Solo cargar si cambió el ID o si aún no hemos cargado nada para este ID
+      if (activeNoteId !== lastLoadedNoteId.current) {
+        const activeNote = notes.find(n => n.id === activeNoteId);
+        if (activeNote) {
+          setContent(activeNote.body);
+          lastLoadedNoteId.current = activeNoteId;
+          loadBacklinks(activeNoteId);
+        }
       }
     } else {
       setContent('');
+      lastLoadedNoteId.current = null;
     }
-  }, [activeNoteId]);
+  }, [activeNoteId, notes, loadBacklinks]);
 
   useEffect(() => {
     mermaid.initialize({ 
@@ -209,7 +215,11 @@ const Editor = () => {
   }, [content, viewMode, editorMode, themeStyle.codeTheme, editorFontSize, dropdownOpen, isSidebarCollapsed, isNoteListCollapsed]);
 
   useEffect(() => {
-    if (!activeNoteId) return;
+    // IMPORTANTE: Solo guardar si el ID activo coincide con lo que cargamos en el editor.
+    // Esto evita que el contenido de una nota anterior se guarde sobre una nueva nota
+    // durante la transición.
+    if (!activeNoteId || activeNoteId !== lastLoadedNoteId.current) return;
+
     const activeNote = notes.find(n => n.id === activeNoteId);
     if (activeNote && activeNote.body === content) return;
 
