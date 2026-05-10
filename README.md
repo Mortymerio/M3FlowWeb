@@ -52,17 +52,6 @@ We spent the entire day deep-diving into React's reconciliation engine to build 
 - **Corruption Guards:** Implemented a visual `loadError` fallback UI for the Rich Editor. If malformed data is detected during state synchronization, the editor elegantly catches the exception instead of crashing the entire application.
 - **Type Safety:** Hardened the payload readers to handle both `InlineItem` arrays and plain strings, completely eliminating the notorious `content.map is not a function` crash when switching from RICH to RAW.
 
----
-
-## 🔥 What's New in Previous Version (Update 0.1.12)
-
-- **🤖 Intent-Aware AI Chat:** The AI now intelligently distinguishes between a request to edit the note and a simple question or greeting. No more accidental note overwrites!
-- **🔍 Gemini Model Discovery:** Added a 'Refresh' button to the Gemini config that automatically lists all available models for your API key.
-- **🛡️ Gemini Stable API (v1):** Added support for the stable `v1` endpoint and improved JSON payload handling for better compatibility with Gemini 3.1 Pro.
-- **⚙️ Configurable AI Versioning:** Toggle between `v1` and `v1beta` directly from the UI to ensure access to the latest experimental features.
-- **🛡️ Critical Bug Fix (Note Erasure):** Resolved a high-priority race condition where the first note opened upon app launch could be overwritten with empty content. Implemented a robust 'Load-Before-Save' validation system.
-
----
 
 ## ✨ Core Features
 
