@@ -149,11 +149,17 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
       } catch { }
     }
 
-    const baseSystemMessage = `You are a helpful AI writing assistant for M3Flow. ${notebookSystemPrompt ? `Context for this notebook: ${notebookSystemPrompt}` : ''}
-Analyze the user's instruction:
-- If the user wants to chat, ask a question, or greet you, start your response with 'REPLY: ' followed by your answer.
-- If the user wants to edit, rewrite, or transform the current note, output ONLY the new markdown content for the entire note, without any prefix.
-- Never output both a reply and markdown unless specifically asked.`;
+    const now = new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const baseSystemMessage = `You are an expert writing assistant embedded in M3Flow, a Markdown knowledge vault. ${notebookSystemPrompt ? `Notebook context: ${notebookSystemPrompt}` : ''}
+Current date: ${now}. Note title: "${noteTitle || 'Untitled'}".
+
+Respond based on the user's intent:
+- CHAT/QUESTION: Start with 'REPLY: ' followed by a concise, helpful answer. Do NOT touch the document.
+- EDIT/TRANSFORM: Output ONLY the full new Markdown content for the document. No prefix, no explanation.
+- EDIT_AND_EXPLAIN: Start with 'REPLY: ' briefly explaining what you changed, then on a new line output '---DOC---' followed by the complete new Markdown.
+
+Important: Always write documents in fluent, natural language. Use Markdown formatting (headers, lists, bold, tables, blockquotes) to make content clear and beautiful.
+CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks. Preserve every mermaid diagram EXACTLY as written in the original document, character by character. Only transform the surrounding prose and text content.`;
 
     let resultText = '';
 
@@ -270,7 +276,20 @@ Analyze the user's instruction:
       }
 
       if (resultText) {
-        if (resultText.trim().startsWith('REPLY:')) {
+        if (resultText.trim().startsWith('REPLY:') && resultText.includes('---DOC---')) {
+          // EDIT_AND_EXPLAIN mode: both a chat reply AND a document update
+          const parts = resultText.split('---DOC---');
+          const replyPart = parts[0].replace(/^REPLY:\s*/i, '').trim();
+          const docPart = parts[1]?.trim();
+          if (docPart) onContentChange(docPart);
+          const aiMsg: ChatMessage = {
+            id: `a-${Date.now()}`,
+            role: 'ai',
+            text: replyPart + (docPart ? '\n\n✅ Documento actualizado.' : ''),
+            timestamp: Date.now(),
+          };
+          setMessages(prev => [...prev, aiMsg]);
+        } else if (resultText.trim().startsWith('REPLY:')) {
           const aiMsg: ChatMessage = {
             id: `a-${Date.now()}`,
             role: 'ai',
@@ -280,9 +299,9 @@ Analyze the user's instruction:
           setMessages(prev => [...prev, aiMsg]);
         } else {
           onContentChange(resultText);
-          let aiResponseText = '✅ Document updated successfully.';
+          let aiResponseText = '✅ Documento actualizado correctamente.';
           if (retrievedNotes.length > 0) {
-            aiResponseText += `\n\n🔍 Searched vault context:\n${retrievedNotes.map(n => `- ${n.title}`).join('\n')}`;
+            aiResponseText += `\n\n🔍 Contexto del vault usado:\n${retrievedNotes.map(n => `- ${n.title}`).join('\n')}`;
           }
           const aiMsg: ChatMessage = {
             id: `a-${Date.now()}`,
@@ -376,9 +395,64 @@ Analyze the user's instruction:
       {/* Chat messages */}
       <div className={`flex-1 overflow-y-auto px-4 py-3 space-y-3 ${themeStyle.editorBg}`}>
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full opacity-30 text-center px-4 gap-3">
-            <Sparkles size={32} />
-            <p className="text-xs">Ask AI to edit, translate, summarize or transform your note.</p>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex flex-col items-center gap-2 opacity-40 py-2">
+              <Sparkles size={24} />
+              <p className="text-[11px] text-center px-4">Ask anything or use a Quick Action to transform your note.</p>
+            </div>
+
+            {/* Quick Actions */}
+            {[{
+              label: '✍️ Transformar',
+              color: 'blue',
+              actions: [
+                { icon: '📋', name: 'Acta de Reunión', prompt: 'Transforma esta nota en un acta de reunión profesional con secciones: Asistentes, Puntos Discutidos, Decisiones Tomadas y Próximos Pasos.' },
+                { icon: '✅', name: 'Checklist', prompt: 'Extrae todas las tareas, compromisos e intenciones del texto y conviértelos en una checklist Markdown con casillas [ ].' },
+                { icon: '📝', name: 'Resumen Ejecutivo', prompt: 'Genera un resumen ejecutivo de esta nota en 5 puntos clave usando bullet points en negrita.' },
+                { icon: '📧', name: 'Email Profesional', prompt: 'Convierte esta nota en un email profesional listo para enviar, con asunto, saludo y cierre adecuados.' },
+              ]
+            }, {
+              label: '💄 Embellecer',
+              color: 'purple',
+              actions: [
+                { icon: '🏗️', name: 'Agregar Estructura', prompt: 'Reorganiza este texto con encabezados Markdown, listas y tablas donde corresponda. Mejora el formato sin cambiar el contenido.' },
+                { icon: '✨', name: 'Mejorar Redacción', prompt: 'Mejora el estilo, la claridad y la fluidez del texto manteniendo el tono y las ideas originales.' },
+                { icon: '🎨', name: 'Agregar Emojis', prompt: 'Agrega emojis apropiados y visuales a los títulos y puntos clave para hacer la nota más dinámica y atractiva.' },
+                { icon: '📊', name: 'Agregar Tabla', prompt: 'Identifica los datos comparativos o estructurados del texto y preséntales en una tabla Markdown bien formateada.' },
+              ]
+            }, {
+              label: '🧠 Expandir',
+              color: 'emerald',
+              actions: [
+                { icon: '🔍', name: 'Desarrollar Ideas', prompt: 'Expande los puntos incompletos y agrega profundidad y detalle a las ideas que parecen bocetos o fragmentos.' },
+                { icon: '💡', name: 'Agregar Ejemplos', prompt: 'Agrega ejemplos concretos, casos de uso o analogías para ilustrar cada idea principal de la nota.' },
+                { icon: '❓', name: 'Preguntas de Seguimiento', prompt: 'REPLY: Basándote en el contenido de la nota, genera 5 preguntas inteligentes de seguimiento que valdría la pena explorar.' },
+                { icon: '🌐', name: 'Traducir al Inglés', prompt: 'Traduce toda la nota al inglés profesional, manteniendo el formato Markdown original.' },
+              ]
+            }].map(category => (
+              <div key={category.label} className="px-3">
+                <p className={`text-[9px] font-black uppercase tracking-widest mb-1.5 ${
+                  category.color === 'blue' ? 'text-blue-400' :
+                  category.color === 'purple' ? 'text-purple-400' : 'text-emerald-400'
+                } opacity-70`}>{category.label}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {category.actions.map(action => (
+                    <button
+                      key={action.name}
+                      onClick={() => setPrompt(action.prompt)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold border transition-all hover:scale-105 active:scale-95 ${
+                        isDark
+                          ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white/80'
+                          : 'bg-black/5 border-black/10 hover:bg-black/10 text-black/70'
+                      }`}
+                    >
+                      <span>{action.icon}</span>
+                      <span>{action.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
         {messages.map(msg => (
@@ -528,7 +602,7 @@ Analyze the user's instruction:
             <textarea
               ref={inputRef}
               className={`flex-1 rounded-xl px-3 py-2 text-xs outline-none resize-none border transition-colors focus:border-blue-500 ${inputBg}`}
-              placeholder="Ask AI to edit your note..."
+              placeholder="Escribe algo o elige una acción arriba... (Enter para enviar)"
               rows={2}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}

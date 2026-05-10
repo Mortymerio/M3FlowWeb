@@ -30,7 +30,7 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 What's New (Update 0.1.14)](#-whats-new-this-version-update-0114)
+- [🔥 What's New (Update 0.1.15)](#-whats-new-this-version-update-0115)
 - [✨ Core Features](#-core-features)
 - [🛡️ Architecture and Fallbacks](#-resilient-architecture-and-fallbacks)
 - [📝 Editing Engines](#-dual-editing-engines)
@@ -42,7 +42,17 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.1.14)
+## 🔥 What's New this Version (Update 0.1.15)
+
+### 🤖 AI Power-Up: Quick Actions & Hybrid Interaction
+- **⚡ AI Quick Actions:** Introduced a new category-based action panel in the AI Chat. Transform, Beautify, or Expand your notes with one click using optimized presets (Meeting Minutes, Checklists, Summaries, etc.).
+- **💬 Edit & Explain Mode:** The AI can now provide natural language explanations of its changes alongside the document update. No more guessing why a paragraph was rewritten!
+- **🇪🇸 Full Spanish Localization (AI):** The AI assistant's interface and feedback messages are now fully localized in Spanish for a smoother experience.
+- **🛡️ Mermaid Preservation Protocol:** Hardened the AI system instructions to guarantee absolute character-for-character preservation of Mermaid diagrams during prose transformations.
+
+---
+
+## 🔥 What's New in Previous Version (Update 0.1.14)
 
 ### 🧜‍♂️ Advanced Mermaid Rendering Engine & DOM Integrity
 We spent the entire day deep-diving into React's reconciliation engine to build a bulletproof Mermaid diagram rendering pipeline. 
