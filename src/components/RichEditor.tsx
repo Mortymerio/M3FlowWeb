@@ -3,7 +3,7 @@
  * Replaces both CodeMirror and Preview panels when active.
  */
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useCreateBlockNote } from '@blocknote/react'
 import { BlockNoteView } from '@blocknote/mantine'
 import '@blocknote/mantine/style.css'
@@ -22,6 +22,7 @@ interface RichEditorProps {
 const RichEditor = ({ content, onChange, fontSize, themeName }: RichEditorProps) => {
   const isInitialLoad = useRef(true)
   const lastSyncedContent = useRef(content)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const editor = useCreateBlockNote({
     schema,
@@ -36,12 +37,14 @@ const RichEditor = ({ content, onChange, fontSize, themeName }: RichEditorProps)
       if (content === lastSyncedContent.current && !isInitialLoad.current) return
 
       try {
+        setLoadError(null)
         const blocks = await markdownToBlocks(editor, content || '')
         editor.replaceBlocks(editor.document, blocks as any)
         lastSyncedContent.current = content
         isInitialLoad.current = false
-      } catch (err) {
+      } catch (err: any) {
         console.error('[RichEditor] Failed to parse markdown:', err)
+        setLoadError(err.message || String(err))
       }
     }
 
@@ -52,6 +55,15 @@ const RichEditor = ({ content, onChange, fontSize, themeName }: RichEditorProps)
   const handleChange = useCallback(() => {
     try {
       const markdown = blocksToMarkdown(editor)
+
+      // CORRUPTION GUARD: if serialization produced raw mermaid tokens,
+      // it means BlockNote didn't properly recognize the mermaid blocks.
+      // Skip this onChange to avoid corrupting the stored content.
+      if (markdown.includes('@@M3FLOW_MERMAID_BLOCK:')) {
+        console.warn('[RichEditor] Skipping onChange — mermaid token leak detected')
+        return
+      }
+
       lastSyncedContent.current = markdown
       onChange(markdown)
     } catch (err) {
@@ -60,6 +72,15 @@ const RichEditor = ({ content, onChange, fontSize, themeName }: RichEditorProps)
   }, [editor, onChange])
 
   const isDark = (THEMES[themeName]?.isDark) !== false
+
+  if (loadError) {
+    return (
+      <div style={{ padding: '20px', color: '#ff6b6b', fontFamily: 'monospace' }}>
+        <h3>Error loading Rich Editor</h3>
+        <p>{loadError}</p>
+      </div>
+    )
+  }
 
   return (
     <div

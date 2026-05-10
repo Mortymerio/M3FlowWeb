@@ -21,8 +21,8 @@ interface RenderState {
   error: boolean
 }
 
-let initialized = false
 let renderQueue = Promise.resolve()
+let initialized = false
 
 function renderIdFromReactId(reactId: string): string {
   const safeId = reactId.replace(/[^a-zA-Z0-9_-]/g, '')
@@ -31,14 +31,11 @@ function renderIdFromReactId(reactId: string): string {
 
 function initializeMermaid(mermaid: MermaidApi) {
   if (initialized) return
-
   mermaid.initialize({
     startOnLoad: false,
-    securityLevel: 'strict',
+    securityLevel: 'loose',
     theme: 'dark',
-    themeVariables: {
-      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-    },
+    fontFamily: 'inherit',
   })
   initialized = true
 }

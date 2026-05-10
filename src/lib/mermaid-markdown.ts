@@ -110,9 +110,9 @@ function mermaidToken(payload: MermaidPayload): string {
 }
 
 function readMermaidToken({ text }: TokenText): MermaidPayload | null {
-  const trimmed = text.trim()
-  if (!trimmed.startsWith(TOKEN_PREFIX) || !trimmed.endsWith(TOKEN_SUFFIX)) return null
-  return decodePayload({ encoded: trimmed.slice(TOKEN_PREFIX.length, -TOKEN_SUFFIX.length) })
+  const match = text.match(/@@M3FLOW_MERMAID_BLOCK:(.*?)@@/)
+  if (!match) return null
+  return decodePayload({ encoded: match[1] })
 }
 
 function readMermaidFenceStart({ line }: MarkdownLine): MermaidFenceStart | null {
@@ -170,17 +170,36 @@ export function preProcessMermaidMarkdown({ markdown }: { markdown: string }): s
     }
 
     const payload = buildPayload({ lines, start: index, end: closingIndex })
-    result.push(`${mermaidToken(payload)}${lineEnding({ line: lines[closingIndex] })}`)
+    result.push(`\n\n${mermaidToken(payload)}\n\n`)
     index = closingIndex
   }
 
   return result.join('')
 }
 
-function readMermaidPayload(content: InlineItem[] | undefined): MermaidPayload | null {
-  const onlyItem = content?.length === 1 ? content[0] : null
-  if (onlyItem?.type !== 'text' || typeof onlyItem.text !== 'string') return null
-  return readMermaidToken({ text: onlyItem.text })
+function readMermaidPayload(content: any): MermaidPayload | null {
+  if (!content) return null
+
+  // If BlockNote gives us a direct string
+  if (typeof content === 'string') {
+    return readMermaidToken({ text: content })
+  }
+
+  // Ensure we have an array before calling .map
+  if (!Array.isArray(content)) return null
+
+  // BlockNote may split the token text into multiple inline items because
+  // the underscores in @@M3FLOW_MERMAID_BLOCK: are interpreted as emphasis.
+  // Concatenate all text items regardless of formatting to reconstruct the token.
+  const fullText = content
+    .map(item => {
+      if (typeof item === 'string') return item
+      if (typeof item?.text === 'string') return item.text
+      return ''
+    })
+    .join('')
+
+  return readMermaidToken({ text: fullText })
 }
 
 function buildMermaidBlock({ block, payload }: { block: BlockLike; payload: MermaidPayload }): BlockLike {
@@ -209,11 +228,13 @@ function readCodeBlockLanguage({ block }: CodeBlockSource): string | null {
   return language.trim().split(/\s+/)[0]?.toLowerCase() ?? null
 }
 
-function readInlineText(content: InlineItem[] | undefined): string | null {
+function readInlineText(content: any): string | null {
+  if (typeof content === 'string') return content
   if (!Array.isArray(content)) return null
-  return content.map((item) => (
-    item.type === 'text' && typeof item.text === 'string' ? item.text : ''
-  )).join('')
+  return content.map((item) => {
+    if (typeof item === 'string') return item
+    return item.type === 'text' && typeof item.text === 'string' ? item.text : ''
+  }).join('')
 }
 
 function looksLikeMermaidDiagram(diagram: string): boolean {
@@ -255,10 +276,14 @@ function readMermaidCodeBlock({ block }: CodeBlockSource): MermaidPayload | null
 
 function injectMermaidInBlock(block: BlockLike): BlockLike {
   const payload = readMermaidPayload(block.content)
-  if (payload) return buildMermaidBlock({ block, payload })
+  if (payload) {
+    return buildMermaidBlock({ block, payload })
+  }
 
   const codeBlockPayload = readMermaidCodeBlock({ block })
-  if (codeBlockPayload) return buildMermaidBlock({ block, payload: codeBlockPayload })
+  if (codeBlockPayload) {
+    return buildMermaidBlock({ block, payload: codeBlockPayload })
+  }
 
   const children = Array.isArray(block.children) ? block.children.map(injectMermaidInBlock) : block.children
   return { ...block, children }
