@@ -421,13 +421,20 @@ CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks.
                 { icon: '📊', name: 'Agregar Tabla', prompt: 'Identifica los datos comparativos o estructurados del texto y preséntales en una tabla Markdown bien formateada.' },
               ]
             }, {
-              label: '🧠 Expandir',
+              label: '🌐 Otros',
               color: 'emerald',
               actions: [
                 { icon: '🔍', name: 'Desarrollar Ideas', prompt: 'Expande los puntos incompletos y agrega profundidad y detalle a las ideas que parecen bocetos o fragmentos.' },
-                { icon: '💡', name: 'Agregar Ejemplos', prompt: 'Agrega ejemplos concretos, casos de uso o analogías para ilustrar cada idea principal de la nota.' },
-                { icon: '❓', name: 'Preguntas de Seguimiento', prompt: 'REPLY: Basándote en el contenido de la nota, genera 5 preguntas inteligentes de seguimiento que valdría la pena explorar.' },
                 { icon: '🌐', name: 'Traducir al Inglés', prompt: 'Traduce toda la nota al inglés profesional, manteniendo el formato Markdown original.' },
+              ]
+            }, {
+              label: '🎓 Asistente Técnico',
+              color: 'purple',
+              actions: [
+                { icon: '⚖️', name: 'Entrevista Socrática', prompt: 'REPLY: Actúa como un mentor socrático y un "Abogado del Diablo". Analiza mi tratado y desafía mis premisas. Hazme 3 preguntas críticas que pongan a prueba la lógica de mi argumento y me obliguen a expandir mi tesis con más rigor técnico.' },
+                { icon: '🖇️', name: 'Jerarquía Lógica', prompt: 'REPLY: Analiza la jerarquía de conceptos de este escrito. ¿El orden lógico es correcto? ¿Hay conceptos complejos que se introducen sin base previa? Genera un mapa de dependencias lógicas y sugiere si algún apartado debería moverse para mejorar la fluidez del tratado.' },
+                { icon: '📚', name: 'Glosario Técnico', prompt: 'REPLY: Escanea este tratado y extrae una taxonomía de términos técnicos clave. Para cada término, genera una definición precisa basada en el contexto del documento y sugiéreme dónde incluir un glosario o referencias cruzadas para mejorar la claridad técnica.' },
+                { icon: '🧪', name: 'Síntesis de Fuentes', prompt: 'REPLY: Basándote en el contenido actual y cualquier nota del @vault relevante, sintetiza una base sólida para el siguiente apartado del tratado. Asegúrate de mantener la integridad técnica y la cohesión con los argumentos ya establecidos.' },
               ]
             }].map(category => (
               <div key={category.label} className="px-3">

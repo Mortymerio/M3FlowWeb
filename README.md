@@ -30,6 +30,7 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
+- [🔥 What's New (Update 0.1.17)](#-whats-new-this-version-update-0117)
 - [🔥 What's New (Update 0.1.16)](#-whats-new-this-version-update-0116)
 - [🔥 What's New (Update 0.1.15)](#-whats-new-this-version-update-0115)
 - [✨ Core Features](#-core-features)
@@ -43,15 +44,18 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.1.16)
+## 🔥 What's New this Version (Update 0.1.17)
 
-### 🪟 Windows 11 Stability & Input Resilience
-- **⌨️ Keyboard Focus Fix:** Resolved a critical bug on Windows 11 where alphanumeric keys were blocked in the editor and folder renaming fields.
-- **🖱️ Cursor Visibility:** Explicitly hardened the text cursor (caret) rendering pipeline to ensure it remains visible even in transparent window modes.
-- **🛡️ Focus Preservation:** Implemented `no-drag` protection for all interactive zones, preventing the OS window manager from intercepting keyboard input.
-- **🏗️ Window Hardening:** Transitioned the main window architecture to a more robust non-transparent focus model for Windows 11, eliminating input "ghosting" while maintaining the premium rounded aesthetic.
+### 🎓 M3Synthesis: Advanced Writing Assistant for Non-Fiction
+- **🧠 Asistente de Escritura:** Introduced a new dedicated studio menu for technical and academic writing.
+- **⚖️ Socratic Dialectic:** Engaging AI as a "Devil's Advocate" to challenge logic and strengthen treatises.
+- **🖇️ Logic Hierarchy:** Real-time conceptual flow analysis to ensure complex ideas have the necessary foundation.
+- **📚 Taxonomy Auto-Extractor:** Automatic identification and definition of technical terms to maintain a consistent glossary.
+- **🧪 Contextual Source Synthesis:** Advanced drafting that pulls relevant snippets from your entire `@vault` to support your current chapter.
 
 ---
+
+## 🔥 What's New in Previous Version (Update 0.1.16)
 
 ## 🔥 What's New in Previous Version (Update 0.1.15)
 

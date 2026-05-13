@@ -713,6 +713,87 @@ const Editor = () => {
 
             <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
 
+            {/* Asistente de Escritura Menu */}
+            <div className="relative">
+              <button
+                onClick={(e) => { e.stopPropagation(); setDropdownOpen(dropdownOpen === 'writing-assistant' ? 'none' : 'writing-assistant'); }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${dropdownOpen === 'writing-assistant' ? 'bg-indigo-500/20 text-indigo-500' : 'opacity-60 hover:opacity-100 hover:text-indigo-400'}`}
+              >
+                <Brain size={14} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Asistente de Escritura</span>
+                <ChevronDown size={10} className={`transition-transform duration-200 ${dropdownOpen === 'writing-assistant' ? 'rotate-180' : ''}`} />
+              </button>
+
+              {dropdownOpen === 'writing-assistant' && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className={`absolute top-8 left-0 w-64 rounded-xl shadow-2xl border z-[9999] ${themeStyle.dropdownText} ${themeStyle.editorBorder} animate-in fade-in slide-in-from-top-2 duration-200`}
+                  style={{
+                    backgroundColor: themeStyle.isDark ? '#1e2329' : '#ffffff',
+                    opacity: 1,
+                  }}
+                >
+                  <div className={`px-4 py-3 border-b flex items-center justify-between bg-black/10 ${themeStyle.editorBorder}`}>
+                    <span className="text-[10px] uppercase font-bold opacity-60 tracking-widest">M3Synthesis Studio</span>
+                    <Sparkles size={12} className="text-indigo-400" />
+                  </div>
+                  <div className="p-1.5 space-y-1">
+                    {[
+                      { 
+                        id: 'socratic', 
+                        label: 'Entrevista Socrática', 
+                        desc: 'Desafía tu lógica y expande tu tesis.',
+                        prompt: 'REPLY: Actúa como un mentor socrático y un "Abogado del Diablo". Analiza mi tratado y desafía mis premisas. Hazme 3 preguntas críticas que pongan a prueba la lógica de mi argumento y me obliguen a expandir mi tesis con más rigor técnico.'
+                      },
+                      { 
+                        id: 'hierarchy', 
+                        label: 'Jerarquía de Conceptos', 
+                        desc: 'Analiza el flujo lógico y dependencias.',
+                        prompt: 'REPLY: Analiza la jerarquía de conceptos de este escrito. ¿El orden lógico es correcto? ¿Hay conceptos complejos que se introducen sin base previa? Genera un mapa de dependencias lógicas y sugiere si algún apartado debería moverse para mejorar la fluidez del tratado.'
+                      },
+                      { 
+                        id: 'taxonomy', 
+                        label: 'Glosario & Taxonomía', 
+                        desc: 'Extrae y define términos técnicos.',
+                        prompt: 'REPLY: Escanea este tratado y extrae una taxonomía de términos técnicos clave. Para cada término, genera una definición precisa basada en el contexto del documento y sugiéreme dónde incluir un glosario o referencias cruzadas para mejorar la claridad técnica.'
+                      },
+                      { 
+                        id: 'synthesis', 
+                        label: 'Síntesis de Fuentes', 
+                        desc: 'Resume y estructura múltiples notas.',
+                        prompt: 'REPLY: Basándote en el contenido actual y cualquier nota del @vault relevante, sintetiza una base sólida para el siguiente apartado del tratado. Asegúrate de mantener la integridad técnica y la cohesión con los argumentos ya establecidos.'
+                      },
+                    ].map(action => (
+                      <div
+                        key={action.id}
+                        onClick={() => {
+                          useStore.getState().toggleAiPanel(true);
+                          // We use a small delay to ensure the panel is open before sending the prompt
+                          setTimeout(() => {
+                             const chatInput = document.querySelector('textarea[placeholder*="Escribe algo"]') as HTMLTextAreaElement;
+                             if (chatInput) {
+                               const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+                               nativeInputValueSetter?.call(chatInput, action.prompt);
+                               chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+                               // Trigger Enter
+                               chatInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+                             }
+                          }, 300);
+                          setDropdownOpen('none');
+                        }}
+                        className={`px-3 py-2.5 rounded-lg cursor-pointer transition-all ${themeStyle.sidebarHover} group/wa`}
+                      >
+                        <div className="text-[11px] font-bold group-hover/wa:text-indigo-400 transition-colors">{action.label}</div>
+                        <div className="text-[9px] opacity-40 leading-tight mt-0.5">{action.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
+
             {/* History Button (Part 3) */}
             <div className="relative">
               <button

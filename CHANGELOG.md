@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.17] - 2026-05-13
+
+### Added
+- **Asistente de Escritura (M3Synthesis)**: New dedicated menu for non-fiction and technical writing.
+  - **Socratic Interview**: Challenge your arguments and logic via AI.
+  - **Hierarchy Mapping**: Analyze the conceptual flow of your treatise.
+  - **Taxonomy & Glossary**: Automatic extraction and definition of technical terms.
+  - **Source Synthesis**: Context-aware drafting based on Vault research.
+- **Enhanced AI Panel**: Added "Asistente Técnico" category to quick actions.
+
 ## [0.1.16] - 2026-05-13
 
 ### Fixed
