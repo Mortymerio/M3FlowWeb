@@ -17,6 +17,12 @@ html, body, #root {
   overscroll-behavior: none;
 }
 
+/* Fix for Windows 11: Ensure text cursor (caret) is always visible and inputs aren't blocked by drag regions */
+input, textarea, [contenteditable="true"], .cm-content {
+  caret-color: #3b82f6 !important;
+  -webkit-app-region: no-drag !important;
+}
+
 /* Custom scrollbar for webkit */
 ::-webkit-scrollbar {
   width: 8px;

@@ -30,6 +30,7 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
+- [🔥 What's New (Update 0.1.16)](#-whats-new-this-version-update-0116)
 - [🔥 What's New (Update 0.1.15)](#-whats-new-this-version-update-0115)
 - [✨ Core Features](#-core-features)
 - [🛡️ Architecture and Fallbacks](#-resilient-architecture-and-fallbacks)
@@ -42,17 +43,17 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.1.15)
+## 🔥 What's New this Version (Update 0.1.16)
 
-### 🤖 AI Power-Up: Quick Actions & Hybrid Interaction
-- **⚡ AI Quick Actions:** Introduced a new category-based action panel in the AI Chat. Transform, Beautify, or Expand your notes with one click using optimized presets (Meeting Minutes, Checklists, Summaries, etc.).
-- **💬 Edit & Explain Mode:** The AI can now provide natural language explanations of its changes alongside the document update. No more guessing why a paragraph was rewritten!
-- **🇪🇸 Full Spanish Localization (AI):** The AI assistant's interface and feedback messages are now fully localized in Spanish for a smoother experience.
-- **🛡️ Mermaid Preservation Protocol:** Hardened the AI system instructions to guarantee absolute character-for-character preservation of Mermaid diagrams during prose transformations.
+### 🪟 Windows 11 Stability & Input Resilience
+- **⌨️ Keyboard Focus Fix:** Resolved a critical bug on Windows 11 where alphanumeric keys were blocked in the editor and folder renaming fields.
+- **🖱️ Cursor Visibility:** Explicitly hardened the text cursor (caret) rendering pipeline to ensure it remains visible even in transparent window modes.
+- **🛡️ Focus Preservation:** Implemented `no-drag` protection for all interactive zones, preventing the OS window manager from intercepting keyboard input.
+- **🏗️ Window Hardening:** Transitioned the main window architecture to a more robust non-transparent focus model for Windows 11, eliminating input "ghosting" while maintaining the premium rounded aesthetic.
 
 ---
 
-## 🔥 What's New in Previous Version (Update 0.1.14)
+## 🔥 What's New in Previous Version (Update 0.1.15)
 
 ### 🧜‍♂️ Advanced Mermaid Rendering Engine & DOM Integrity
 We spent the entire day deep-diving into React's reconciliation engine to build a bulletproof Mermaid diagram rendering pipeline. 

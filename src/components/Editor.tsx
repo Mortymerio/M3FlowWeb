@@ -15,6 +15,7 @@ import { Download, Layout, Eye, PenTool, Book, Settings2, Plus, ChevronDown, Tra
 import RichEditor from './RichEditor';
 import AiChatPanel from './AiChatPanel';
 import NotebookDashboard from './NotebookDashboard';
+import { animate } from 'animejs';
 
 const mdParser = new MarkdownIt({
   html: true,
@@ -97,6 +98,19 @@ const Editor = () => {
   // AI Panel State
   const isAiPanelOpen = useStore(state => state.isAiPanelOpen);
   const toggleAiPanel = useStore(state => state.toggleAiPanel);
+  const contentAreaRef = useRef<HTMLDivElement>(null);
+
+  const triggerAiAnimation = useCallback(() => {
+    if (!contentAreaRef.current) return;
+    
+    // Un efecto de pulso de brillo y una ligera escala para indicar transformación
+    animate(contentAreaRef.current, {
+      scale: [1, 1.002, 1],
+      filter: ['brightness(1)', 'brightness(1.4)', 'brightness(1)'],
+      duration: 800,
+      ease: 'easeOutQuart'
+    });
+  }, []);
 
   const tags = useStore(state => state.tags);
   const noteTags = useStore(state => state.noteTags);
@@ -807,7 +821,11 @@ const Editor = () => {
           </div>
         </div>
 
-        <div id="editor-content-area" className={`flex-1 flex overflow-hidden relative ${dropdownOpen !== 'none' ? 'pointer-events-none' : ''}`}>
+        <div 
+          id="editor-content-area" 
+          ref={contentAreaRef}
+          className={`flex-1 flex overflow-hidden relative ${dropdownOpen !== 'none' ? 'pointer-events-none' : ''}`}
+        >
 
           {/* RICH MODE: BlockNote replaces everything */}
           {editorType === 'rich' && (
@@ -932,7 +950,10 @@ const Editor = () => {
               const lines = content.split('\n');
               return (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled').replace(/^#+\s*/, '').trim().substring(0, 60);
             })()}
-            onContentChange={(md) => setContent(md)}
+            onContentChange={(md) => {
+              setContent(md);
+              triggerAiAnimation();
+            }}
           />
         </div>
       </div>

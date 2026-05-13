@@ -64,7 +64,8 @@ const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activ
           {isEditing ? (
             <input
               autoFocus
-              className="bg-white/10 border border-blue-500/50 rounded px-1 text-[13px] w-full outline-none text-white"
+              className="bg-white/10 border border-blue-500/50 rounded px-1 text-[13px] w-full outline-none text-white no-drag"
+              style={{ WebkitAppRegion: 'no-drag', caretColor: '#3b82f6' } as any}
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               onBlur={handleSave}
