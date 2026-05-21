@@ -30,9 +30,10 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 What's New (Update 0.1.17)](#-whats-new-this-version-update-0117)
-- [🔥 What's New (Update 0.1.16)](#-whats-new-this-version-update-0116)
-- [🔥 What's New (Update 0.1.15)](#-whats-new-this-version-update-0115)
+- [🔥 What's New (Update 0.1.18)](#-whats-new-this-version-update-0118)
+- [🔥 What's New (Update 0.1.17)](#-whats-new-in-previous-version-update-0117)
+- [🔥 What's New (Update 0.1.16)](#-whats-new-in-previous-version-update-0116)
+- [🔥 What's New (Update 0.1.15)](#-whats-new-in-previous-version-update-0115)
 - [✨ Core Features](#-core-features)
 - [🛡️ Architecture and Fallbacks](#-resilient-architecture-and-fallbacks)
 - [📝 Editing Engines](#-dual-editing-engines)
@@ -44,7 +45,21 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.1.17)
+## 🔥 What's New this Version (Update 0.1.18)
+
+### 🏗️ Major Editor Refactoring & Architecture
+- **Component Decomposition:** The monolithic `Editor.tsx` (1100+ lines) was meticulously refactored into focused modular components (`EditorToolbar.tsx`, `EditorStatusBar.tsx`), massively improving code maintainability and rendering performance.
+- **Zero-Flicker State Management:** State is now purely delegated to Zustand, decoupling the AI panel and dropdowns from the main editor lifecycle to guarantee that typing in `CodeMirror` remains buttery smooth.
+
+### ⚡ UX & Workflow Features
+- **📅 Quick Daily Notes:** New "Today" button and `Ctrl+D` shortcut that instantly navigates to or creates a Daily Scrum note in the auto-generated "Daily Journal" notebook.
+- **👥 Meeting Notes Template:** New "Meeting" button and `Ctrl+M` shortcut that generates fresh meeting minutes with attendees, agenda, and action items matrices on the fly.
+- **✨ Enhanced AI Chat Panel:** Fully polished slide-in animations, memory of open/closed states across reloads, robust `z-index` layering, and a dedicated `Ctrl+Shift+A` hotkey for instantaneous AI access.
+- **🔄 Granular Sync Progress:** GitHub synchronization now displays real-time, step-by-step progress percentages instead of binary states.
+
+---
+
+## 🔥 What's New in Previous Version (Update 0.1.17)
 
 ### 🎓 M3Synthesis: Advanced Writing Assistant for Non-Fiction
 - **🧠 Asistente de Escritura:** Introduced a new dedicated studio menu for technical and academic writing.
