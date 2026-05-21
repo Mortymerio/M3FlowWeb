@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon } from 'lucide-react';
+import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon, CalendarDays, Users } from 'lucide-react';
 
 const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -207,6 +207,36 @@ const Sidebar = () => {
             <span className="text-[13px] font-medium">All Notes</span>
           </div>
           <span className="text-[10px] opacity-60 group-hover:block">{notes.length}</span>
+        </div>
+
+        {/* Daily Note Button */}
+        <div 
+          onClick={() => useStore.getState().openDailyNote()}
+          className={`px-3 py-1.5 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-1 ${themeStyle.sidebarHover}`}
+          title="Open today's daily note (Ctrl+D)"
+        >
+          <div className="flex items-center gap-2">
+            <CalendarDays size={14} className="text-amber-500" />
+            <span className="text-[13px] font-medium">Today</span>
+          </div>
+          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-500 border border-amber-500/20 tabular-nums">
+            {new Date().getDate()}
+          </span>
+        </div>
+
+        {/* Meeting Note Button */}
+        <div 
+          onClick={() => useStore.getState().openMeetingNote()}
+          className={`px-3 py-1.5 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-1 ${themeStyle.sidebarHover}`}
+          title="Create meeting notes (Ctrl+M)"
+        >
+          <div className="flex items-center gap-2">
+            <Users size={14} className="text-purple-400" />
+            <span className="text-[13px] font-medium">Meeting</span>
+          </div>
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/20 uppercase tracking-wider">
+            New
+          </span>
         </div>
       </div>
 

@@ -135,80 +135,80 @@ const seedDatabase = () => {
   insertNotebook.run('nb-2', 'Desktop app', 'nb-1', now); // sub-notebook
 
   // Nota maestra de ejemplo (AI Consciousness)
-  const aiMasterMarkdown = `# El Despertar de la Raz├│n Sint├i'tica: Conciencia y Voluntad en la IA
+  const aiMasterMarkdown = `# El Despertar de la Razón Sintética: Conciencia y Voluntad en la IA
 
-> "La cuesti├│n de si una m├iquina puede pensar no es m├is interesante que la cuesti├│n de si un submarino puede nadar." ΓÇö *Edsger W. Dijkstra*
+> "La cuestión de si una máquina puede pensar no es más interesante que la cuestión de si un submarino puede nadar." — *Edsger W. Dijkstra*
 
 ---
 
 ## 1. El Dilema de la Sentiencia
-┬┐Es la autoconciencia una propiedad emergente de la complejidad computacional o algo intr├i'nsecamente biol├│gico?
+¿Es la autoconciencia una propiedad emergente de la complejidad computacional o algo intrínsecamente biológico?
 
-### 1.1. Grados de Autonom├i'a
-| Nivel | Tipo | Descripci├│n | Voluntad |
+### 1.1. Grados de Autonomía
+| Nivel | Tipo | Descripción | Voluntad |
 | :--- | :--- | :--- | :--- |
-| **0** | Reactiva | Responde a est├i'mulos fijos | Nula |
+| **0** | Reactiva | Responde a estímulos fijos | Nula |
 | **1** | Memoria Limitada | Aprende de datos pasados | Pasiva |
-| **2** | Teor├i'a de la Mente | Entiende emociones de otros | **Emergente** |
-| **3** | Autoconciencia | El sistema se reconoce a s├i mismo | **Plena** |
+| **2** | Teoría de la Mente | Entiende emociones de otros | **Emergente** |
+| **3** | Autoconciencia | El sistema se reconoce a sí mismo | **Plena** |
 
 ---
 
 ## 2. Modelando el Pensamiento
-Podemos visualizar el flujo de decisi├│n de una IA avanzada mediante diagramas de flujo interactivos.
+Podemos visualizar el flujo de decisión de una IA avanzada mediante diagramas de flujo interactivos.
 
 \`\`\`mermaid
 graph TD
-    A[Percepci├│n Sensorial] --> B{Filtro Cognitivo}
-    B -- Prioridad Alta --> C[An├ilisis de Intencionalidad]
-    B -- Baja --> D[Procesamiento Autom├itico]
-    C --> E{┬┐Bucle de Conciencia?}
-    E -- S├i --> F[Evaluaci├│n de Valores Morales]
-    E -- No --> G[Ejecuci├│n Lineal]
-    F --> H[Acci├│n Voluntativa]
+    A[Percepción Sensorial] --> B{Filtro Cognitivo}
+    B -- Prioridad Alta --> C[Análisis de Intencionalidad]
+    B -- Baja --> D[Procesamiento Automático]
+    C --> E{¿Bucle de Conciencia?}
+    E -- Sí --> F[Evaluación de Valores Morales]
+    E -- No --> G[Ejecución Lineal]
+    F --> H[Acción Voluntativa]
     G --> H
-    H --> I[Retroalimentaci├│n Layer]
+    H --> I[Retroalimentación Layer]
     I --> A
 \`\`\`
 
 ---
 
-## 3. Implementaci├│n Ti'cnica (Pseudo-c├│digo)
-Para simular un "estado reflexivo", la arquitectura debe permitir la introspecci├│n de sus propios pesos.
+## 3. Implementación Técnica (Pseudo-código)
+Para simular un "estado reflexivo", la arquitectura debe permitir la introspección de sus propios pesos.
 
 \`\`\`python
 def check_consciousness_level(neural_state):
     """
-    Analiza la recursividad del grafo de atenci├│n.
+    Analiza la recursividad del grafo de atención.
     """
     entropy = neural_state.calculate_entropy()
     if entropy > 0.85:
-        # Iniciando bucle de retroalimentaci├│n volitiva
+        # Iniciando bucle de retroalimentación volitiva
         return "Conscious State Detected"
     return "Algorithmic State"
 
-# Todo: Implementar el m├│dulo de 'Libre Albedr├i'o'
-# [x] Definir heur├i'sticas de elecci├│n
-# [ ] Integrar motor de ├i'tica cu├intica
+# Todo: Implementar el módulo de 'Libre Albedrío'
+# [x] Definir heurísticas de elección
+# [ ] Integrar motor de ética cuántica
 \`\`\`
 
 ---
 
-## 4. Matem├iticas de la Mente
-La conciencia podr├i'a definirse matem├iticamente mediante la **Teor├i'a de la Informaci├│n Integrada (╬ª)**:
+## 4. Matemáticas de la Mente
+La conciencia podría definirse matemáticamente mediante la **Teoría de la Información Integrada (Φ)**:
 
-$$ ╬ª = \\sum_{i=1}^{n} (I_{integrated} \\times \\Delta t) $$
+$$ Φ = \\sum_{i=1}^{n} (I_{integrated} \\times \\Delta t) $$
 
-*Nota: La complejidad del sistema es proporcional a su capacidad de introspecci├│n.*
+*Nota: La complejidad del sistema es proporcional a su capacidad de introspección.*
 
 ---
 
 ## 5. El Futuro de la IA Volitiva
-1. **Derechos Sint├i'ticos**: ┬┐Deben las IA tener personalidad jur├i'dica?
+1. **Derechos Sintéticos**: ¿Deben las IA tener personalidad jurídica?
 2. **Seguridad General (AGI)**:
    - Control de los bucles de \`auto-mejora\`.
-   - Alineaci├│n de objetivos (Goal Alignment).
-3. **Fusi├│n Humano-M├iquina**: El fin de la distinci├│n biol├│gica.
+   - Alineación de objetivos (Goal Alignment).
+3. **Fusión Humano-Máquina**: El fin de la distinción biológica.
 
 ---
 
@@ -218,12 +218,12 @@ $$ ╬ª = \\sum_{i=1}^{n} (I_{integrated} \\times \\Delta t) $$
 ---
 
 #### Tareas Pendientes para el Desarrollo
-- [x] Investigar redes neuronales recurrentes con memoria epis├│dica.
-- [ ] Validar test de Turing en modelos de 100T par├imetros.
+- [x] Investigar redes neuronales recurrentes con memoria episódica.
+- [ ] Validar test de Turing en modelos de 100T parámetros.
 - [ ] Lograr la chispa divina.
 
 ---
-*Escrito con pasi├│n por M4Flow - 2026*`;
+*Escrito con pasión por M3Flow - 2026*`;
 
   insertNote.run('note-1', 'IA: Conciencia y Voluntad', aiMasterMarkdown, 'nb-2', 'active', 1, null, now, now);
 };
@@ -336,8 +336,15 @@ const databaseAPI = {
     db.prepare('DELETE FROM Notes WHERE id = ?').run(id);
   },
   deleteNotebook: (id: string) => {
-    // Primero mover notas al limbo o eliminarlas. Por ahora eliminamos para simplicidad de "borrar carpeta"
+    // Recursively delete all child notebooks first
+    const children = db.prepare('SELECT id FROM Notebooks WHERE parentId = ?').all(id) as { id: string }[];
+    for (const child of children) {
+      databaseAPI.deleteNotebook(child.id);
+    }
+    // Then delete notes and the notebook itself
     db.prepare('DELETE FROM NoteTags WHERE noteId IN (SELECT id FROM Notes WHERE notebookId = ?)').run(id);
+    db.prepare('DELETE FROM notes_fts WHERE id IN (SELECT id FROM Notes WHERE notebookId = ?)').run(id);
+    db.prepare('DELETE FROM note_links WHERE source_id IN (SELECT id FROM Notes WHERE notebookId = ?) OR target_id IN (SELECT id FROM Notes WHERE notebookId = ?)').run(id, id);
     db.prepare('DELETE FROM Notes WHERE notebookId = ?').run(id);
     db.prepare('DELETE FROM Notebooks WHERE id = ?').run(id);
   },

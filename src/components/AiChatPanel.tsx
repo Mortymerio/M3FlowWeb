@@ -3,7 +3,7 @@
  * Replaces the old dropdown-based AI interaction with a persistent chat panel.
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Sparkles, Settings2, X, Send, Loader2, Cpu, ChevronDown, ChevronRight, Trash2, Brain } from 'lucide-react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
@@ -56,8 +56,13 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
+  const [undoContent, setUndoContent] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const activeNoteId = useStore(state => state.activeNoteId);
+  const pendingAiPrompt = useStore(state => state.pendingAiPrompt);
+  const aiChatHistory = useStore(state => state.aiChatHistory);
+  const setAiChatHistory = useStore(state => state.setAiChatHistory);
 
   // Gemini model discovery
   const [availableGeminiModels, setAvailableGeminiModels] = useState<{ name: string, displayName: string }[]>([]);
@@ -96,6 +101,35 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
   useEffect(() => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 200);
   }, [isOpen]);
+
+  // Load chat history for the active note
+  useEffect(() => {
+    if (activeNoteId && aiChatHistory[activeNoteId]) {
+      setMessages(aiChatHistory[activeNoteId]);
+    } else {
+      setMessages([]);
+    }
+  }, [activeNoteId]);
+
+  // Save chat history when messages change
+  useEffect(() => {
+    if (activeNoteId && messages.length > 0) {
+      setAiChatHistory(activeNoteId, messages);
+    }
+  }, [messages, activeNoteId]);
+
+  // Consume pending AI prompt from Writing Assistant
+  useEffect(() => {
+    if (pendingAiPrompt && isOpen && !isLoading) {
+      setPrompt(pendingAiPrompt);
+      useStore.getState().setPendingAiPrompt(null);
+      // Auto-send after a tick to let the UI update
+      setTimeout(() => {
+        const fakeEvent = { key: 'Enter', shiftKey: false, preventDefault: () => {} };
+        inputRef.current?.dispatchEvent(new Event('focus'));
+      }, 100);
+    }
+  }, [pendingAiPrompt, isOpen, isLoading]);
 
   const handleSend = useCallback(async () => {
     if (!prompt.trim() || isLoading) return;
@@ -299,6 +333,7 @@ CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks.
           setMessages(prev => [...prev, aiMsg]);
         } else {
           onContentChange(resultText);
+          setUndoContent(content); // Capture content before AI overwrite for undo
           let aiResponseText = '✅ Documento actualizado correctamente.';
           if (retrievedNotes.length > 0) {
             aiResponseText += `\n\n🔍 Contexto del vault usado:\n${retrievedNotes.map(n => `- ${n.title}`).join('\n')}`;
@@ -334,7 +369,10 @@ CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks.
     }
   }, [prompt, isLoading, activeAiProvider, content, ollamaUrl, ollamaModel, openAiKey, lmStudioUrl, githubToken, azureUrl, azureKey, geminiKey, geminiModel, geminiApiVersion, claudeKey, onContentChange]);
 
-  const clearChat = () => setMessages([]);
+  const clearChat = () => {
+    setMessages([]);
+    if (activeNoteId) setAiChatHistory(activeNoteId, []);
+  };
 
   const inputBg = isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-black/5 border-black/10 text-black placeholder-black/30';
   const fieldBg = isDark ? 'bg-black/20 border-white/5 text-white' : 'bg-black/5 border-black/10 text-black';
@@ -356,14 +394,18 @@ CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks.
           <Sparkles size={16} className="text-blue-500" />
           <span className={`text-sm font-bold ${themeStyle.editorText}`}>AI Chat</span>
           {(() => {
-            const activeNotebookId = useStore.getState().activeNotebookId;
-            const nb = useStore.getState().notebooks.find(n => n.id === activeNotebookId);
-            const hasContext = nb?.config && JSON.parse(nb.config).systemPrompt;
-            return hasContext ? (
-              <div className="flex items-center gap-1 bg-purple-500/20 text-purple-400 text-[9px] px-2 py-0.5 rounded-full font-black border border-purple-500/30 ml-2 animate-pulse">
-                <Brain size={8} /> CONTEXT ACTIVE
-              </div>
-            ) : null;
+            try {
+              const currentNotebookId = useStore.getState().activeNotebookId;
+              const nb = useStore.getState().notebooks.find(n => n.id === currentNotebookId);
+              const hasContext = nb?.config && JSON.parse(nb.config).systemPrompt;
+              return hasContext ? (
+                <div className="flex items-center gap-1 bg-purple-500/20 text-purple-400 text-[9px] px-2 py-0.5 rounded-full font-black border border-purple-500/30 ml-2 animate-pulse">
+                  <Brain size={8} /> CONTEXT ACTIVE
+                </div>
+              ) : null;
+            } catch {
+              return null;
+            }
           })()}
         </div>
         <div className="flex items-center gap-1">
@@ -389,6 +431,19 @@ CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks.
         <div className={`px-4 py-2 border-b text-xs flex items-center gap-2 ${themeStyle.editorBorder} opacity-60`}>
           <span>📎</span>
           <span className="truncate font-medium">{noteTitle}</span>
+        </div>
+      )}
+
+      {/* Undo bar after AI content overwrite */}
+      {undoContent !== null && (
+        <div className={`px-4 py-2 border-b flex items-center justify-between ${themeStyle.editorBorder} bg-amber-500/10`}>
+          <span className="text-[10px] font-bold text-amber-400">AI replaced document content</span>
+          <button
+            onClick={() => { onContentChange(undoContent); setUndoContent(null); }}
+            className="text-[10px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/20 px-2 py-1 rounded-md transition-colors"
+          >
+            ↩ UNDO
+          </button>
         </div>
       )}
 

@@ -41,7 +41,7 @@ interface AppState {
   toggleSidebar: () => void;
   toggleNoteList: () => void;
   isAiPanelOpen: boolean;
-  toggleAiPanel: () => void;
+  toggleAiPanel: (forceOpen?: boolean) => void;
   activeNotebookId: string | null;
   activeNoteId: string | null;
   activeStatusId: string | null;
@@ -120,6 +120,12 @@ interface AppState {
   webLlmProgress: number;
   webLlmStatusText: string;
   
+  // AI Writing Assistant
+  pendingAiPrompt: string | null;
+  setPendingAiPrompt: (prompt: string | null) => void;
+  aiChatHistory: Record<string, { id: string; role: 'user' | 'ai'; text: string; timestamp: number }[]>;
+  setAiChatHistory: (noteId: string, messages: { id: string; role: 'user' | 'ai'; text: string; timestamp: number }[]) => void;
+  
   // Acciones
   setSearchQuery: (query: string) => void;
   setSortOrder: (order: 'default' | 'alphabetical') => void;
@@ -156,6 +162,8 @@ interface AppState {
   updateNotebook: (id: string, name: string, parentId: string | null, config?: any) => Promise<void>;
   deleteNote: (id: string | null) => Promise<void>;
   deleteNotebook: (id: string) => Promise<void>;
+  openDailyNote: () => Promise<void>;
+  openMeetingNote: () => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -164,8 +172,8 @@ export const useStore = create<AppState>((set, get) => ({
   toggleSidebar: () => set(state => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
   toggleNoteList: () => set(state => ({ isNoteListCollapsed: !state.isNoteListCollapsed })),
   isAiPanelOpen: localStorage.getItem('isAiPanelOpen') === 'true',
-  toggleAiPanel: () => set(state => {
-    const newVal = !state.isAiPanelOpen;
+  toggleAiPanel: (forceOpen) => set(state => {
+    const newVal = typeof forceOpen === 'boolean' ? forceOpen : !state.isAiPanelOpen;
     localStorage.setItem('isAiPanelOpen', newVal ? 'true' : 'false');
     return { isAiPanelOpen: newVal };
   }),
@@ -223,6 +231,13 @@ export const useStore = create<AppState>((set, get) => ({
   isWebLlmLoaded: false,
   webLlmProgress: 0,
   webLlmStatusText: '',
+  
+  pendingAiPrompt: null,
+  setPendingAiPrompt: (prompt) => set({ pendingAiPrompt: prompt }),
+  aiChatHistory: {},
+  setAiChatHistory: (noteId, messages) => set(state => ({
+    aiChatHistory: { ...state.aiChatHistory, [noteId]: messages }
+  })),
 
   ftsQuery: '',
   searchResults: [],
@@ -244,15 +259,20 @@ export const useStore = create<AppState>((set, get) => ({
 
   setSearchQuery: async (query) => {
     set({ searchQuery: query });
-    const dbAPI = (window as any).dbAPI;
-    if (dbAPI && dbAPI.searchNotes && query.trim().length > 1) {
-      try {
-        const results = await dbAPI.searchNotes(query);
-        set({ searchResults: results });
-      } catch (e) {
-        console.error('FTS Search error:', e);
-        set({ searchResults: [] });
-      }
+    
+    // Debounce FTS search to avoid hammering DB on every keystroke
+    if ((window as any).__m3flow_searchTimer) clearTimeout((window as any).__m3flow_searchTimer);
+    
+    if (window.dbAPI?.searchNotes && query.trim().length > 1) {
+      (window as any).__m3flow_searchTimer = setTimeout(async () => {
+        try {
+          const results = await window.dbAPI.searchNotes(query);
+          set({ searchResults: results });
+        } catch (e) {
+          console.error('FTS Search error:', e);
+          set({ searchResults: [] });
+        }
+      }, 200);
     } else {
       set({ searchResults: [] });
     }
@@ -414,24 +434,32 @@ export const useStore = create<AppState>((set, get) => ({
     let targetNbId = existingNote ? existingNote.notebookId : null;
 
     if (!existingNote) {
-       // Si por alguna razón no existía (no debería ocurrir)
        const { activeNotebookId, notebooks } = get();
        targetNbId = activeNotebookId || (notebooks.length > 0 ? notebooks[0].id : null);
     }
 
-    await (window as any).dbAPI.saveNote({
-      id,
-      title,
-      body,
-      notebookId: targetNbId,
-    });
+    // ANTI-ERASURE GUARD — Must run BEFORE DB write to prevent data corruption
+    if (body.trim() === '' && existingNote && existingNote.body.length > 50) {
+      console.warn('[M3Flow Guard] Intento de borrado masivo detectado. Bloqueando guardado.');
+      return;
+    }
+
+    try {
+      await (window as any).dbAPI.saveNote({
+        id,
+        title,
+        body,
+        notebookId: targetNbId,
+      });
+    } catch (e) {
+      console.error('[store] saveNote DB error:', e);
+      return; // Don't update local state if DB write failed
+    }
     
-    // Update local state & history (Part 1)
+    // Update local state & history only after successful DB write
     set((state) => {
       const currentHistory = state.noteHistory[id] || [];
       
-      // Capturamos el estado PREVIO en el historial antes de actualizar
-      // Solo si el cuerpo cambió respecto a lo que había en memoria
       const historyUpdate: any = {};
       if (!skipHistory && existingNote && existingNote.body !== body && existingNote.body.trim() !== '') {
         const newVersion = { body: existingNote.body, timestamp: Date.now() };
@@ -439,14 +467,6 @@ export const useStore = create<AppState>((set, get) => ({
           ...state.noteHistory, 
           [id]: [newVersion, ...currentHistory].slice(0, 3) 
         };
-      }
-
-      // ANTI-ERASURE GUARD (Part 2)
-      // Si el contenido nuevo es vacío pero el viejo tenía mucho texto (>50 chars), 
-      // probablemente sea un bug de carga. Bloqueamos el guardado para proteger integridad.
-      if (body.trim() === '' && existingNote && existingNote.body.length > 50) {
-        console.warn('[M3Flow Guard] Intento de borrado masivo detectado. Bloqueando guardado.');
-        return state;
       }
 
       return {
@@ -461,7 +481,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   createNote: async () => {
     const { activeNotebookId, notes, notebooks } = get();
-    const newId = 'note-' + Date.now();
+    const newId = 'note-' + crypto.randomUUID();
     
     // Si no hay libretas (teóricamente imposible ahora), abortar o crear una
     if (notebooks.length === 0) {
@@ -507,6 +527,209 @@ export const useStore = create<AppState>((set, get) => ({
     });
   },
 
+  openDailyNote: async () => {
+    const { notebooks, notes } = get();
+
+    // 1. Build today's title with localized day name
+    const now = new Date();
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const dayName = dayNames[now.getDay()];
+    const dateStr = now.toISOString().slice(0, 10); // 2026-05-21
+    const dailyTitle = `📅 ${dateStr} — ${dayName}`;
+
+    // 2. Find or create the "Daily Journal" notebook
+    const DAILY_NB_NAME = 'Daily Journal';
+    let dailyNotebook = notebooks.find(nb => nb.name === DAILY_NB_NAME);
+
+    if (!dailyNotebook) {
+      const nbId = 'nb-' + crypto.randomUUID().slice(0, 8);
+      const config = JSON.stringify({ systemPrompt: 'Este es un notebook de Daily Standup / Scrum. Ayuda al usuario a organizar sus tareas diarias, blockers y seguimiento del equipo.' });
+      const newNB = { id: nbId, name: DAILY_NB_NAME, parentId: null, config, createdAt: Date.now() };
+      set(state => ({ notebooks: [...state.notebooks, newNB] }));
+      try {
+        const dbAPI = (window as any).dbAPI;
+        if (dbAPI?.saveNotebook) await dbAPI.saveNotebook(newNB);
+      } catch (e) { console.error('[store] openDailyNote createNotebook error:', e); }
+      dailyNotebook = newNB;
+    }
+
+    // 3. Find existing note for today in that notebook
+    const existingNote = get().notes.find(
+      n => n.notebookId === dailyNotebook!.id && n.title === dailyTitle
+    );
+
+    if (existingNote) {
+      // Navigate to it
+      set({
+        activeNotebookId: dailyNotebook.id,
+        activeNoteId: existingNote.id,
+        activeStatusId: null,
+        activeTagId: null,
+      });
+      return;
+    }
+
+    // 4. Create today's daily note with Scrum template
+    const newId = 'note-' + crypto.randomUUID();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const template = `# ${dailyTitle}
+
+> Standup iniciado a las ${timeStr}
+
+## 🔄 ¿Qué hice ayer?
+- [ ] 
+
+## 🎯 ¿Qué voy a hacer hoy?
+| Tarea | Responsable | Estado |
+|:------|:------------|:-------|
+|  | @yo | ⬜ Pendiente |
+|  |  | ⬜ Pendiente |
+
+## 🚧 Blockers / Impedimentos
+- _Ninguno por ahora_
+
+## 📋 Action Items
+- [ ] 
+- [ ] 
+
+## 👥 Notas del equipo
+| Miembro | Update | Blocker |
+|:--------|:-------|:--------|
+|  |  |  |
+
+## 💡 Observaciones
+> _Notas generales de la daily..._
+
+---
+*Daily Standup — ${dateStr} — M3Flow*
+`;
+
+    const newNote = {
+      id: newId,
+      title: dailyTitle,
+      body: template,
+      notebookId: dailyNotebook.id,
+      status: 'active',
+      isPinned: 0,
+      reminderAt: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    try {
+      await (window as any).dbAPI.saveNote(newNote);
+    } catch (e) { console.error('[store] openDailyNote saveNote error:', e); }
+
+    set(state => ({
+      notes: [newNote, ...state.notes],
+      activeNotebookId: dailyNotebook!.id,
+      activeNoteId: newId,
+      activeStatusId: null,
+      activeTagId: null,
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error',
+    }));
+  },
+
+  openMeetingNote: async () => {
+    const { notebooks } = get();
+
+    const now = new Date();
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const dayName = dayNames[now.getDay()];
+    const dateStr = now.toISOString().slice(0, 10);
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const meetingTitle = `📌 Reunión ${dateStr} — ${timeStr}`;
+
+    // 1. Find or create "Reuniones" notebook
+    const MTG_NB_NAME = 'Reuniones';
+    let mtgNotebook = notebooks.find(nb => nb.name === MTG_NB_NAME);
+
+    if (!mtgNotebook) {
+      const nbId = 'nb-' + crypto.randomUUID().slice(0, 8);
+      const config = JSON.stringify({ systemPrompt: 'Este es un notebook de minutas de reunión. Ayuda al usuario a organizar agendas, decisiones y action items de cada meeting.' });
+      const newNB = { id: nbId, name: MTG_NB_NAME, parentId: null, config, createdAt: Date.now() };
+      set(state => ({ notebooks: [...state.notebooks, newNB] }));
+      try {
+        const dbAPI = (window as any).dbAPI;
+        if (dbAPI?.saveNotebook) await dbAPI.saveNotebook(newNB);
+      } catch (e) { console.error('[store] openMeetingNote createNotebook error:', e); }
+      mtgNotebook = newNB;
+    }
+
+    // 2. Always create a new meeting note (multiple meetings per day are normal)
+    const newId = 'note-' + crypto.randomUUID();
+    const template = `# ${meetingTitle}
+
+## 📃 Info
+| Campo | Valor |
+|:------|:------|
+| **Fecha** | ${dateStr} (${dayName}) |
+| **Hora** | ${timeStr} |
+| **Moderador** | @yo |
+| **Duración est.** | 30 min |
+
+## 👥 Asistentes
+- [ ] @nombre1
+- [ ] @nombre2
+- [ ] @nombre3
+
+## 📝 Agenda
+1. 
+2. 
+3. 
+
+## 🗣️ Discusión
+> _Notas de la reunión..._
+
+## ✅ Decisiones Tomadas
+| # | Decisión | Responsable |
+|:--|:---------|:------------|
+| 1 |  |  |
+| 2 |  |  |
+
+## 📌 Action Items
+| Tarea | Responsable | Deadline | Estado |
+|:------|:------------|:---------|:-------|
+|  |  |  | ⬜ Pendiente |
+|  |  |  | ⬜ Pendiente |
+|  |  |  | ⬜ Pendiente |
+
+## 🗓️ Próxima Reunión
+- **Fecha:**
+- **Temas pendientes:**
+
+---
+*Minuta de Reunión — ${dateStr} ${timeStr} — M3Flow*
+`;
+
+    const newNote = {
+      id: newId,
+      title: meetingTitle,
+      body: template,
+      notebookId: mtgNotebook.id,
+      status: 'active',
+      isPinned: 0,
+      reminderAt: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    try {
+      await (window as any).dbAPI.saveNote(newNote);
+    } catch (e) { console.error('[store] openMeetingNote saveNote error:', e); }
+
+    set(state => ({
+      notes: [newNote, ...state.notes],
+      activeNotebookId: mtgNotebook!.id,
+      activeNoteId: newId,
+      activeStatusId: null,
+      activeTagId: null,
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error',
+    }));
+  },
+
   moveNotebook: async (notebookId, newParentId) => {
     if (notebookId === newParentId) return;
     set(state => ({
@@ -545,7 +768,7 @@ export const useStore = create<AppState>((set, get) => ({
     } catch(e) { console.error('[store] updateNoteReminder error:', e); }
   },
   createTag: async (name, color) => {
-    const id = 'tag-' + Date.now();
+    const id = 'tag-' + crypto.randomUUID().slice(0, 8);
     const newTag = { id, name, color };
     set(state => ({ tags: [...state.tags, newTag] }));
     try {
@@ -581,7 +804,7 @@ export const useStore = create<AppState>((set, get) => ({
     } catch(e) { console.error('[store] toggleNoteTag error:', e); }
   },
   createNotebook: async (name, parentId, config) => {
-    const id = 'nb-' + Date.now();
+    const id = 'nb-' + crypto.randomUUID().slice(0, 8);
     const configStr = config ? JSON.stringify(config) : null;
     const newNB = { id, name, parentId, config: configStr as any, createdAt: Date.now() };
     set(state => ({ 

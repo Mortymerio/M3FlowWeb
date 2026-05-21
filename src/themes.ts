@@ -1,4 +1,29 @@
-export const THEMES: Record<string, any> = {
+interface ThemeConfig {
+  isDark: boolean;
+  sidebarBg: string;
+  sidebarHeader: string;
+  sidebarText: string;
+  sidebarHover: string;
+  sidebarActive: string;
+  sidebarBorder: string;
+  listBg: string;
+  listHeader: string;
+  listText: string;
+  listHover: string;
+  listActive: string;
+  listBorder: string;
+  editorBg: string;
+  editorHeader: string;
+  editorText: string;
+  editorBorder: string;
+  dropdownBg: string;
+  dropdownText: string;
+  previewBg: string;
+  prose: string;
+  codeTheme: 'light' | 'dark';
+}
+
+export const THEMES: Record<string, ThemeConfig> = {
   'midnight-indigo': {
     isDark: false,
     sidebarBg: 'bg-[#1b1c28]',

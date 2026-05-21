@@ -149,12 +149,15 @@ const HelpOverlay = () => {
               <Shortcut label="Nueva Nota" keys={['Ctrl', 'N']} />
               <Shortcut label="Paleta Comandos" keys={['Ctrl', 'P']} />
               <Shortcut label="Alternar Sidebar" keys={['Ctrl', 'B']} />
+              <Shortcut label="Daily Note" keys={['Ctrl', 'D']} />
+              <Shortcut label="Meeting" keys={['Ctrl', 'M']} />
             </div>
             <div className="flex flex-col gap-2">
               <h5 className="text-[10px] font-black uppercase text-blue-500/50 tracking-[0.3em] mb-2 px-1">Editor</h5>
               <Shortcut label="Guardar (Auto)" keys={['1s idle']} />
               <Shortcut label="Modo VIM" keys={['Esc', ':', 'w']} />
               <Shortcut label="IA Magic" keys={['Ctrl', 'Enter']} />
+              <Shortcut label="Panel IA" keys={['Ctrl', '⇧', 'A']} />
             </div>
           </div>
 

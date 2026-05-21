@@ -47,11 +47,8 @@ ipcMain.handle('db:deleteTag', (_, id: string) => databaseAPI.deleteTag(id));
 ipcMain.handle('db:toggleNoteTag', (_, noteId: string, tagId: string) => databaseAPI.toggleNoteTag(noteId, tagId));
 ipcMain.handle('db:isFallbackMode', () => getFallbackStatus());
 
-// Fase 1: Handlers de Búsqueda y Conexiones
 ipcMain.handle('db:search', (_, query: string) => databaseAPI.searchNotes(query));
 ipcMain.handle('db:getBacklinks', (_, noteId: string) => databaseAPI.getBacklinks(noteId));
-ipcMain.handle('move-notebook', (_, { notebookId, parentId }) => databaseAPI.moveNotebook(notebookId, parentId));
-ipcMain.handle('move-note', (_, { noteId, notebookId }) => databaseAPI.moveNote(noteId, notebookId));
 
 // GitHub Sync Handlers
 ipcMain.handle('github:testConnection', (_, token: string) => testConnection(token));

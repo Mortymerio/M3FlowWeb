@@ -95,7 +95,9 @@ export const syncToGithub = async (
     const treePayload: any[] = [];
     if (syncMarkdown) {
       // 1. Sincronizar Notas con Metadatos (YAML Frontmatter)
-      for (const note of notes) {
+      for (let i = 0; i < notes.length; i++) {
+        const note = notes[i];
+        if (onProgress) onProgress({ current: Math.round(10 + (i / notes.length) * 70), total: 100, message: `Syncing: ${note.title.substring(0, 40)}...` });
         // Inyectar metadatos en la parte superior del archivo
         const yamlMetadata = `---
 id: ${note.id}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { Minus, Square, X, Bell } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import NoteList from './components/NoteList';
@@ -96,6 +96,9 @@ const App = () => {
           setActiveAlert(note.title);
           triggeredReminders.current.add(note.id);
           
+          // Auto-dismiss after 10 seconds
+          setTimeout(() => setActiveAlert(null), 10000);
+          
           // Native notification if possible
           if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
              new Notification('M3Flow Reminder', { body: note.title });
@@ -120,11 +123,26 @@ const App = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        useStore.getState().createNote();
+        // Guard: only create note if notebooks are loaded
+        if (useStore.getState().notebooks.length > 0) {
+          useStore.getState().createNote();
+        }
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         useStore.getState().toggleSidebar();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        useStore.getState().toggleAiPanel();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        useStore.getState().openDailyNote();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        useStore.getState().openMeetingNote();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -265,3 +283,41 @@ const App = () => {
 };
 
 export default App;
+
+// Error Boundary to prevent unhandled React errors from crashing the Electron window
+class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[M3Flow ErrorBoundary]', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, fontFamily: 'system-ui', color: '#e2e8f0', backgroundColor: '#1a1b26', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <h1 style={{ fontSize: 24, marginBottom: 16, color: '#f87171' }}>⚠️ M3Flow encountered an error</h1>
+          <pre style={{ fontSize: 12, color: '#94a3b8', maxWidth: 600, overflow: 'auto', padding: 16, background: '#0f172a', borderRadius: 8, border: '1px solid #334155' }}>
+            {this.state.error?.message}\n{this.state.error?.stack}
+          </pre>
+          <button
+            onClick={() => { this.setState({ hasError: false, error: null }); }}
+            style={{ marginTop: 20, padding: '10px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700 }}
+          >
+            Try to Recover
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export { AppErrorBoundary };
