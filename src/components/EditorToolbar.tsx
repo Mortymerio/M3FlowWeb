@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import {
-  Download, Layout, Eye, PenTool, Book, Settings2, Plus,
+  Layout, Eye, PenTool, Book, Settings2, Plus,
   ChevronDown, Trash2, Search, Check, Columns, LayoutList,
   Bell, Calendar, Sparkles, History, Brain
 } from 'lucide-react';

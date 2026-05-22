@@ -109,7 +109,7 @@ export const TemplatesManagerModal: React.FC = () => {
                   <div className="flex items-center gap-2 overflow-hidden">
                     <FileText size={14} className={activeTemplate?.id === tpl.id ? 'text-blue-400' : 'text-gray-500'} />
                     <span className="truncate text-sm">{tpl.name}</span>
-                    {tpl.isSystem === 1 && <Lock size={12} className="text-gray-500" title="Plantilla de Sistema" />}
+                    {tpl.isSystem === 1 && <span title="Plantilla de Sistema"><Lock size={12} className="text-gray-500" /></span>}
                   </div>
                   {tpl.isSystem === 0 && (
                     <button 

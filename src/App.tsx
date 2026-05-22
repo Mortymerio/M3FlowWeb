@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, Component, ErrorInfo, ReactNode } from 'react';
+import { useEffect, useState, useRef, Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { Minus, Square, X, Bell } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import NoteList from './components/NoteList';

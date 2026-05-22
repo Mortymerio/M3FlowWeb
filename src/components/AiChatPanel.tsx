@@ -3,7 +3,7 @@
  * Replaces the old dropdown-based AI interaction with a persistent chat panel.
  */
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, Settings2, X, Send, Loader2, Cpu, ChevronDown, ChevronRight, Trash2, Brain } from 'lucide-react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
@@ -124,10 +124,9 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
       setPrompt(pendingAiPrompt);
       useStore.getState().setPendingAiPrompt(null);
       // Auto-send after a tick to let the UI update
-      setTimeout(() => {
-        const fakeEvent = { key: 'Enter', shiftKey: false, preventDefault: () => {} };
-        inputRef.current?.dispatchEvent(new Event('focus'));
-      }, 100);
+      if (prompt.trim()) {
+        setPrompt('');
+      }
     }
   }, [pendingAiPrompt, isOpen, isLoading]);
 

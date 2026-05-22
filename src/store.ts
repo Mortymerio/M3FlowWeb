@@ -540,7 +540,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   openDailyNote: async () => {
-    const { notebooks, notes } = get();
+    const { notebooks } = get();
 
     // 1. Build today's title with localized day name
     const now = new Date();

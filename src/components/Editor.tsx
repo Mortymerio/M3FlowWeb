@@ -66,8 +66,6 @@ const Editor = () => {
 
   const isSidebarCollapsed = useStore(state => state.isSidebarCollapsed);
   const isNoteListCollapsed = useStore(state => state.isNoteListCollapsed);
-  const toggleSidebar = useStore(state => state.toggleSidebar);
-  const toggleNoteList = useStore(state => state.toggleNoteList);
   const themeName = useStore(state => state.theme);
   const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
   const isDark = themeStyle.isDark !== false;
