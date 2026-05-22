@@ -57,30 +57,6 @@
 - **✨ Enhanced AI Chat Panel:** Fully polished slide-in animations, memory of open/closed states across reloads, robust `z-index` layering, and a dedicated `Ctrl+Shift+A` hotkey for instantaneous AI access.
 - **🔄 Granular Sync Progress:** GitHub synchronization now displays real-time, step-by-step progress percentages instead of binary states.
 
----
-
-## 🔥 What's New in Previous Version (Update 0.1.17)
-
-### 🎓 M3Synthesis: Advanced Writing Assistant for Non-Fiction
-- **🧠 Asistente de Escritura:** Introduced a new dedicated studio menu for technical and academic writing.
-- **⚖️ Socratic Dialectic:** Engaging AI as a "Devil's Advocate" to challenge logic and strengthen treatises.
-- **🖇️ Logic Hierarchy:** Real-time conceptual flow analysis to ensure complex ideas have the necessary foundation.
-- **📚 Taxonomy Auto-Extractor:** Automatic identification and definition of technical terms to maintain a consistent glossary.
-- **🧪 Contextual Source Synthesis:** Advanced drafting that pulls relevant snippets from your entire `@vault` to support your current chapter.
-
----
-
-## 🔥 What's New in Previous Version (Update 0.1.16)
-
-## 🔥 What's New in Previous Version (Update 0.1.15)
-
-### 🧜‍♂️ Advanced Mermaid Rendering Engine & DOM Integrity
-We spent the entire day deep-diving into React's reconciliation engine to build a bulletproof Mermaid diagram rendering pipeline. 
-- **Zero-Flicker Architecture:** We isolated the Markdown Preview component using `React.memo` to completely stop "DOM tearing." Moving the cursor or typing in the RAW editor no longer causes Mermaid SVGs to flash or revert to raw text. React now perfectly respects our manually injected diagrams.
-- **Robust Token Serialization:** Completely rewrote the `mermaid-markdown.ts` parsing logic. The parser now uses a hardened regex-based token extraction system (`@@M3FLOW_MERMAID_BLOCK@@`) that survives BlockNote's internal data transformations.
-- **Block Protection:** Added automatic double-newline padding during pre-processing to guarantee the WYSIWYG editor treats Mermaid diagrams as isolated paragraphs, preventing them from fusing with adjacent text.
-- **Corruption Guards:** Implemented a visual `loadError` fallback UI for the Rich Editor. If malformed data is detected during state synchronization, the editor elegantly catches the exception instead of crashing the entire application.
-- **Type Safety:** Hardened the payload readers to handle both `InlineItem` arrays and plain strings, completely eliminating the notorious `content.map is not a function` crash when switching from RICH to RAW.
 
 
 ## ✨ Core Features
