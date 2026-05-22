@@ -46,6 +46,9 @@ ipcMain.handle('db:createTag', (_, tag: Tag) => databaseAPI.createTag(tag));
 ipcMain.handle('db:updateTag', (_, tag: Tag) => databaseAPI.updateTag(tag));
 ipcMain.handle('db:deleteTag', (_, id: string) => databaseAPI.deleteTag(id));
 ipcMain.handle('db:toggleNoteTag', (_, noteId: string, tagId: string) => databaseAPI.toggleNoteTag(noteId, tagId));
+ipcMain.handle('db:getTemplates', () => databaseAPI.getTemplates());
+ipcMain.handle('db:saveTemplate', (_, template: any) => databaseAPI.saveTemplate(template));
+ipcMain.handle('db:deleteTemplate', (_, id: string) => databaseAPI.deleteTemplate(id));
 ipcMain.handle('db:isFallbackMode', () => getFallbackStatus());
 
 ipcMain.handle('db:search', (_, query: string) => databaseAPI.searchNotes(query));
@@ -111,6 +114,35 @@ ipcMain.handle('export-markdown', async (_, { title, content }: { title: string,
   });
   if (!result.canceled && result.filePath) {
     fs.writeFileSync(result.filePath, content);
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('export-csv', async (_, { title, content }: { title: string, content: string }) => {
+  const result = await dialog.showSaveDialog({
+    title: 'Export active note to CSV',
+    defaultPath: `${title || 'untitled'}.csv`,
+    filters: [{ name: 'CSV', extensions: ['csv'] }]
+  });
+  if (!result.canceled && result.filePath) {
+    // Parse Markdown to CSV (handles tables and text)
+    const lines = content.split('\n');
+    const csvLines = [];
+    for (const line of lines) {
+      if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+        if (line.match(/^\|[\s:-]+\|$/)) continue; // skip header separator
+        const cells = line.split('|').slice(1, -1).map(c => `"${c.trim().replace(/"/g, '""')}"`);
+        csvLines.push(cells.join(';'));
+      } else {
+        const text = line.trim();
+        if (text) {
+          csvLines.push(`"${text.replace(/"/g, '""')}"`);
+        }
+      }
+    }
+    // Escribir BOM UTF-8 y forzar que Excel sepa que el separador es ; (por si acaso)
+    fs.writeFileSync(result.filePath, "\uFEFF" + "sep=;\n" + csvLines.join('\n'), 'utf8');
     return true;
   }
   return false;

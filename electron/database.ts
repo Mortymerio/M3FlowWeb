@@ -77,6 +77,15 @@ const initDB = (onProgress?: (msg: string) => void) => {
       FOREIGN KEY(tagId) REFERENCES Tags(id)
     );
 
+    CREATE TABLE IF NOT EXISTS Templates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      isSystem INTEGER DEFAULT 0,
+      createdAt INTEGER NOT NULL,
+      updatedAt INTEGER NOT NULL
+    );
+
     -- Fase 1: Full-Text Search (FTS5)
     CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
       id UNINDEXED,
@@ -115,6 +124,25 @@ const initDB = (onProgress?: (msg: string) => void) => {
 
   log('Base de datos inicializada correctamente.');
 
+  // Sembrar plantillas del sistema si la tabla está vacía
+  try {
+    const tplStmt = db.prepare('SELECT COUNT(*) as count FROM Templates');
+    const tplSize = tplStmt.get() as { count: number };
+    if (tplSize.count === 0) {
+      log('Sembrando plantillas del sistema...');
+      const insertTemplate = db.prepare('INSERT INTO Templates (id, name, content, isSystem, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)');
+      const now = Date.now();
+      
+      const dailyTpl = `> Standup iniciado a las {{time}}\n\n## 🔄 ¿Qué hice ayer?\n- [ ] \n\n## 🎯 ¿Qué voy a hacer hoy?\n| Tarea | Responsable | Estado |\n|:------|:------------|:-------|\n|  | @yo | ⬜ Pendiente |\n|  |  | ⬜ Pendiente |\n\n## 🚧 Blockers / Impedimentos\n- _Ninguno por ahora_\n\n## 📋 Action Items\n- [ ] \n- [ ] \n\n## 👥 Notas del equipo\n| Miembro | Update | Blocker |\n|:--------|:-------|:--------|\n|  |  |  |\n\n## 💡 Observaciones\n> _Notas generales de la daily..._\n\n---\n*Daily Standup — {{date}} — M3Flow*\n`;
+      const meetingTpl = `## 📃 Info\n| Campo | Valor |\n|:------|:------|\n| **Fecha** | {{date}} ({{dayName}}) |\n| **Hora** | {{time}} |\n| **Moderador** | @yo |\n| **Duración est.** | 30 min |\n\n## 👥 Asistentes\n- [ ] @nombre1\n- [ ] @nombre2\n- [ ] @nombre3\n\n## 📝 Agenda\n1. \n2. \n3. \n\n## 🗣️ Discusión\n> _Notas de la reunión..._\n\n## ✅ Decisiones Tomadas\n| # | Decisión | Responsable |\n|:--|:---------|:------------|\n| 1 |  |  |\n| 2 |  |  |\n\n## 📌 Action Items\n| Tarea | Responsable | Deadline | Estado |\n|:------|:------------|:---------|:-------|\n|  |  |  | ⬜ Pendiente |\n|  |  |  | ⬜ Pendiente |\n|  |  |  | ⬜ Pendiente |\n\n## 🗓️ Próxima Reunión\n- **Fecha:**\n- **Temas pendientes:**\n\n---\n*Minuta de Reunión — {{date}} {{time}} — M3Flow*\n`;
+
+      insertTemplate.run('tpl-daily', 'Daily Standup', dailyTpl, 1, now, now);
+      insertTemplate.run('tpl-meeting', 'Minuta de Reunión', meetingTpl, 1, now, now);
+    }
+  } catch (e) {
+    console.error('Error sembrando plantillas:', e);
+  }
+
   // Sembrar datos de prueba iniciales (Solo si la DB está vacía)
   const stmt = db.prepare('SELECT COUNT(*) as count FROM Notebooks');
   const size = stmt.get() as { count: number };
@@ -128,6 +156,7 @@ const initDB = (onProgress?: (msg: string) => void) => {
 const seedDatabase = () => {
   const insertNotebook = db.prepare('INSERT INTO Notebooks (id, name, parentId, createdAt) VALUES (?, ?, ?, ?)');
   const insertNote = db.prepare('INSERT INTO Notes (id, title, body, notebookId, status, isPinned, reminderAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const insertTemplate = db.prepare('INSERT INTO Templates (id, name, content, isSystem, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)');
   
   const now = Date.now();
   // Notebook base
@@ -226,12 +255,88 @@ $$ Φ = \\sum_{i=1}^{n} (I_{integrated} \\times \\Delta t) $$
 *Escrito con pasión por M3Flow - 2026*`;
 
   insertNote.run('note-1', 'IA: Conciencia y Voluntad', aiMasterMarkdown, 'nb-2', 'active', 1, null, now, now);
+
+  const dailyTemplate = `> Standup iniciado a las {{time}}
+
+## 🔄 ¿Qué hice ayer?
+- [ ] 
+
+## 🎯 ¿Qué voy a hacer hoy?
+| Tarea | Responsable | Estado |
+|:------|:------------|:-------|
+|  | @yo | ⬜ Pendiente |
+|  |  | ⬜ Pendiente |
+
+## 🚧 Blockers / Impedimentos
+- _Ninguno por ahora_
+
+## 📋 Action Items
+- [ ] 
+- [ ] 
+
+## 👥 Notas del equipo
+| Miembro | Update | Blocker |
+|:--------|:-------|:--------|
+|  |  |  |
+
+## 💡 Observaciones
+> _Notas generales de la daily..._
+
+---
+*Daily Standup — {{date}} — M3Flow*
+`;
+
+  const meetingTemplate = `## 📃 Info
+| Campo | Valor |
+|:------|:------|
+| **Fecha** | {{date}} ({{dayName}}) |
+| **Hora** | {{time}} |
+| **Moderador** | @yo |
+| **Duración est.** | 30 min |
+
+## 👥 Asistentes
+- [ ] @nombre1
+- [ ] @nombre2
+- [ ] @nombre3
+
+## 📝 Agenda
+1. 
+2. 
+3. 
+
+## 🗣️ Discusión
+> _Notas de la reunión..._
+
+## ✅ Decisiones Tomadas
+| # | Decisión | Responsable |
+|:--|:---------|:------------|
+| 1 |  |  |
+| 2 |  |  |
+
+## 📌 Action Items
+| Tarea | Responsable | Deadline | Estado |
+|:------|:------------|:---------|:-------|
+|  |  |  | ⬜ Pendiente |
+|  |  |  | ⬜ Pendiente |
+|  |  |  | ⬜ Pendiente |
+
+## 🗓️ Próxima Reunión
+- **Fecha:**
+- **Temas pendientes:**
+
+---
+*Minuta de Reunión — {{date}} {{time}} — M3Flow*
+`;
+
+  insertTemplate.run('tpl-daily', 'Daily Standup', dailyTemplate, 1, now, now);
+  insertTemplate.run('tpl-meeting', 'Minuta de Reunión', meetingTemplate, 1, now, now);
 };
 
 // -- Tipos Básicos --
 export interface Note { id: string; title: string; body: string; notebookId: string; status?: string; reminderAt?: number | null; }
 export interface Notebook { id: string; name: string; parentId: string | null; config?: string; }
 export interface Tag { id: string; name: string; color: string; }
+export interface Template { id: string; name: string; content: string; isSystem: number; createdAt: number; updatedAt: number; }
 
 // -- Exportar Métodos CRUD Básicos --
 
@@ -382,6 +487,18 @@ const databaseAPI = {
       WHERE l.target_id = ?
     `);
     return stmt.all(noteId);
+  },
+
+  // Templates
+  getTemplates: () => {
+    return db.prepare('SELECT * FROM Templates ORDER BY name ASC').all();
+  },
+  saveTemplate: (template: Template) => {
+    const stmt = db.prepare('INSERT OR REPLACE INTO Templates (id, name, content, isSystem, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)');
+    stmt.run(template.id, template.name, template.content, template.isSystem, template.createdAt, Date.now());
+  },
+  deleteTemplate: (id: string) => {
+    db.prepare('DELETE FROM Templates WHERE id = ?').run(id);
   }
 };
 

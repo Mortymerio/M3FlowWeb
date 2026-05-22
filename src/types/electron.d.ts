@@ -17,6 +17,9 @@ interface DbAPI {
   saveNotebook: (nb: { id: string; name: string; parentId: string | null; config?: string | null; createdAt?: number }) => Promise<void>;
   deleteNotebook: (id: string) => Promise<void>;
   moveNotebook: (notebookId: string, parentId: string | null) => Promise<void>;
+  getTemplates: () => Promise<any[]>;
+  saveTemplate: (template: any) => Promise<void>;
+  deleteTemplate: (id: string) => Promise<void>;
 
   // Tags
   getTags: () => Promise<any[]>;
@@ -32,6 +35,7 @@ interface DbAPI {
 
   // Export
   exportMarkdown: (title: string, content: string) => Promise<boolean>;
+  exportCSV: (title: string, content: string) => Promise<boolean>;
   exportPDF: (title: string) => Promise<boolean>;
   importWorkspace: () => Promise<boolean>;
 

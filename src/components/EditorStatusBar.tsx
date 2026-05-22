@@ -113,6 +113,17 @@ const EditorStatusBar = ({
           <Download size={10} /> MD
         </button>
         <button
+          className="flex items-center gap-1 text-[10px] font-semibold opacity-60 hover:opacity-100 transition-all hover:text-green-400 print:hidden"
+          title="Export as CSV"
+          onClick={async () => {
+            const lines = content.split('\n');
+            const title = (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled Note').replace(/^#+\s*/, '').trim().substring(0, 50);
+            await window.dbAPI.exportCSV(title, content);
+          }}
+        >
+          <Download size={10} /> CSV
+        </button>
+        <button
           className="flex items-center gap-1 text-[10px] font-semibold opacity-60 hover:opacity-100 transition-all hover:text-purple-400 print:hidden"
           title="Export as PDF"
           onClick={async () => {

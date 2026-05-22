@@ -36,6 +36,7 @@ interface AppState {
   notes: Note[];
   tags: Tag[];
   noteTags: NoteTag[];
+  templates: any[];
   isSidebarCollapsed: boolean;
   isNoteListCollapsed: boolean;
   toggleSidebar: () => void;
@@ -71,6 +72,9 @@ interface AppState {
   isNotebookContextModalOpen: boolean;
   contextNotebookId: string | null;
   setNotebookContextModal: (isOpen: boolean, notebookId?: string | null) => void;
+  
+  isTemplatesModalOpen: boolean;
+  setTemplatesModalOpen: (val: boolean) => void;
   
   // GitHub Sync State
   githubSyncToken: string;
@@ -164,6 +168,8 @@ interface AppState {
   deleteNotebook: (id: string) => Promise<void>;
   openDailyNote: () => Promise<void>;
   openMeetingNote: () => Promise<void>;
+  saveTemplate: (template: any) => Promise<void>;
+  deleteTemplate: (id: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -181,6 +187,7 @@ export const useStore = create<AppState>((set, get) => ({
   notes: [],
   tags: [],
   noteTags: [],
+  templates: [],
   activeNotebookId: null,
   activeNoteId: null,
   activeStatusId: null,
@@ -201,6 +208,9 @@ export const useStore = create<AppState>((set, get) => ({
   isNotebookContextModalOpen: false,
   contextNotebookId: null,
   setNotebookContextModal: (isOpen, notebookId = null) => set({ isNotebookContextModalOpen: isOpen, contextNotebookId: notebookId }),
+
+  isTemplatesModalOpen: false,
+  setTemplatesModalOpen: (val) => set({ isTemplatesModalOpen: val }),
 
   // GitHub Sync Defaults
   githubSyncToken: localStorage.getItem('githubSyncToken') || '',
@@ -400,11 +410,12 @@ export const useStore = create<AppState>((set, get) => ({
       const isFallback = await dbAPI.isFallbackMode();
       set({ isFallbackMode: isFallback });
 
-      let [notebooks, notes, tags, noteTags] = await Promise.all([
+      let [notebooks, notes, tags, noteTags, templates] = await Promise.all([
         dbAPI.getNotebooks(),
         dbAPI.getNotes(),
         dbAPI.getTags ? dbAPI.getTags() : [],
-        dbAPI.getNoteTags ? dbAPI.getNoteTags() : []
+        dbAPI.getNoteTags ? dbAPI.getNoteTags() : [],
+        dbAPI.getTemplates ? dbAPI.getTemplates() : []
       ]);
 
       // AUTO-INITIALIZE: Si no hay libretas, crear una 'General' para evitar el WelcomeScreen
@@ -419,6 +430,7 @@ export const useStore = create<AppState>((set, get) => ({
         notes, 
         tags, 
         noteTags,
+        templates,
         activeNotebookId: notebooks.length > 0 ? notebooks[0].id : null,
         activeNoteId: notes.length > 0 ? notes[0].id : null
       });
@@ -572,37 +584,22 @@ export const useStore = create<AppState>((set, get) => ({
     // 4. Create today's daily note with Scrum template
     const newId = 'note-' + crypto.randomUUID();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const template = `# ${dailyTitle}
-
-> Standup iniciado a las ${timeStr}
-
-## 🔄 ¿Qué hice ayer?
-- [ ] 
-
-## 🎯 ¿Qué voy a hacer hoy?
-| Tarea | Responsable | Estado |
-|:------|:------------|:-------|
-|  | @yo | ⬜ Pendiente |
-|  |  | ⬜ Pendiente |
-
-## 🚧 Blockers / Impedimentos
-- _Ninguno por ahora_
-
-## 📋 Action Items
-- [ ] 
-- [ ] 
-
-## 👥 Notas del equipo
-| Miembro | Update | Blocker |
-|:--------|:-------|:--------|
-|  |  |  |
-
-## 💡 Observaciones
-> _Notas generales de la daily..._
-
----
-*Daily Standup — ${dateStr} — M3Flow*
-`;
+    
+    // Get template from DB or fallback
+    const { templates } = get();
+    const tpl = templates.find(t => t.id === 'tpl-daily');
+    let template = tpl ? tpl.content : `# {{title}}\n\n> Standup iniciado a las {{time}}\n\n## 🔄 ¿Qué hice ayer?\n- [ ] \n\n## 🎯 ¿Qué voy a hacer hoy?\n| Tarea | Responsable | Estado |\n|:------|:------------|:-------|\n|  | @yo | ⬜ Pendiente |\n|  |  | ⬜ Pendiente |\n\n## 🚧 Blockers / Impedimentos\n- _Ninguno por ahora_\n\n## 📋 Action Items\n- [ ] \n- [ ] \n\n## 👥 Notas del equipo\n| Miembro | Update | Blocker |\n|:--------|:-------|:--------|\n|  |  |  |\n\n## 💡 Observaciones\n> _Notas generales de la daily..._\n\n---\n*Daily Standup — {{date}} — M3Flow*\n`;
+    
+    template = template
+      .replace(/\{\{title\}\}/g, dailyTitle)
+      .replace(/\{\{date\}\}/g, dateStr)
+      .replace(/\{\{time\}\}/g, timeStr)
+      .replace(/\{\{dayName\}\}/g, dayName);
+      
+    // Ensure title exists at the top
+    if (!template.includes(dailyTitle)) {
+      template = `# ${dailyTitle}\n\n${template}`;
+    }
 
     const newNote = {
       id: newId,
@@ -659,49 +656,22 @@ export const useStore = create<AppState>((set, get) => ({
 
     // 2. Always create a new meeting note (multiple meetings per day are normal)
     const newId = 'note-' + crypto.randomUUID();
-    const template = `# ${meetingTitle}
+    
+    // Get template from DB or fallback
+    const { templates } = get();
+    const tpl = templates.find(t => t.id === 'tpl-meeting');
+    let template = tpl ? tpl.content : `## 📃 Info\n| Campo | Valor |\n|:------|:------|\n| **Fecha** | {{date}} ({{dayName}}) |\n| **Hora** | {{time}} |\n| **Moderador** | @yo |\n| **Duración est.** | 30 min |\n\n## 👥 Asistentes\n- [ ] @nombre1\n- [ ] @nombre2\n- [ ] @nombre3\n\n## 📝 Agenda\n1. \n2. \n3. \n\n## 🗣️ Discusión\n> _Notas de la reunión..._\n\n## ✅ Decisiones Tomadas\n| # | Decisión | Responsable |\n|:--|:---------|:------------|\n| 1 |  |  |\n| 2 |  |  |\n\n## 📌 Action Items\n| Tarea | Responsable | Deadline | Estado |\n|:------|:------------|:---------|:-------|\n|  |  |  | ⬜ Pendiente |\n|  |  |  | ⬜ Pendiente |\n|  |  |  | ⬜ Pendiente |\n\n## 🗓️ Próxima Reunión\n- **Fecha:**\n- **Temas pendientes:**\n\n---\n*Minuta de Reunión — {{date}} {{time}} — M3Flow*\n`;
 
-## 📃 Info
-| Campo | Valor |
-|:------|:------|
-| **Fecha** | ${dateStr} (${dayName}) |
-| **Hora** | ${timeStr} |
-| **Moderador** | @yo |
-| **Duración est.** | 30 min |
+    template = template
+      .replace(/\{\{title\}\}/g, meetingTitle)
+      .replace(/\{\{date\}\}/g, dateStr)
+      .replace(/\{\{time\}\}/g, timeStr)
+      .replace(/\{\{dayName\}\}/g, dayName);
 
-## 👥 Asistentes
-- [ ] @nombre1
-- [ ] @nombre2
-- [ ] @nombre3
-
-## 📝 Agenda
-1. 
-2. 
-3. 
-
-## 🗣️ Discusión
-> _Notas de la reunión..._
-
-## ✅ Decisiones Tomadas
-| # | Decisión | Responsable |
-|:--|:---------|:------------|
-| 1 |  |  |
-| 2 |  |  |
-
-## 📌 Action Items
-| Tarea | Responsable | Deadline | Estado |
-|:------|:------------|:---------|:-------|
-|  |  |  | ⬜ Pendiente |
-|  |  |  | ⬜ Pendiente |
-|  |  |  | ⬜ Pendiente |
-
-## 🗓️ Próxima Reunión
-- **Fecha:**
-- **Temas pendientes:**
-
----
-*Minuta de Reunión — ${dateStr} ${timeStr} — M3Flow*
-`;
+    // Ensure title exists at the top
+    if (!template.includes(meetingTitle)) {
+      template = `# ${meetingTitle}\n\n${template}`;
+    }
 
     const newNote = {
       id: newId,
@@ -802,6 +772,23 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       if ((window as any).dbAPI.toggleNoteTag) await (window as any).dbAPI.toggleNoteTag(noteId, tagId);
     } catch(e) { console.error('[store] toggleNoteTag error:', e); }
+  },
+  saveTemplate: async (template) => {
+    try {
+      if ((window as any).dbAPI.saveTemplate) {
+        await (window as any).dbAPI.saveTemplate(template);
+        const templates = await (window as any).dbAPI.getTemplates();
+        set({ templates });
+      }
+    } catch(e) { console.error('[store] saveTemplate error:', e); }
+  },
+  deleteTemplate: async (id) => {
+    try {
+      if ((window as any).dbAPI.deleteTemplate) {
+        await (window as any).dbAPI.deleteTemplate(id);
+        set(state => ({ templates: state.templates.filter(t => t.id !== id) }));
+      }
+    } catch(e) { console.error('[store] deleteTemplate error:', e); }
   },
   createNotebook: async (name, parentId, config) => {
     const id = 'nb-' + crypto.randomUUID().slice(0, 8);

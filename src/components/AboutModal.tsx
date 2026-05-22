@@ -43,7 +43,7 @@ const AboutModal = () => {
           </div>
 
           <h2 className={`text-3xl font-black tracking-tight mb-1 ${themeName.includes('light') || themeName === 'cloud-nine' ? 'text-slate-900' : 'text-white'}`}>M3Flow</h2>
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-blue-400 mb-6 opacity-80">v0.1.0 Beta</p>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-blue-400 mb-6 opacity-80">v0.1.20 Beta</p>
 
           <div className="w-full space-y-4 mb-8">
             <p className="text-sm text-center leading-relaxed opacity-70">

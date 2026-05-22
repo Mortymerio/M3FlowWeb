@@ -30,7 +30,8 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 What's New (Update 0.1.19)](#-whats-new-this-version-update-0119)
+- [🔥 What's New (Update 0.1.20)](#-whats-new-this-version-update-0120)
+- [🔥 What's New (Update 0.1.19)](#-whats-new-in-previous-version-update-0119)
 - [🔥 What's New (Update 0.1.18)](#-whats-new-in-previous-version-update-0118)
 - [🔥 What's New (Update 0.1.17)](#-whats-new-in-previous-version-update-0117)
 - [🔥 What's New (Update 0.1.16)](#-whats-new-in-previous-version-update-0116)
@@ -46,7 +47,15 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.1.19)
+## 🔥 What's New this Version (Update 0.1.20)
+
+### 📝 Customizable Templates System & Smart Export
+- **Templates Manager:** A powerful new visual interface to manage your system templates. You can now modify the default Daily Standup and Meeting templates, or create an infinite amount of your own custom templates with magic variables like `{{date}}` and `{{time}}`.
+- **Smart CSV Export:** Added a new 1-click CSV export option in the status bar. The backend engine intelligently parses Markdown tables and converts them into native CSV grids with proper UTF-8 BOM, automatically preserving the tabular structure perfectly when imported into Excel.
+
+---
+
+## 🔥 What's New in Previous Version (Update 0.1.19)
 
 ### 📊 System Telemetry & Writing Metrics
 - **Performance Monitor:** Integrated a native lightweight IPC polling mechanism to fetch OS-level system stats. The editor status bar now displays real-time Application RAM usage and System CPU load (e.g., `APP: 45MB | SYS: 21%`). Polling is extremely gentle (5-second intervals via `os` and `process.memoryUsage()`) for zero impact on editor fluidity.

@@ -663,7 +663,7 @@ CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks.
           <div className="flex items-end gap-2">
             <textarea
               ref={inputRef}
-              className={`flex-1 rounded-xl px-3 py-2 text-xs outline-none resize-none border transition-colors focus:border-blue-500 ${inputBg}`}
+              className={`flex-1 rounded-xl px-3 py-2 text-xs outline-none resize-none border transition-colors focus:border-blue-500 pointer-events-auto select-text cursor-text ${inputBg}`}
               placeholder="Escribe algo o elige una acción arriba... (Enter para enviar)"
               rows={2}
               value={prompt}

@@ -8,6 +8,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import HelpOverlay from './components/HelpOverlay';
 import AboutModal from './components/AboutModal';
 import SyncSettingsModal from './components/SyncSettingsModal';
+import { TemplatesManagerModal } from './components/TemplatesManagerModal';
 import NotebookContextModal from './components/NotebookContextModal';
 import { useStore } from './store';
 import { THEMES } from './themes';
@@ -278,6 +279,7 @@ const App = () => {
       <CommandPalette />
       <SyncSettingsModal isOpen={isSyncModalOpen} onClose={() => setSyncModalOpen(false)} />
       <NotebookContextModal />
+      <TemplatesManagerModal />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon, CalendarDays, Users } from 'lucide-react';
+import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon, CalendarDays, Users, FileText } from 'lucide-react';
 
 const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -185,6 +185,9 @@ const Sidebar = () => {
               <div className={`absolute top-6 right-0 w-48 rounded-md shadow-2xl border overflow-hidden z-50 ${themeStyle.sidebarBg} ${themeStyle.sidebarBorder}`}>
                <div className={`px-3 py-2 text-[10px] uppercase font-bold border-b opacity-60 ${themeStyle.sidebarBorder}`}>General Settings</div>
                <div className="max-h-48 overflow-y-auto">
+                 <div onClick={() => { setSettingsOpen(false); useStore.getState().setTemplatesModalOpen(true); }} className={`px-3 py-2 cursor-pointer text-xs transition-colors ${themeStyle.sidebarHover} flex items-center gap-2`}>
+                   <FileText size={14} /> Templates
+                 </div>
                  <div onClick={() => { setSettingsOpen(false); useStore.getState().setShowAboutModal(true); }} className={`px-3 py-2 cursor-pointer text-xs transition-colors ${themeStyle.sidebarHover}`}>
                    About
                  </div>
