@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import fs from 'fs';
+import os from 'os';
 import { join, basename } from 'path';
 
 
@@ -49,6 +50,20 @@ ipcMain.handle('db:isFallbackMode', () => getFallbackStatus());
 
 ipcMain.handle('db:search', (_, query: string) => databaseAPI.searchNotes(query));
 ipcMain.handle('db:getBacklinks', (_, noteId: string) => databaseAPI.getBacklinks(noteId));
+
+ipcMain.handle('get-system-stats', () => {
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const usedMem = totalMem - freeMem;
+  const sysMemPct = Math.round((usedMem / totalMem) * 100);
+  
+  const processMem = process.memoryUsage().rss; // Resident Set Size (memory allocated for process)
+  
+  return {
+    sysMemPct,
+    processMemMb: Math.round(processMem / 1024 / 1024)
+  };
+});
 
 // GitHub Sync Handlers
 ipcMain.handle('github:testConnection', (_, token: string) => testConnection(token));

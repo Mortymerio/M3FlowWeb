@@ -45,6 +45,7 @@ try {
     closeApp: () => ipcRenderer.invoke('window:close'),
     minimizeApp: () => ipcRenderer.invoke('window:minimize'),
     maximizeApp: () => ipcRenderer.invoke('window:maximize'),
+    getSystemStats: () => ipcRenderer.invoke('get-system-stats'),
     isFallbackMode: () => ipcRenderer.invoke('db:isFallbackMode'),
     githubTestConnection: (token: string) => ipcRenderer.invoke('github:testConnection', token),
     githubSync: (opts: any) => ipcRenderer.invoke('github:sync', opts),

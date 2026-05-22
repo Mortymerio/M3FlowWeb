@@ -41,6 +41,7 @@ interface DbAPI {
   maximizeApp: () => Promise<void>;
 
   // System
+  getSystemStats: () => Promise<{ sysMemPct: number; processMemMb: number }>;
   isFallbackMode: () => Promise<boolean>;
 
   // GitHub Sync
