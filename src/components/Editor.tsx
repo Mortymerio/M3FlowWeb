@@ -17,6 +17,9 @@ import AiChatPanel from './AiChatPanel';
 import NotebookDashboard from './NotebookDashboard';
 import EditorToolbar from './EditorToolbar';
 import EditorStatusBar from './EditorStatusBar';
+import { GhostwriterContextMenu } from './GhostwriterContextMenu';
+import { ghostwriterField, setGhostwriterRange } from '../lib/ghostwriterExtension';
+import { executeAiPrompt } from '../services/aiService';
 import { animate } from 'animejs';
 
 const mdParser = new MarkdownIt({
@@ -92,10 +95,15 @@ const Editor = () => {
   const [totalLines, setTotalLines] = useState(0);
   const [vimMode, setVimMode] = useState('NORMAL');
 
-  // AI Panel State
+  // AI Panel & Ghostwriter State
   const isAiPanelOpen = useStore(state => state.isAiPanelOpen);
   const toggleAiPanel = useStore(state => state.toggleAiPanel);
   const contentAreaRef = useRef<HTMLDivElement>(null);
+
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, pos: number, selection: string } | null>(null);
+  const [ghostwriterReview, setGhostwriterReview] = useState<{ from: number, to: number, originalText?: string, prompt: string, type: 'expand' | 'directive' | 'continue' } | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [reviewCoords, setReviewCoords] = useState<{ top: number, left: number } | null>(null);
 
   const triggerAiAnimation = useCallback(() => {
     if (!contentAreaRef.current) return;
@@ -152,8 +160,34 @@ const Editor = () => {
     if (editorMode === 'emacs') exts.push(emacs());
     exts.push(markdown({ base: markdownLanguage, codeLanguages: languages }));
     exts.push(cursorTracker());
+    exts.push(ghostwriterField);
     return exts;
   }, [editorMode, cursorTracker]);
+
+  // Update Review Coords when ghostwriter range changes
+  const updateReviewCoords = useCallback(() => {
+    if (!ghostwriterReview || !editorRef.current?.view) return;
+    const view = editorRef.current.view;
+    // Get the current range from the StateField
+    const currentRange = view.state.field(ghostwriterField, false);
+    if (currentRange) {
+      const coords = view.coordsAtPos(currentRange.to);
+      if (coords) {
+        setReviewCoords({ top: coords.bottom + 5, left: Math.max(10, coords.left - 200) });
+      }
+    }
+  }, [ghostwriterReview]);
+
+  // Poll for coords updates while reviewing (since scrolling or typing moves it)
+  useEffect(() => {
+    if (ghostwriterReview) {
+      updateReviewCoords();
+      const interval = setInterval(updateReviewCoords, 50);
+      return () => clearInterval(interval);
+    } else {
+      setReviewCoords(null);
+    }
+  }, [ghostwriterReview, updateReviewCoords]);
 
   useEffect(() => {
     if (activeNoteId) {
@@ -329,6 +363,122 @@ const Editor = () => {
     view.focus();
   };
 
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    // Only in raw mode
+    if (editorType !== 'raw') return;
+    
+    // We must find the pos inside CodeMirror
+    const view = editorRef.current?.view;
+    if (!view) return;
+    
+    // Determine if clicked on codemirror
+    const target = e.target as HTMLElement;
+    if (!target.closest('.cm-editor')) return;
+
+    e.preventDefault();
+    const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }) || view.state.selection.main.head;
+    const { from, to } = view.state.selection.main;
+    const hasSelection = from !== to && pos >= from && pos <= to;
+    
+    setContextMenu({ x: e.clientX, y: e.clientY, pos, selection: hasSelection ? view.state.sliceDoc(from, to) : '' });
+  }, [editorType]);
+
+  const handleGhostwriterAction = useCallback(async (action: 'directive' | 'expand' | 'continue', prompt?: string, isTryAgain = false) => {
+    const view = editorRef.current?.view;
+    if (!view) return;
+    
+    setIsAiLoading(true);
+    let originalText = '';
+    let insertPos = contextMenu?.pos || view.state.selection.main.head;
+    let replaceFrom = insertPos;
+    let replaceTo = insertPos;
+
+    if (action === 'expand' && contextMenu?.selection) {
+      originalText = contextMenu.selection;
+      const { from, to } = view.state.selection.main;
+      replaceFrom = from;
+      replaceTo = to;
+    }
+
+    if (isTryAgain && ghostwriterReview) {
+      replaceFrom = ghostwriterReview.from;
+      replaceTo = ghostwriterReview.to;
+      originalText = ghostwriterReview.originalText || '';
+      insertPos = replaceFrom;
+    }
+
+    let notebookSystemPrompt = "";
+    if (activeNoteId) {
+      const activeNote = notes.find(n => n.id === activeNoteId);
+      const nb = notebooks.find(n => n.id === activeNote?.notebookId);
+      if (nb?.config) {
+        try { notebookSystemPrompt = JSON.parse(nb.config).systemPrompt || ""; } catch { }
+      }
+    }
+
+    try {
+      let instruction = '';
+      if (action === 'directive') instruction = prompt || '';
+      if (action === 'expand') instruction = 'Desarrolla, expande y mejora el siguiente texto en prosa detallada.';
+      if (action === 'continue') instruction = 'Continúa escribiendo la historia de forma natural, manteniendo el tono y estilo.';
+      
+      if (isTryAgain) {
+         instruction += ' (INTENTO ANTERIOR FALLIDO. Intenta un enfoque diferente, mejora la creatividad y cambia la perspectiva o el tono).';
+      }
+
+      let documentContext = view.state.doc.toString();
+      if (action === 'continue') {
+        documentContext = view.state.sliceDoc(0, replaceFrom);
+      } else if (action === 'expand') {
+        documentContext = `Contexto del documento:\n${documentContext}\n\nTexto a expandir/mejorar:\n${originalText}`;
+      }
+
+      const generatedText = await executeAiPrompt({
+        instruction,
+        documentContext,
+        notebookSystemPrompt
+      });
+
+      if (generatedText) {
+        view.dispatch({
+          changes: { from: replaceFrom, to: replaceTo, insert: generatedText },
+          effects: setGhostwriterRange.of({ from: replaceFrom, to: replaceFrom + generatedText.length })
+        });
+        setGhostwriterReview({
+          from: replaceFrom,
+          to: replaceFrom + generatedText.length,
+          originalText: isTryAgain ? originalText : (action === 'expand' ? originalText : undefined),
+          prompt: prompt || '',
+          type: action
+        });
+      }
+    } catch (e: any) {
+      console.error(e);
+      useStore.getState().setActiveAlert(`AI Error: ${e.message}`);
+    } finally {
+      setIsAiLoading(false);
+    }
+  }, [contextMenu, notes, notebooks, activeNoteId, ghostwriterReview]);
+
+  const handleGhostwriterDecision = useCallback((decision: 'keep' | 'discard' | 'try_again') => {
+     const view = editorRef.current?.view;
+     if (!view || !ghostwriterReview) return;
+
+     if (decision === 'keep') {
+       view.dispatch({ effects: setGhostwriterRange.of(null) });
+       setGhostwriterReview(null);
+     } else if (decision === 'discard') {
+       const { from, to, originalText } = ghostwriterReview;
+       view.dispatch({
+         changes: { from, to, insert: originalText || '' },
+         effects: setGhostwriterRange.of(null)
+       });
+       setGhostwriterReview(null);
+     } else if (decision === 'try_again') {
+       handleGhostwriterAction(ghostwriterReview.type, ghostwriterReview.prompt, true);
+     }
+  }, [ghostwriterReview, handleGhostwriterAction]);
+
   if (!activeNoteId) {
     return <NotebookDashboard />;
   }
@@ -414,9 +564,16 @@ const Editor = () => {
                     width: viewMode === 'split' ? `${splitRatio * 100}%` : '100%',
                     flexShrink: 0
                   }}
-                  className={`h-full overflow-y-auto ${themeStyle.editorBg} ${viewMode === 'split' ? `border-r ${themeStyle.editorBorder}` : ''} print:hidden`}
+                  className={`h-full overflow-y-auto ${themeStyle.editorBg} ${viewMode === 'split' ? `border-r ${themeStyle.editorBorder}` : ''} print:hidden relative`}
+                  onContextMenu={handleContextMenu}
                 >
-                  <div className="h-full" style={{ fontSize: `${editorFontSize}px` }}>
+                  <div className="h-full relative" style={{ fontSize: `${editorFontSize}px` }}>
+                    {isAiLoading && (
+                      <div className="absolute top-2 right-2 z-50 bg-blue-500 text-white p-1.5 rounded-full shadow-lg animate-pulse flex items-center gap-2 px-3">
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">AI Thinking...</span>
+                      </div>
+                    )}
                     <CodeMirror
                       ref={editorRef}
                       value={content}
@@ -520,6 +677,42 @@ const Editor = () => {
               triggerAiAnimation();
             }}
           />
+          
+          {contextMenu && (
+            <GhostwriterContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              hasSelection={!!contextMenu.selection}
+              onClose={() => setContextMenu(null)}
+              onAction={handleGhostwriterAction}
+            />
+          )}
+
+          {ghostwriterReview && reviewCoords && (
+            <div 
+              className="absolute z-[999] flex items-center gap-1.5 bg-green-500/10 backdrop-blur-md border border-green-500/30 p-1.5 rounded-lg shadow-2xl animate-in slide-in-from-bottom-2 fade-in"
+              style={{ top: reviewCoords.top, left: reviewCoords.left }}
+            >
+              <button 
+                onClick={() => handleGhostwriterDecision('keep')}
+                className="px-2 py-1 bg-green-500/20 hover:bg-green-500 text-green-200 hover:text-white rounded-md text-[10px] font-bold uppercase transition-colors"
+              >
+                Keep
+              </button>
+              <button 
+                onClick={() => handleGhostwriterDecision('try_again')}
+                className="px-2 py-1 bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white rounded-md text-[10px] font-bold uppercase transition-colors"
+              >
+                Try Again
+              </button>
+              <button 
+                onClick={() => handleGhostwriterDecision('discard')}
+                className="px-2 py-1 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white rounded-md text-[10px] font-bold uppercase transition-colors"
+              >
+                Discard
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

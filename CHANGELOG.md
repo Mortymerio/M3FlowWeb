@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-05-24
+
+### Added
+- **AI Ghostwriter Mode**: In-line AI integration directly into the CodeMirror editor.
+- **Context Menu Options**: Right-click to access "Directiva IA", "Desarrollar Selección", and "Continuar Escribiendo".
+- **Visual Review Mode**: Copilot-style green highlights with floating Keep/Try Again/Discard buttons.
+
+## [0.1.20] - 2026-05-22
+
+### Added
+- **Customizable Templates Manager**: Visual interface to manage and create custom note templates.
+- **Smart CSV Export**: 1-click export of Markdown tables to native CSV format.
+
 ## [0.1.17] - 2026-05-13
 
 ### Added

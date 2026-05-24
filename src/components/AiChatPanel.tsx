@@ -4,17 +4,12 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, Settings2, X, Send, Loader2, Cpu, ChevronDown, ChevronRight, Trash2, Brain } from 'lucide-react';
-import { useStore } from '../store';
+import { Send, Loader2, Trash2, X, Sparkles, Brain, Settings2, Cpu, ChevronDown, ChevronRight } from 'lucide-react';
 import { THEMES } from '../themes';
-import { initWebLlm, getEngine } from '../lib/webllm';
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'ai';
-  text: string;
-  timestamp: number;
-}
+import { useStore } from '../store';
+import type { ChatMessage } from '../store';
+import { getEngine } from '../lib/webllm';
+import { executeAiPrompt } from '../services/aiService';
 
 interface AiChatPanelProps {
   isOpen: boolean;
@@ -194,119 +189,13 @@ Respond based on the user's intent:
 Important: Always write documents in fluent, natural language. Use Markdown formatting (headers, lists, bold, tables, blockquotes) to make content clear and beautiful.
 CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks. Preserve every mermaid diagram EXACTLY as written in the original document, character by character. Only transform the surrounding prose and text content.`;
 
-    let resultText = '';
-
     try {
-      if (activeAiProvider === 'webllm') {
-        const engine = getEngine();
-        if (!engine) throw new Error("WebLLM Engine is not loaded.");
-        const reply = await engine.chat.completions.create({
-          messages: [
-            { role: "system", content: baseSystemMessage },
-            { role: "user", content: `Instruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}\n\nOutput only the resulting markdown.` }
-          ]
-        });
-        resultText = reply.choices[0]?.message.content || '';
-      } else if (activeAiProvider === 'ollama') {
-        const res = await fetch(`${ollamaUrl}/api/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: ollamaModel || "llama3",
-            prompt: `Instruction: ${userMsg.text}\n\nNote Document:\n${content}${vaultContext}\n\nOutput only the resulting markdown content without conversational fill.`,
-            stream: false
-          })
-        });
-        const data = await res.json();
-        resultText = data.response;
-      } else if (activeAiProvider === 'openai' || activeAiProvider === 'lmstudio' || activeAiProvider === 'github' || activeAiProvider === 'azure') {
-        const isLocal = activeAiProvider === 'lmstudio';
-        const isGithub = activeAiProvider === 'github';
-        const isAzure = activeAiProvider === 'azure';
-
-        let url = 'https://api.openai.com/v1/chat/completions';
-        if (isLocal) url = `${lmStudioUrl}/v1/chat/completions`;
-        if (isGithub) url = 'https://models.inference.ai.azure.com/chat/completions';
-        if (isAzure) url = azureUrl;
-
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (isAzure) {
-          headers['api-key'] = azureKey;
-        } else {
-          let token = openAiKey;
-          if (isLocal) token = 'lm-studio';
-          if (isGithub) token = githubToken;
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const res = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            model: isLocal ? "local-model" : "gpt-4o",
-            messages: [
-              { role: "system", content: baseSystemMessage },
-              { role: "user", content: `Instruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}` }
-            ]
-          })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message || 'API Error');
-        resultText = data.choices?.[0]?.message?.content;
-      } else if (activeAiProvider === 'gemini') {
-        const isBeta = geminiApiVersion === 'v1beta';
-        const payload: any = {
-          contents: [{
-            parts: [{
-              text: isBeta
-                ? `Instruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}`
-                : `System: ${baseSystemMessage}\n\nInstruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}`
-            }]
-          }]
-        };
-
-        if (isBeta) {
-          payload.system_instruction = { parts: [{ text: baseSystemMessage }] };
-        }
-
-        const res = await fetch(`https://generativelanguage.googleapis.com/${geminiApiVersion || 'v1'}/models/${geminiModel || 'gemini-3.1-pro'}:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message || 'Gemini API Error');
-
-        if (data.candidates && data.candidates.length > 0) {
-          const cand = data.candidates[0];
-          if (cand.content?.parts?.[0]?.text) {
-            resultText = cand.content.parts[0].text;
-          } else if (cand.finishReason && cand.finishReason !== 'STOP') {
-            throw new Error(`Gemini blocked response. Reason: ${cand.finishReason}`);
-          }
-        }
-      } else if (activeAiProvider === 'claude') {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': claudeKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 4096,
-            system: baseSystemMessage,
-            messages: [
-              { role: 'user', content: `Instruction: ${userMsg.text}\n\nDocument:\n${content}${vaultContext}` }
-            ]
-          })
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message || 'Claude API Error');
-        resultText = data.content?.[0]?.text;
-      }
+      const resultText = await executeAiPrompt({
+        instruction: userMsg.text,
+        documentContext: content,
+        notebookSystemPrompt,
+        vaultContext,
+      });
 
       if (resultText) {
         if (resultText.trim().startsWith('REPLY:') && resultText.includes('---DOC---')) {
@@ -659,10 +548,15 @@ CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks.
         {activeAiProvider === 'webllm' && !isWebLlmLoaded ? (
           <p className="text-[10px] opacity-40 text-center">Open config above to download the AI model first.</p>
         ) : (
-          <div className="flex items-end gap-2">
+          <div 
+            className="flex items-end gap-2 no-drag" 
+            style={{ WebkitAppRegion: 'no-drag', cursor: 'text' } as any}
+            onClick={() => inputRef.current?.focus()}
+          >
             <textarea
               ref={inputRef}
               className={`flex-1 rounded-xl px-3 py-2 text-xs outline-none resize-none border transition-colors focus:border-blue-500 pointer-events-auto select-text cursor-text ${inputBg}`}
+              style={{ WebkitAppRegion: 'no-drag', userSelect: 'auto' } as any}
               placeholder="Escribe algo o elige una acción arriba... (Enter para enviar)"
               rows={2}
               value={prompt}
@@ -675,9 +569,10 @@ CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks.
               }}
             />
             <button
-              onClick={handleSend}
+              onClick={(e) => { e.stopPropagation(); handleSend(); }}
               disabled={isLoading || !prompt.trim()}
               className="p-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg"
+              style={{ WebkitAppRegion: 'no-drag' } as any}
             >
               {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             </button>

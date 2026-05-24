@@ -30,11 +30,11 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 What's New (Update 0.1.20)](#-whats-new-this-version-update-0120)
+- [🔥 What's New (Update 0.2.0)](#-whats-new-this-version-update-020)
+- [🔥 What's New (Update 0.1.20)](#-whats-new-in-previous-version-update-0120)
 - [🔥 What's New (Update 0.1.19)](#-whats-new-in-previous-version-update-0119)
 - [🔥 What's New (Update 0.1.18)](#-whats-new-in-previous-version-update-0118)
 - [🔥 What's New (Update 0.1.17)](#-whats-new-in-previous-version-update-0117)
-- [🔥 What's New (Update 0.1.16)](#-whats-new-in-previous-version-update-0116)
 - [🔥 What's New (Update 0.1.15)](#-whats-new-in-previous-version-update-0115)
 - [✨ Core Features](#-core-features)
 - [🛡️ Architecture and Fallbacks](#-resilient-architecture-and-fallbacks)
@@ -47,7 +47,16 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.1.20)
+## 🔥 What's New this Version (Update 0.2.0)
+
+### 🪄 AI Ghostwriter Mode (Copilot for Writers)
+- **Inline AI Directives:** Right-click anywhere in the editor to open a floating prompt. Give the AI instructions and watch it write directly into your document.
+- **Visual Review Mode:** Generated text appears seamlessly with a green highlight. Review it using floating "Keep", "Try Again" or "Discard" buttons without ruining your document flow.
+- **Smart Expansion & Autocomplete:** Select bullet points and click "Expand Selection" to turn them into prose, or click "Continue Writing" to let the AI analyze the entire note and write the next paragraphs matching your exact tone and style.
+
+---
+
+## 🔥 What's New in Previous Version (Update 0.1.20)
 
 ### 📝 Customizable Templates System & Smart Export
 - **Templates Manager:** A powerful new visual interface to manage your system templates. You can now modify the default Daily Standup and Meeting templates, or create an infinite amount of your own custom templates with magic variables like `{{date}}` and `{{time}}`.
