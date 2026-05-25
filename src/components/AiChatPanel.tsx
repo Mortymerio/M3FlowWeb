@@ -7,9 +7,15 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Loader2, Trash2, X, Sparkles, Brain, Settings2, Cpu, ChevronDown, ChevronRight } from 'lucide-react';
 import { THEMES } from '../themes';
 import { useStore } from '../store';
-import type { ChatMessage } from '../store';
-import { getEngine } from '../lib/webllm';
+import { getEngine, initWebLlm } from '../lib/webllm';
 import { executeAiPrompt } from '../services/aiService';
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'ai';
+  text: string;
+  timestamp: number;
+}
 
 interface AiChatPanelProps {
   isOpen: boolean;

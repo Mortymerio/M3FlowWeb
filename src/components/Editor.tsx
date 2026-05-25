@@ -51,9 +51,60 @@ mdParser.renderer.rules.fence = (tokens: any[], idx: number, options: any, _env:
 };
 
 const MarkdownPreview = React.memo(({ content, className }: { content: string, className: string }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    
+    const renderMermaid = async () => {
+      if (!containerRef.current) return;
+      const elements = containerRef.current.querySelectorAll('.mermaid');
+      if (elements.length === 0) return;
+
+      for (let i = 0; i < elements.length; i++) {
+        if (isCancelled) break;
+        const el = elements[i];
+        
+        // Skip if already processed or has error
+        if (el.querySelector('svg') || el.querySelector('.mermaid-error')) continue;
+        
+        const src = el.getAttribute('data-mermaid-src');
+        if (src) {
+          try {
+            const uniqueId = `mermaid-${Date.now()}-${i}`;
+            const renderPromise = mermaid.render(uniqueId, src);
+            const timeoutPromise = new Promise<{svg: string}>((_, reject) => 
+              setTimeout(() => reject(new Error('Mermaid timeout')), 2000)
+            );
+            
+            const { svg } = await Promise.race([renderPromise, timeoutPromise]);
+            
+            if (!isCancelled) {
+              el.innerHTML = svg;
+              el.setAttribute('data-processed', 'true');
+            }
+          } catch (err) {
+            if (!isCancelled) {
+              console.error('Mermaid render error:', err);
+              el.innerHTML = `<div class="mermaid-error" style="color:red; font-size:12px; margin-top:10px; padding:10px; border:1px solid red; border-radius:5px;">Error de Sintaxis en Mermaid. Revisa el código.</div>`;
+            }
+          }
+        }
+      }
+    };
+
+    const timeout = setTimeout(renderMermaid, 500);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [content]);
+
   return (
     <div
       id="preview-area"
+      ref={containerRef}
       className={className}
       dangerouslySetInnerHTML={{ __html: mdParser.render(content) }}
     />
@@ -173,7 +224,9 @@ const Editor = () => {
     if (currentRange) {
       const coords = view.coordsAtPos(currentRange.to);
       if (coords) {
-        setReviewCoords({ top: coords.bottom + 5, left: Math.max(10, coords.left - 200) });
+        const contentRect = view.contentDOM.getBoundingClientRect();
+        // Place it directly below the last word, but glued to the left margin of the text area
+        setReviewCoords({ top: coords.bottom + 10, left: contentRect.left });
       }
     }
   }, [ghostwriterReview]);
@@ -215,60 +268,7 @@ const Editor = () => {
     });
   }, [themeStyle.codeTheme]);
 
-  // MERMAID RENDERER: Guardián del DOM (MutationObserver)
-  useEffect(() => {
-    if (viewMode === 'edit' || editorType !== 'raw') return;
 
-    let timeout: any;
-
-    const renderMermaid = async () => {
-      try {
-        const previewArea = document.getElementById('preview-area');
-        if (!previewArea) return;
-
-        const elements = previewArea.querySelectorAll('.mermaid');
-
-        for (let i = 0; i < elements.length; i++) {
-          const el = elements[i];
-          // Si el gráfico ya está dibujado, lo ignoramos para evitar loops
-          if (el.querySelector('svg')) continue;
-
-          const src = el.getAttribute('data-mermaid-src');
-          if (src) {
-            try {
-              const uniqueId = `mermaid-${Date.now()}-${i}`;
-              const { svg } = await mermaid.render(uniqueId, src);
-              el.innerHTML = svg;
-              el.setAttribute('data-processed', 'true');
-            } catch (err) {
-              console.error('Error renderizando diagrama individual:', err);
-              el.innerHTML = `<div style="color:red; font-size:12px;">Error en Mermaid: revisa la sintaxis.</div>`;
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Mermaid error global:', e);
-      }
-    };
-
-    // Vigilamos si React sobrescribe el DOM con texto plano
-    const observer = new MutationObserver(() => {
-      clearTimeout(timeout);
-      timeout = setTimeout(renderMermaid, 150);
-    });
-
-    const previewArea = document.getElementById('preview-area');
-    if (previewArea) {
-      observer.observe(previewArea, { childList: true, subtree: true, characterData: true });
-      // Primera ejecución al montar
-      renderMermaid();
-    }
-
-    return () => {
-      observer.disconnect();
-      clearTimeout(timeout);
-    };
-  }, [viewMode, editorType]);
 
   // Reset Mermaid cache cuando el usuario cambia de modo de editor
   useEffect(() => {
@@ -393,7 +393,7 @@ const Editor = () => {
     let replaceFrom = insertPos;
     let replaceTo = insertPos;
 
-    if (action === 'expand' && contextMenu?.selection) {
+    if ((action === 'expand' || action === 'directive') && contextMenu?.selection) {
       originalText = contextMenu.selection;
       const { from, to } = view.state.selection.main;
       replaceFrom = from;
@@ -426,11 +426,14 @@ const Editor = () => {
          instruction += ' (INTENTO ANTERIOR FALLIDO. Intenta un enfoque diferente, mejora la creatividad y cambia la perspectiva o el tono).';
       }
 
+      // STRICT RULE to prevent the AI from echoing the whole document
+      instruction += '\n\nREGLA CRÍTICA: Escribe SOLAMENTE el texto nuevo o expandido. NO repitas el contexto ni agregues explicaciones. Si recibes un texto a procesar, devuelve ÚNICAMENTE la versión procesada que reemplazará a dicho texto.';
+
       let documentContext = view.state.doc.toString();
       if (action === 'continue') {
         documentContext = view.state.sliceDoc(0, replaceFrom);
-      } else if (action === 'expand') {
-        documentContext = `Contexto del documento:\n${documentContext}\n\nTexto a expandir/mejorar:\n${originalText}`;
+      } else if (action === 'expand' || (action === 'directive' && originalText)) {
+        documentContext = `Texto a procesar:\n${originalText}`;
       }
 
       const generatedText = await executeAiPrompt({
@@ -454,7 +457,7 @@ const Editor = () => {
       }
     } catch (e: any) {
       console.error(e);
-      useStore.getState().setActiveAlert(`AI Error: ${e.message}`);
+      alert(`AI Error: ${e.message}`);
     } finally {
       setIsAiLoading(false);
     }
@@ -690,7 +693,7 @@ const Editor = () => {
 
           {ghostwriterReview && reviewCoords && (
             <div 
-              className="absolute z-[999] flex items-center gap-1.5 bg-green-500/10 backdrop-blur-md border border-green-500/30 p-1.5 rounded-lg shadow-2xl animate-in slide-in-from-bottom-2 fade-in"
+              className="fixed z-[999] flex items-center gap-1.5 bg-green-500/10 backdrop-blur-md border border-green-500/30 p-1.5 rounded-lg shadow-2xl animate-in slide-in-from-bottom-2 fade-in"
               style={{ top: reviewCoords.top, left: reviewCoords.left }}
             >
               <button 

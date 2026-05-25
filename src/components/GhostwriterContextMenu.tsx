@@ -40,10 +40,16 @@ export const GhostwriterContextMenu: React.FC<GhostwriterContextMenuProps> = ({ 
     }
   }, [showPromptInput]);
 
+  // Prevent menu from flowing off the bottom of the screen
+  const estimatedHeight = showPromptInput ? 100 : 160;
+  const safeY = y + estimatedHeight > window.innerHeight ? Math.max(10, window.innerHeight - estimatedHeight - 10) : y;
+  // Prevent menu from flowing off the right of the screen
+  const safeX = x + 256 > window.innerWidth ? Math.max(10, window.innerWidth - 266) : x;
+
   return (
     <div 
       className="fixed z-[999999] bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden w-64 animate-in fade-in zoom-in-95 duration-100"
-      style={{ left: x, top: y }}
+      style={{ left: safeX, top: safeY }}
       onClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.preventDefault()}
     >
