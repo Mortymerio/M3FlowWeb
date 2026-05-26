@@ -6,6 +6,8 @@ import { join, basename } from 'path';
 
 
 
+
+
 // Configuración de rutas robusta para CommonJS
 process.env.DIST_ELECTRON = __dirname;
 // En producción, 'dist' suele estar al mismo nivel que 'dist-electron'
@@ -329,6 +331,8 @@ async function initializeApp() {
     }, 800); // Pequeño buffer para una transición suave
   });
 }
+
+
 
 app.whenReady().then(initializeApp)
 

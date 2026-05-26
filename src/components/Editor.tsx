@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-import { EditorView } from '@codemirror/view';
-import MarkdownIt from 'markdown-it';
-import mermaid from 'mermaid';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/atom-one-dark.css'; // Global fallback highlight
-import { vim, getCM } from '@replit/codemirror-vim';
+
+
+import { vim } from '@replit/codemirror-vim';
 import { emacs } from '@replit/codemirror-emacs';
 import { languages } from '@codemirror/language-data';
 import { useStore } from '../store';
@@ -18,104 +15,21 @@ import NotebookDashboard from './NotebookDashboard';
 import EditorToolbar from './EditorToolbar';
 import EditorStatusBar from './EditorStatusBar';
 import { GhostwriterContextMenu } from './GhostwriterContextMenu';
-import { ghostwriterField, setGhostwriterRange } from '../lib/ghostwriterExtension';
-import { executeAiPrompt } from '../services/aiService';
+import { ghostwriterField } from '../lib/ghostwriterExtension';
 import { animate } from 'animejs';
+import { MarkdownPreview } from './MarkdownPreview';
+import { useNoteManager } from '../hooks/useNoteManager';
+import { createCursorTracker } from '../lib/cm-extensions/cursorTracker';
+import { useGhostwriterActions } from '../hooks/useGhostwriterActions';
+import { ghostwriterCoordsTracker } from '../lib/cm-extensions/ghostwriterTracker';
 
-const mdParser = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-  highlight: function (str, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return hljs.highlight(str, { language: lang }).value;
-      } catch (__) { }
-    }
-    return '';
-  }
-});
-
-mdParser.renderer.rules.fence = (tokens: any[], idx: number, options: any, _env: any, _slf: any) => {
-  const token = tokens[idx];
-  const code = token.content.trim();
-  if (token.info === 'mermaid') {
-    const escapedCode = mdParser.utils.escapeHtml(code);
-    return `<div class="mermaid" data-mermaid-src="${escapedCode}">${escapedCode}</div>`;
-  }
-  if (token.info) {
-    const highlightedText = options.highlight?.(code, token.info, '') || mdParser.utils.escapeHtml(code);
-    return `<pre><code class="hljs language-${token.info}">${highlightedText}</code></pre>`;
-  }
-  return `<pre><code class="hljs">${mdParser.utils.escapeHtml(code)}</code></pre>`;
-};
-
-const MarkdownPreview = React.memo(({ content, className }: { content: string, className: string }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let isCancelled = false;
-    
-    const renderMermaid = async () => {
-      if (!containerRef.current) return;
-      const elements = containerRef.current.querySelectorAll('.mermaid');
-      if (elements.length === 0) return;
-
-      for (let i = 0; i < elements.length; i++) {
-        if (isCancelled) break;
-        const el = elements[i];
-        
-        // Skip if already processed or has error
-        if (el.querySelector('svg') || el.querySelector('.mermaid-error')) continue;
-        
-        const src = el.getAttribute('data-mermaid-src');
-        if (src) {
-          try {
-            const uniqueId = `mermaid-${Date.now()}-${i}`;
-            const renderPromise = mermaid.render(uniqueId, src);
-            const timeoutPromise = new Promise<{svg: string}>((_, reject) => 
-              setTimeout(() => reject(new Error('Mermaid timeout')), 2000)
-            );
-            
-            const { svg } = await Promise.race([renderPromise, timeoutPromise]);
-            
-            if (!isCancelled) {
-              el.innerHTML = svg;
-              el.setAttribute('data-processed', 'true');
-            }
-          } catch (err) {
-            if (!isCancelled) {
-              console.error('Mermaid render error:', err);
-              el.innerHTML = `<div class="mermaid-error" style="color:red; font-size:12px; margin-top:10px; padding:10px; border:1px solid red; border-radius:5px;">Error de Sintaxis en Mermaid. Revisa el código.</div>`;
-            }
-          }
-        }
-      }
-    };
-
-    const timeout = setTimeout(renderMermaid, 500);
-
-    return () => {
-      isCancelled = true;
-      clearTimeout(timeout);
-    };
-  }, [content]);
-
-  return (
-    <div
-      id="preview-area"
-      ref={containerRef}
-      className={className}
-      dangerouslySetInnerHTML={{ __html: mdParser.render(content) }}
-    />
-  );
-});
+// Markdown components extracted to src/components/MarkdownPreview.tsx and src/lib/MarkdownEngine.ts
 
 const Editor = () => {
   const activeNoteId = useStore(state => state.activeNoteId);
   const notes = useStore(state => state.notes);
   const notebooks = useStore(state => state.notebooks);
-  const saveNote = useStore(state => state.saveNote);
+
   const editorMode = useStore(state => state.editorMode);
 
   const isSidebarCollapsed = useStore(state => state.isSidebarCollapsed);
@@ -126,17 +40,13 @@ const Editor = () => {
   const editorFontSize = useStore(state => state.editorFontSize);
   const editorType = useStore(state => state.editorType);
   const setEditorType = useStore(state => state.setEditorType);
-  const loadBacklinks = useStore(state => state.loadBacklinks);
   const currentBacklinks = useStore(state => state.currentBacklinks);
   const setActiveNote = useStore(state => state.setActiveNote);
   const setActiveNotebook = useStore(state => state.setActiveNotebook);
 
-  const [content, setContent] = useState('');
-  const [viewMode, setViewMode] = useState<'split' | 'edit' | 'preview'>('split');
-  const [splitRatio, setSplitRatio] = useState(0.5);
-  const isResizingSplit = useRef(false);
+  const { content, setContent, viewMode, setViewMode, splitRatio, setSplitRatio, isResizingSplit } = useNoteManager();
+  
   const editorRef = useRef<any>(null);
-  const lastLoadedNoteId = useRef<string | null>(null);
   const lastRenderedContent = useRef<string>('');
   const lastRenderedViewMode = useRef<string>('');
 
@@ -151,10 +61,16 @@ const Editor = () => {
   const toggleAiPanel = useStore(state => state.toggleAiPanel);
   const contentAreaRef = useRef<HTMLDivElement>(null);
 
-  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, pos: number, selection: string } | null>(null);
-  const [ghostwriterReview, setGhostwriterReview] = useState<{ from: number, to: number, originalText?: string, prompt: string, type: 'expand' | 'directive' | 'continue' } | null>(null);
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [reviewCoords, setReviewCoords] = useState<{ top: number, left: number } | null>(null);
+  const {
+    contextMenu,
+    setContextMenu,
+    ghostwriterReview,
+    isAiLoading,
+    reviewCoords,
+    handleContextMenu,
+    handleGhostwriterAction,
+    handleGhostwriterDecision
+  } = useGhostwriterActions(editorRef, editorType, activeNoteId, notes, notebooks);
 
   const triggerAiAnimation = useCallback(() => {
     if (!contentAreaRef.current) return;
@@ -177,32 +93,7 @@ const Editor = () => {
   const myHistory = activeNoteId ? (noteHistory[activeNoteId] || []) : [];
 
 
-  // Cursor position tracking extension
-  const cursorTracker = useCallback(() => EditorView.updateListener.of((update) => {
-    if (update.selectionSet || update.docChanged) {
-      const pos = update.state.selection.main.head;
-      const line = update.state.doc.lineAt(pos);
-      setCursorLine(line.number);
-      setCursorCol(pos - line.from + 1);
-      setTotalLines(update.state.doc.lines);
-
-      // Track vim mode
-      if (editorMode === 'vim') {
-        try {
-          const cm = getCM(update.view);
-          if (cm?.state?.vim) {
-            const vs = cm.state.vim;
-            if (vs.insertMode) setVimMode('INSERT');
-            else if (vs.visualMode) {
-              if (vs.visualLine) setVimMode('V-LINE');
-              else if (vs.visualBlock) setVimMode('V-BLOCK');
-              else setVimMode('VISUAL');
-            } else setVimMode('NORMAL');
-          }
-        } catch { /* getCM may fail during init */ }
-      }
-    }
-  }), [editorMode]);
+  // Cursor position tracking extension extracted to src/lib/cm-extensions/cursorTracker.ts
 
   // Build extensions: vim/emacs MUST come before markdown for keymap precedence
   const editorExtensions = useMemo(() => {
@@ -210,63 +101,15 @@ const Editor = () => {
     if (editorMode === 'vim') exts.push(vim());
     if (editorMode === 'emacs') exts.push(emacs());
     exts.push(markdown({ base: markdownLanguage, codeLanguages: languages }));
-    exts.push(cursorTracker());
+    exts.push(createCursorTracker({ editorMode, setCursorLine, setCursorCol, setTotalLines, setVimMode }));
     exts.push(ghostwriterField);
+    exts.push(ghostwriterCoordsTracker);
     return exts;
-  }, [editorMode, cursorTracker]);
+  }, [editorMode]);
 
-  // Update Review Coords when ghostwriter range changes
-  const updateReviewCoords = useCallback(() => {
-    if (!ghostwriterReview || !editorRef.current?.view) return;
-    const view = editorRef.current.view;
-    // Get the current range from the StateField
-    const currentRange = view.state.field(ghostwriterField, false);
-    if (currentRange) {
-      const coords = view.coordsAtPos(currentRange.to);
-      if (coords) {
-        const contentRect = view.contentDOM.getBoundingClientRect();
-        // Place it directly below the last word, but glued to the left margin of the text area
-        setReviewCoords({ top: coords.bottom + 10, left: contentRect.left });
-      }
-    }
-  }, [ghostwriterReview]);
+  // Note loading logic extracted to useNoteManager
 
-  // Poll for coords updates while reviewing (since scrolling or typing moves it)
-  useEffect(() => {
-    if (ghostwriterReview) {
-      updateReviewCoords();
-      const interval = setInterval(updateReviewCoords, 50);
-      return () => clearInterval(interval);
-    } else {
-      setReviewCoords(null);
-    }
-  }, [ghostwriterReview, updateReviewCoords]);
 
-  useEffect(() => {
-    if (activeNoteId) {
-      // Solo cargar si cambió el ID o si aún no hemos cargado nada para este ID
-      if (activeNoteId !== lastLoadedNoteId.current) {
-        const activeNote = notes.find(n => n.id === activeNoteId);
-        if (activeNote) {
-          setContent(activeNote.body);
-          lastLoadedNoteId.current = activeNoteId;
-          loadBacklinks(activeNoteId);
-        }
-      }
-    } else {
-      setContent('');
-      lastLoadedNoteId.current = null;
-    }
-  }, [activeNoteId, notes, loadBacklinks]);
-
-  useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: themeStyle.codeTheme === 'dark' ? 'dark' : 'default',
-      securityLevel: 'sandbox',
-      fontFamily: 'inherit'
-    });
-  }, [themeStyle.codeTheme]);
 
 
 
@@ -303,26 +146,7 @@ const Editor = () => {
     };
   }, []);
 
-  // Auto-save: derive activeNoteBody to avoid reacting to changes in OTHER notes
-  const activeNoteBody = useMemo(() => {
-    if (!activeNoteId) return undefined;
-    return notes.find(n => n.id === activeNoteId)?.body;
-  }, [notes, activeNoteId]);
-
-  useEffect(() => {
-    // IMPORTANTE: Solo guardar si el ID activo coincide con lo que cargamos en el editor.
-    if (!activeNoteId || activeNoteId !== lastLoadedNoteId.current) return;
-
-    if (activeNoteBody === content) return;
-
-    const timeout = setTimeout(() => {
-      const lines = content.split('\n');
-      const titleLine = lines.find(line => line.trim().startsWith('#')) || lines[0] || 'Untitled Note';
-      const title = titleLine.replace(/^#+\s*/, '').trim().substring(0, 50);
-      saveNote(activeNoteId, title, content);
-    }, 1000);
-    return () => clearTimeout(timeout);
-  }, [content, activeNoteId, saveNote, activeNoteBody]);
+  // Auto-save logic extracted to useNoteManager
 
   const applyFormat = (type: string) => {
     if (!editorRef.current) return;
@@ -363,124 +187,7 @@ const Editor = () => {
     view.focus();
   };
 
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    // Only in raw mode
-    if (editorType !== 'raw') return;
-    
-    // We must find the pos inside CodeMirror
-    const view = editorRef.current?.view;
-    if (!view) return;
-    
-    // Determine if clicked on codemirror
-    const target = e.target as HTMLElement;
-    if (!target.closest('.cm-editor')) return;
-
-    e.preventDefault();
-    const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }) || view.state.selection.main.head;
-    const { from, to } = view.state.selection.main;
-    const hasSelection = from !== to && pos >= from && pos <= to;
-    
-    setContextMenu({ x: e.clientX, y: e.clientY, pos, selection: hasSelection ? view.state.sliceDoc(from, to) : '' });
-  }, [editorType]);
-
-  const handleGhostwriterAction = useCallback(async (action: 'directive' | 'expand' | 'continue', prompt?: string, isTryAgain = false) => {
-    const view = editorRef.current?.view;
-    if (!view) return;
-    
-    setIsAiLoading(true);
-    let originalText = '';
-    let insertPos = contextMenu?.pos || view.state.selection.main.head;
-    let replaceFrom = insertPos;
-    let replaceTo = insertPos;
-
-    if ((action === 'expand' || action === 'directive') && contextMenu?.selection) {
-      originalText = contextMenu.selection;
-      const { from, to } = view.state.selection.main;
-      replaceFrom = from;
-      replaceTo = to;
-    }
-
-    if (isTryAgain && ghostwriterReview) {
-      replaceFrom = ghostwriterReview.from;
-      replaceTo = ghostwriterReview.to;
-      originalText = ghostwriterReview.originalText || '';
-      insertPos = replaceFrom;
-    }
-
-    let notebookSystemPrompt = "";
-    if (activeNoteId) {
-      const activeNote = notes.find(n => n.id === activeNoteId);
-      const nb = notebooks.find(n => n.id === activeNote?.notebookId);
-      if (nb?.config) {
-        try { notebookSystemPrompt = JSON.parse(nb.config).systemPrompt || ""; } catch { }
-      }
-    }
-
-    try {
-      let instruction = '';
-      if (action === 'directive') instruction = prompt || '';
-      if (action === 'expand') instruction = 'Desarrolla, expande y mejora el siguiente texto en prosa detallada.';
-      if (action === 'continue') instruction = 'Continúa escribiendo la historia de forma natural, manteniendo el tono y estilo.';
-      
-      if (isTryAgain) {
-         instruction += ' (INTENTO ANTERIOR FALLIDO. Intenta un enfoque diferente, mejora la creatividad y cambia la perspectiva o el tono).';
-      }
-
-      // STRICT RULE to prevent the AI from echoing the whole document
-      instruction += '\n\nREGLA CRÍTICA: Escribe SOLAMENTE el texto nuevo o expandido. NO repitas el contexto ni agregues explicaciones. Si recibes un texto a procesar, devuelve ÚNICAMENTE la versión procesada que reemplazará a dicho texto.';
-
-      let documentContext = view.state.doc.toString();
-      if (action === 'continue') {
-        documentContext = view.state.sliceDoc(0, replaceFrom);
-      } else if (action === 'expand' || (action === 'directive' && originalText)) {
-        documentContext = `Texto a procesar:\n${originalText}`;
-      }
-
-      const generatedText = await executeAiPrompt({
-        instruction,
-        documentContext,
-        notebookSystemPrompt
-      });
-
-      if (generatedText) {
-        view.dispatch({
-          changes: { from: replaceFrom, to: replaceTo, insert: generatedText },
-          effects: setGhostwriterRange.of({ from: replaceFrom, to: replaceFrom + generatedText.length })
-        });
-        setGhostwriterReview({
-          from: replaceFrom,
-          to: replaceFrom + generatedText.length,
-          originalText: isTryAgain ? originalText : (action === 'expand' ? originalText : undefined),
-          prompt: prompt || '',
-          type: action
-        });
-      }
-    } catch (e: any) {
-      console.error(e);
-      alert(`AI Error: ${e.message}`);
-    } finally {
-      setIsAiLoading(false);
-    }
-  }, [contextMenu, notes, notebooks, activeNoteId, ghostwriterReview]);
-
-  const handleGhostwriterDecision = useCallback((decision: 'keep' | 'discard' | 'try_again') => {
-     const view = editorRef.current?.view;
-     if (!view || !ghostwriterReview) return;
-
-     if (decision === 'keep') {
-       view.dispatch({ effects: setGhostwriterRange.of(null) });
-       setGhostwriterReview(null);
-     } else if (decision === 'discard') {
-       const { from, to, originalText } = ghostwriterReview;
-       view.dispatch({
-         changes: { from, to, insert: originalText || '' },
-         effects: setGhostwriterRange.of(null)
-       });
-       setGhostwriterReview(null);
-     } else if (decision === 'try_again') {
-       handleGhostwriterAction(ghostwriterReview.type, ghostwriterReview.prompt, true);
-     }
-  }, [ghostwriterReview, handleGhostwriterAction]);
+  // Ghostwriter handlers extracted to useGhostwriterActions
 
   if (!activeNoteId) {
     return <NotebookDashboard />;
