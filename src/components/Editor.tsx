@@ -53,7 +53,18 @@ const Editor = () => {
   // Status bar state
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorCol, setCursorCol] = useState(1);
-  const [totalLines, setTotalLines] = useState(0);
+  const [totalLines, setTotalLines] = useState(1);
+
+  const [editorOpacity, setEditorOpacity] = useState(1);
+
+  useEffect(() => {
+    setEditorOpacity(0);
+    const timeout = setTimeout(() => {
+      setEditorOpacity(1);
+    }, 75);
+    return () => clearTimeout(timeout);
+  }, [activeNoteId]);
+
   const [vimMode, setVimMode] = useState('NORMAL');
 
   // AI Panel & Ghostwriter State
@@ -249,7 +260,8 @@ const Editor = () => {
         <div 
           id="editor-content-area" 
           ref={contentAreaRef}
-          className="flex-1 flex overflow-hidden relative"
+          className="flex-1 flex overflow-hidden relative transition-opacity duration-150 ease-in-out"
+          style={{ opacity: editorOpacity }}
         >
 
           {/* RICH MODE: BlockNote replaces everything */}

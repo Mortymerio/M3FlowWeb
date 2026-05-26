@@ -22,6 +22,9 @@ export const createDataSlice: StateCreator<
   searchResults: [],
   currentBacklinks: [],
   noteHistory: {},
+  saveStatus: 'idle',
+
+  setSaveStatus: (status) => set({ saveStatus: status }),
 
   revertToHistory: (noteId, index) => {
     const { noteHistory, notes, saveNote } = get();
@@ -139,8 +142,11 @@ export const createDataSlice: StateCreator<
     // ANTI-ERASURE GUARD — Must run BEFORE DB write to prevent data corruption
     if (body.trim() === '' && existingNote && existingNote.body.length > 50) {
       console.warn('[M3Flow Guard] Intento de borrado masivo detectado. Bloqueando guardado.');
+      set({ saveStatus: 'error' });
       return;
     }
+
+    set({ saveStatus: 'saving' });
 
     try {
       await (window as any).dbAPI.saveNote({
@@ -151,6 +157,7 @@ export const createDataSlice: StateCreator<
       });
     } catch (e) {
       console.error('[store] saveNote DB error:', e);
+      set({ saveStatus: 'error' });
       return; // Don't update local state if DB write failed
     }
     
@@ -172,7 +179,8 @@ export const createDataSlice: StateCreator<
         ...historyUpdate,
         notes: state.notes.map((n) => n.id === id ? { ...n, title, body, updatedAt: Date.now() } : n),
         hasUnsyncedChanges: true,
-        syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
+        syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error',
+        saveStatus: 'saved'
       };
     });
   },

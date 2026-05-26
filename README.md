@@ -30,7 +30,8 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 What's New (Update 0.2.0)](#-whats-new-this-version-update-020)
+- [🔥 What's New (Update 0.2.1)](#-whats-new-this-version-update-021)
+- [🔥 What's New (Update 0.2.0)](#-whats-new-in-previous-version-update-020)
 - [🔥 What's New (Update 0.1.20)](#-whats-new-in-previous-version-update-0120)
 - [🔥 What's New (Update 0.1.19)](#-whats-new-in-previous-version-update-0119)
 - [🔥 What's New (Update 0.1.18)](#-whats-new-in-previous-version-update-0118)
@@ -47,7 +48,22 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.2.0)
+## 🔥 What's New this Version (Update 0.2.1)
+
+### 🏗️ Major Editor Refactoring (Phase 2)
+- **Deep Component Decomposition:** Extracted core logic from the main `Editor.tsx` into specialized hooks (`useNoteManager.ts`) and completely isolated the Markdown parsing engine (`MarkdownEngine.ts` & `MarkdownPreview.tsx`) to guarantee buttery smooth typing at 60fps without unnecessary re-renders.
+- **Event-Driven AI Ghostwriter:** Completely rewrote the AI inline contextual menu. Eliminated legacy `setInterval` coordinate polling loops in favor of a custom native CodeMirror extension (`ghostwriterTracker.ts`) that listens to native scroll and cursor events. Zero CPU waste and no UI jank while typing.
+- **CodeMirror Architecture:** Separated CodeMirror extensions (like `cursorTracker`) into pure functions, ensuring the editor never loses the `Ctrl+Z` history buffer and fixing edge-case VIM mode flickers.
+
+### 🎨 UX & UI Polish (Phase 1)
+- **Save Indicator & Ctrl+S:** Added a visual feedback indicator (`📝 Editing` and `✅ Saved`) in the status bar so you always know your data is safe. Native `Ctrl+S` interception now immediately flushes changes to disk without triggering the browser's save dialog.
+- **Friendly Empty States:** Empty notebooks now display a visually appealing call-to-action to create a new note with `Ctrl+N`, replacing the old plain text message.
+- **Smart Formatting Toolbar:** The top formatting toolbar (Bold, Italic, Code, etc.) now automatically hides when switching to the Rich editor (BlockNote), reducing visual clutter since the Rich editor uses its own floating menus.
+- **Smooth Note Transitions:** Added a subtle crossfade animation when navigating between different notes, eliminating abrupt visual jumps and keeping you anchored in your workflow.
+
+---
+
+## 🔥 What's New in Previous Version (Update 0.2.0)
 
 ### 🪄 AI Ghostwriter Mode (Copilot for Writers)
 - **Inline AI Directives:** Right-click anywhere in the editor to open a floating prompt. Give the AI instructions and watch it write directly into your document.

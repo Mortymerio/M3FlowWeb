@@ -427,14 +427,17 @@ const EditorToolbar = ({
       {/* Formatting Toolbar */}
       <div id="format-toolbar" className={`flex items-center justify-between px-4 py-2 border-b ${themeStyle.editorBorder} opacity-80 print:hidden relative z-[90]`}>
         <div className="flex gap-4">
-          <span onClick={() => applyFormat('bold')} className="font-bold cursor-pointer hover:opacity-70 px-1">B</span>
-          <span onClick={() => applyFormat('italic')} className="italic cursor-pointer hover:opacity-70 px-1">I</span>
-          <span onClick={() => applyFormat('strike')} className="cursor-pointer hover:opacity-70 px-1"><s>S</s></span>
-          <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
-          <span onClick={() => applyFormat('code')} className="cursor-pointer hover:opacity-70 px-1 font-mono">&lt;/&gt;</span>
-          <span onClick={() => applyFormat('h1')} className="cursor-pointer hover:opacity-70 px-1 font-bold">A</span>
-
-          <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
+          {editorType === 'raw' && (
+            <>
+              <span onClick={() => applyFormat('bold')} className="font-bold cursor-pointer hover:opacity-70 px-1">B</span>
+              <span onClick={() => applyFormat('italic')} className="italic cursor-pointer hover:opacity-70 px-1">I</span>
+              <span onClick={() => applyFormat('strike')} className="cursor-pointer hover:opacity-70 px-1"><s>S</s></span>
+              <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
+              <span onClick={() => applyFormat('code')} className="cursor-pointer hover:opacity-70 px-1 font-mono">&lt;/&gt;</span>
+              <span onClick={() => applyFormat('h1')} className="cursor-pointer hover:opacity-70 px-1 font-bold">A</span>
+              <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
+            </>
+          )}
           <span className={`mx-2 w-px h-4 border-l ${themeStyle.editorBorder} opacity-50`}></span>
           <button
             onClick={(e) => { e.stopPropagation(); toggleAiPanel(); }}

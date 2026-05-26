@@ -1,7 +1,7 @@
 import { useMemo, memo } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { Edit3, Search, Clock, SortDesc, Trash2 } from 'lucide-react';
+import { Edit3, Search, Clock, SortDesc, Trash2, FileText } from 'lucide-react';
 
 const NoteItem = memo(({ note, isActive, onSelect, themeStyle, themeName, allTags, allNoteTags }: any) => {
   const getTimeAgo = (ts: number) => {
@@ -191,8 +191,26 @@ const NoteList = () => {
       {/* Lista de Notas (Scroll) */}
       <div className="flex-1 overflow-y-auto no-drag relative" style={{ WebkitAppRegion: 'no-drag' } as any}>
         {sortedNotes.length === 0 ? (
-          <div className={`p-6 text-center text-[13px] opacity-60 ${themeStyle.listText}`}>
-            No notes found.
+          <div className="flex flex-col items-center justify-center h-[60%] px-6 text-center animate-in fade-in zoom-in-95 duration-300">
+            <div className={`p-4 rounded-2xl mb-4 border shadow-sm ${themeStyle.listHeader} ${themeStyle.listBorder}`}>
+              <FileText size={32} className="opacity-40" />
+            </div>
+            <h3 className={`font-bold mb-1 ${themeStyle.listText}`}>No notes here</h3>
+            <p className={`text-[11px] opacity-60 mb-6 ${themeStyle.listText}`}>
+              Get started by creating your first note in this notebook.
+            </p>
+            <button 
+              onClick={createNote}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 group"
+            >
+              <Edit3 size={14} className="group-hover:rotate-12 transition-transform" />
+              Create Note
+            </button>
+            <div className="mt-4 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest opacity-40">
+              <span className="px-1.5 py-0.5 rounded border border-current">Ctrl</span>
+              <span>+</span>
+              <span className="px-1.5 py-0.5 rounded border border-current">N</span>
+            </div>
           </div>
         ) : (
           sortedNotes.map(note => (

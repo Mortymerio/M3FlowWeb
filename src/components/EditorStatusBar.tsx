@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Download, Cpu } from 'lucide-react';
+import { Download, Cpu, Check, PenLine, AlertCircle } from 'lucide-react';
+import { useStore } from '../store';
 
 interface EditorStatusBarProps {
   editorType: 'raw' | 'rich';
@@ -26,6 +27,17 @@ const EditorStatusBar = ({
   themeStyle,
   isDark,
 }: EditorStatusBarProps) => {
+  const saveStatus = useStore(state => state.saveStatus);
+  const [showSaved, setShowSaved] = useState(false);
+
+  useEffect(() => {
+    if (saveStatus === 'saved') {
+      setShowSaved(true);
+      const timer = setTimeout(() => setShowSaved(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveStatus]);
+
   const [sysMemPct, setSysMemPct] = useState<number | null>(null);
   const [processMemMb, setProcessMemMb] = useState<number | null>(null);
 
@@ -97,6 +109,25 @@ const EditorStatusBar = ({
         <span className="text-[10px]">{contentLength} chars</span>
         <span className="text-[10px]">UTF-8</span>
         <span className="text-[10px] uppercase">Markdown</span>
+
+        <span className={`mx-1 w-px h-3 border-l ${themeStyle.editorBorder}`}></span>
+
+        {/* Save Status Indicator */}
+        <div className="flex items-center gap-1.5 w-20 justify-end transition-all duration-300">
+          {saveStatus === 'saving' ? (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500/80 animate-pulse">
+              <PenLine size={10} /> Editing
+            </span>
+          ) : saveStatus === 'error' ? (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-red-500">
+              <AlertCircle size={10} /> Error
+            </span>
+          ) : showSaved ? (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 transition-opacity duration-300">
+              <Check size={10} /> Saved
+            </span>
+          ) : null}
+        </div>
 
         <span className={`mx-1 w-px h-3 border-l ${themeStyle.editorBorder}`}></span>
 

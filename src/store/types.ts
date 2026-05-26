@@ -113,6 +113,8 @@ export interface DataSlice {
   openMeetingNote: () => Promise<void>;
   saveTemplate: (template: any) => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  setSaveStatus: (status: 'idle' | 'saving' | 'saved' | 'error') => void;
 }
 
 export interface SyncSlice {

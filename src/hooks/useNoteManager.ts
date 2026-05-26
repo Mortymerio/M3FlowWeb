@@ -37,20 +37,49 @@ export function useNoteManager() {
     return notes.find(n => n.id === activeNoteId)?.body;
   }, [notes, activeNoteId]);
 
+  const flushSave = () => {
+    if (!activeNoteId || !content) return;
+    const lines = content.split('\n');
+    const titleLine = lines.find(line => line.trim().startsWith('#')) || lines[0] || 'Untitled Note';
+    const title = titleLine.replace(/^#+\s*/, '').trim().substring(0, 50);
+    saveNote(activeNoteId, title, content);
+  };
+
+  const flushSaveRef = useRef(flushSave);
+  flushSaveRef.current = flushSave;
+
   // Debounced auto-save
   useEffect(() => {
     if (!activeNoteId || activeNoteId !== lastLoadedNoteId.current) return;
     if (activeNoteBody === content) return;
 
     const timeout = setTimeout(() => {
-      const lines = content.split('\n');
-      const titleLine = lines.find(line => line.trim().startsWith('#')) || lines[0] || 'Untitled Note';
-      const title = titleLine.replace(/^#+\s*/, '').trim().substring(0, 50);
-      saveNote(activeNoteId, title, content);
+      flushSaveRef.current();
     }, 1000);
     
     return () => clearTimeout(timeout);
-  }, [content, activeNoteId, saveNote, activeNoteBody]);
+  }, [content, activeNoteId, activeNoteBody]);
+
+  // Flush on unmount to not lose the last few seconds of typing
+  useEffect(() => {
+    return () => {
+      if (lastLoadedNoteId.current && activeNoteBody !== content) {
+        flushSaveRef.current();
+      }
+    };
+  }, []);
+
+  // Global Ctrl+S handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        flushSaveRef.current();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return {
     content,
