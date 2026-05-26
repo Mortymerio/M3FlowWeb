@@ -7,7 +7,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Loader2, Trash2, X, Sparkles, Brain, Settings2, Cpu, ChevronDown, ChevronRight } from 'lucide-react';
 import { THEMES } from '../themes';
 import { useStore } from '../store';
-import { getEngine, initWebLlm } from '../lib/webllm';
+import { initWebLlm } from '../lib/webllm';
 import { executeAiPrompt } from '../services/aiService';
 
 interface ChatMessage {
@@ -183,17 +183,7 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
       } catch { }
     }
 
-    const now = new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const baseSystemMessage = `You are an expert writing assistant embedded in M3Flow, a Markdown knowledge vault. ${notebookSystemPrompt ? `Notebook context: ${notebookSystemPrompt}` : ''}
-Current date: ${now}. Note title: "${noteTitle || 'Untitled'}".
 
-Respond based on the user's intent:
-- CHAT/QUESTION: Start with 'REPLY: ' followed by a concise, helpful answer. Do NOT touch the document.
-- EDIT/TRANSFORM: Output ONLY the full new Markdown content for the document. No prefix, no explanation.
-- EDIT_AND_EXPLAIN: Start with 'REPLY: ' briefly explaining what you changed, then on a new line output '---DOC---' followed by the complete new Markdown.
-
-Important: Always write documents in fluent, natural language. Use Markdown formatting (headers, lists, bold, tables, blockquotes) to make content clear and beautiful.
-CRITICAL RULE: NEVER modify, rewrite, or reformat any \`\`\`mermaid code blocks. Preserve every mermaid diagram EXACTLY as written in the original document, character by character. Only transform the surrounding prose and text content.`;
 
     try {
       const resultText = await executeAiPrompt({

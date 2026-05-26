@@ -36,6 +36,7 @@ function initializeMermaid(mermaid: MermaidApi) {
     securityLevel: 'loose',
     theme: 'dark',
     fontFamily: 'inherit',
+    suppressErrorRendering: true
   })
   initialized = true
 }

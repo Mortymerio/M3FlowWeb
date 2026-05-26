@@ -15,7 +15,7 @@ export const GhostwriterContextMenu: React.FC<GhostwriterContextMenuProps> = ({ 
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const handleGlobalClick = (e: MouseEvent) => {
+    const handleGlobalClick = () => {
       // Small timeout to prevent immediate close on the right-click event itself
       setTimeout(() => onClose(), 10);
     };
