@@ -1,7 +1,7 @@
 {
   "name": "m3flow",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "The High-Performance, Local-First Knowledge Vault",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -29,6 +29,7 @@
     "animejs": "^4.4.1",
     "better-sqlite3": "^12.9.0",
     "clsx": "^2.1.1",
+    "electron-updater": "^6.8.9",
     "highlight.js": "^11.11.1",
     "lucide-react": "^1.8.0",
     "markdown-it": "^14.1.1",
@@ -90,6 +91,13 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Mortymerio",
+        "repo": "M3Flow"
+      }
+    ]
   }
 }

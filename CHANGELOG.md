@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-06-14
+
+### Added
+- **Tabs System**: Seamlessly navigate between multiple open notes or tasks using the new intuitive TabsBar.
+- **Tasks Dashboard**: A dedicated SQLite-backed Kanban/List view to manage actionable tasks effectively.
+- **Command Palette (`Ctrl+P`)**: Instantly jump between notes, execute actions, and control the UI via keyboard.
+- **Zen Mode (`Ctrl+Shift+Z`)**: Collapse all sidebars instantly to focus completely on writing.
+- **Auto-Updater**: Seamless over-the-air updates directly from GitHub Releases using `electron-updater`.
+
+## [0.2.1] - 2026-06-14
+
+### Added
+- **Major Editor Refactoring**: Deep component decomposition extracting core logic to `useNoteManager.ts`.
+- **Event-Driven AI Ghostwriter**: Custom CodeMirror native extensions for Zero CPU waste context menus.
+- **Save Indicator & Ctrl+S**: Visual feedback for note saving.
+- **Empty States**: Friendly UI empty states for notes.
+- **Smooth Note Transitions**: Crossfade animations when navigating notes.
+
 ## [0.2.0] - 2026-05-24
 
 ### Added

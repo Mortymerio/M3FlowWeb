@@ -30,13 +30,6 @@
 <details>
   <summary><b>Table of Contents</b> (Click to expand)</summary>
   
-- [🔥 What's New (Update 0.2.1)](#-whats-new-this-version-update-021)
-- [🔥 What's New (Update 0.2.0)](#-whats-new-in-previous-version-update-020)
-- [🔥 What's New (Update 0.1.20)](#-whats-new-in-previous-version-update-0120)
-- [🔥 What's New (Update 0.1.19)](#-whats-new-in-previous-version-update-0119)
-- [🔥 What's New (Update 0.1.18)](#-whats-new-in-previous-version-update-0118)
-- [🔥 What's New (Update 0.1.17)](#-whats-new-in-previous-version-update-0117)
-- [🔥 What's New (Update 0.1.15)](#-whats-new-in-previous-version-update-0115)
 - [✨ Core Features](#-core-features)
 - [🛡️ Architecture and Fallbacks](#-resilient-architecture-and-fallbacks)
 - [📝 Editing Engines](#-dual-editing-engines)
@@ -48,70 +41,20 @@
 
 ---
 
-## 🔥 What's New this Version (Update 0.2.1)
-
-### 🏗️ Major Editor Refactoring (Phase 2)
-- **Deep Component Decomposition:** Extracted core logic from the main `Editor.tsx` into specialized hooks (`useNoteManager.ts`) and completely isolated the Markdown parsing engine (`MarkdownEngine.ts` & `MarkdownPreview.tsx`) to guarantee buttery smooth typing at 60fps without unnecessary re-renders.
-- **Event-Driven AI Ghostwriter:** Completely rewrote the AI inline contextual menu. Eliminated legacy `setInterval` coordinate polling loops in favor of a custom native CodeMirror extension (`ghostwriterTracker.ts`) that listens to native scroll and cursor events. Zero CPU waste and no UI jank while typing.
-- **CodeMirror Architecture:** Separated CodeMirror extensions (like `cursorTracker`) into pure functions, ensuring the editor never loses the `Ctrl+Z` history buffer and fixing edge-case VIM mode flickers.
-
-### 🎨 UX & UI Polish (Phase 1)
-- **Save Indicator & Ctrl+S:** Added a visual feedback indicator (`📝 Editing` and `✅ Saved`) in the status bar so you always know your data is safe. Native `Ctrl+S` interception now immediately flushes changes to disk without triggering the browser's save dialog.
-- **Friendly Empty States:** Empty notebooks now display a visually appealing call-to-action to create a new note with `Ctrl+N`, replacing the old plain text message.
-- **Smart Formatting Toolbar:** The top formatting toolbar (Bold, Italic, Code, etc.) now automatically hides when switching to the Rich editor (BlockNote), reducing visual clutter since the Rich editor uses its own floating menus.
-- **Smooth Note Transitions:** Added a subtle crossfade animation when navigating between different notes, eliminating abrupt visual jumps and keeping you anchored in your workflow.
-
----
-
-## 🔥 What's New in Previous Version (Update 0.2.0)
-
-### 🪄 AI Ghostwriter Mode (Copilot for Writers)
-- **Inline AI Directives:** Right-click anywhere in the editor to open a floating prompt. Give the AI instructions and watch it write directly into your document.
-- **Visual Review Mode:** Generated text appears seamlessly with a green highlight. Review it using floating "Keep", "Try Again" or "Discard" buttons without ruining your document flow.
-- **Smart Expansion & Autocomplete:** Select bullet points and click "Expand Selection" to turn them into prose, or click "Continue Writing" to let the AI analyze the entire note and write the next paragraphs matching your exact tone and style.
-
----
-
-## 🔥 What's New in Previous Version (Update 0.1.20)
-
-### 📝 Customizable Templates System & Smart Export
-- **Templates Manager:** A powerful new visual interface to manage your system templates. You can now modify the default Daily Standup and Meeting templates, or create an infinite amount of your own custom templates with magic variables like `{{date}}` and `{{time}}`.
-- **Smart CSV Export:** Added a new 1-click CSV export option in the status bar. The backend engine intelligently parses Markdown tables and converts them into native CSV grids with proper UTF-8 BOM, automatically preserving the tabular structure perfectly when imported into Excel.
-
----
-
-## 🔥 What's New in Previous Version (Update 0.1.19)
-
-### 📊 System Telemetry & Writing Metrics
-- **Performance Monitor:** Integrated a native lightweight IPC polling mechanism to fetch OS-level system stats. The editor status bar now displays real-time Application RAM usage and System CPU load (e.g., `APP: 45MB | SYS: 21%`). Polling is extremely gentle (5-second intervals via `os` and `process.memoryUsage()`) for zero impact on editor fluidity.
-- **Word Count:** Added a real-time word count metric directly into the editor's status bar to complement the existing character count, instantly updating without noticeable performance overhead.
-
----
-
-## 🔥 What's New in Previous Version (Update 0.1.18)
-
-### 🏗️ Major Editor Refactoring & Architecture
-- **Component Decomposition:** The monolithic `Editor.tsx` (1100+ lines) was meticulously refactored into focused modular components (`EditorToolbar.tsx`, `EditorStatusBar.tsx`), massively improving code maintainability and rendering performance.
-- **Zero-Flicker State Management:** State is now purely delegated to Zustand, decoupling the AI panel and dropdowns from the main editor lifecycle to guarantee that typing in `CodeMirror` remains buttery smooth.
-
-### ⚡ UX & Workflow Features
-- **📅 Quick Daily Notes:** New "Today" button and `Ctrl+D` shortcut that instantly navigates to or creates a Daily Scrum note in the auto-generated "Daily Journal" notebook.
-- **👥 Meeting Notes Template:** New "Meeting" button and `Ctrl+M` shortcut that generates fresh meeting minutes with attendees, agenda, and action items matrices on the fly.
-- **✨ Enhanced AI Chat Panel:** Fully polished slide-in animations, memory of open/closed states across reloads, robust `z-index` layering, and a dedicated `Ctrl+Shift+A` hotkey for instantaneous AI access.
-- **🔄 Granular Sync Progress:** GitHub synchronization now displays real-time, step-by-step progress percentages instead of binary states.
-
-
-
 ## ✨ Core Features
 
 | Feature | Detail |
 | :--- | :--- |
 | **🏠 Local-First** | Full privacy. Local SQLite with enterprise-grade performance. |
+| **📑 Tabs & Tasks** | Fluid navigation with Tabs and a built-in SQLite Kanban board. |
+| **🧘 Zen Mode** | Pure distraction-free writing environment (`Ctrl+Shift+Z`). |
 | **🔄 Dynamic Contexts** | Organize your brain into Notebooks with AI configurations and custom views. |
 | **🤖 AI & Vault** | Side chat with `@vault` commands to extract semantic context from your local notes. |
 | **🔄 Dual Mode** | Swap between a WYSIWYG Editor (BlockNote) and a RAW Editor (CodeMirror). |
+| **⚡ Command Palette** | Keep your hands on the keyboard and trigger anything with `Ctrl+P`. |
 | **⌨️ Power Users** | Deep support for **VIM** and **Emacs** modes in the RAW editor. |
 | **🎨 Customization** | 20+ dynamic themes (VS Code Style) and universal font scaling. |
+| **📡 Auto-Updater** | Built-in OTA updates via GitHub Releases. |
 
 ---
 
