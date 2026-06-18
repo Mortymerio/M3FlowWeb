@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore } from '../store';
 
-export function useNoteManager() {
-  const activeNoteId = useStore(state => state.activeNoteId);
+export function useNoteManager(noteId: string | null) {
   const notes = useStore(state => state.notes);
   const saveNote = useStore(state => state.saveNote);
   const loadBacklinks = useStore(state => state.loadBacklinks);
@@ -14,35 +13,35 @@ export function useNoteManager() {
   
   const lastLoadedNoteId = useRef<string | null>(null);
 
-  // Load note content when activeNoteId changes
+  // Load note content when noteId changes
   useEffect(() => {
-    if (activeNoteId) {
-      if (activeNoteId !== lastLoadedNoteId.current) {
-        const activeNote = notes.find(n => n.id === activeNoteId);
+    if (noteId) {
+      if (noteId !== lastLoadedNoteId.current) {
+        const activeNote = notes.find(n => n.id === noteId);
         if (activeNote) {
           setContent(activeNote.body);
-          lastLoadedNoteId.current = activeNoteId;
-          loadBacklinks(activeNoteId);
+          lastLoadedNoteId.current = noteId;
+          loadBacklinks(noteId);
         }
       }
     } else {
       setContent('');
       lastLoadedNoteId.current = null;
     }
-  }, [activeNoteId, notes, loadBacklinks]);
+  }, [noteId, notes, loadBacklinks]);
 
   // Derive active note body from store
   const activeNoteBody = useMemo(() => {
-    if (!activeNoteId) return undefined;
-    return notes.find(n => n.id === activeNoteId)?.body;
-  }, [notes, activeNoteId]);
+    if (!noteId) return undefined;
+    return notes.find(n => n.id === noteId)?.body;
+  }, [notes, noteId]);
 
   const flushSave = () => {
-    if (!activeNoteId || !content) return;
+    if (!noteId || !content) return;
     const lines = content.split('\n');
     const titleLine = lines.find(line => line.trim().startsWith('#')) || lines[0] || 'Untitled Note';
     const title = titleLine.replace(/^#+\s*/, '').trim().substring(0, 50);
-    saveNote(activeNoteId, title, content);
+    saveNote(noteId, title, content);
   };
 
   const flushSaveRef = useRef(flushSave);
@@ -50,7 +49,7 @@ export function useNoteManager() {
 
   // Debounced auto-save
   useEffect(() => {
-    if (!activeNoteId || activeNoteId !== lastLoadedNoteId.current) return;
+    if (!noteId || noteId !== lastLoadedNoteId.current) return;
     if (activeNoteBody === content) return;
 
     const timeout = setTimeout(() => {
@@ -58,7 +57,7 @@ export function useNoteManager() {
     }, 1000);
     
     return () => clearTimeout(timeout);
-  }, [content, activeNoteId, activeNoteBody]);
+  }, [content, noteId, activeNoteBody]);
 
   // Flush on unmount to not lose the last few seconds of typing
   useEffect(() => {

@@ -57,6 +57,8 @@ try {
     githubRecoverNotes: (opts: any) => ipcRenderer.invoke('github:recoverNotes', opts),
     searchNotes: (query: string) => ipcRenderer.invoke('db:search', query),
     getBacklinks: (noteId: string) => ipcRenderer.invoke('db:getBacklinks', noteId),
+    scanTasks: () => ipcRenderer.invoke('db:scanTasks'),
+    toggleTask: (opts: {noteId: string, lineNumber: number, checked: boolean}) => ipcRenderer.invoke('db:toggleTask', opts),
     onGithubProgress: (callback: (data: { current: number; total: number; message: string }) => void) => {
       ipcRenderer.on('github:progress', (_, data) => callback(data));
     },

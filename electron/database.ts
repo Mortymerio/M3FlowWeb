@@ -489,6 +489,57 @@ const databaseAPI = {
     return stmt.all(noteId);
   },
 
+  // Fase 3: Tasks Dashboard
+  scanTasks: () => {
+    const notes = db.prepare('SELECT id, title, body FROM Notes').all() as {id: string, title: string, body: string}[];
+    const tasks: any[] = [];
+    
+    for (const note of notes) {
+      if (!note.body) continue;
+      const lines = note.body.split('\n');
+      let taskIndex = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const match = lines[i].match(/^(\s*)-\s*\[([ xX])\]\s*(.+)$/);
+        if (match) {
+          tasks.push({
+            noteId: note.id,
+            noteTitle: note.title,
+            lineNumber: i,
+            taskIndex: taskIndex++,
+            checked: match[2] !== ' ',
+            text: match[3].trim(),
+          });
+        }
+      }
+    }
+    return tasks;
+  },
+
+  toggleTask: (noteId: string, lineNumber: number, checked: boolean) => {
+    const note = db.prepare('SELECT body, title FROM Notes WHERE id = ?').get(noteId) as {body: string, title: string} | undefined;
+    if (!note || !note.body) return false;
+    
+    const lines = note.body.split('\n');
+    const line = lines[lineNumber];
+    if (line === undefined) return false;
+    
+    // Reemplazar [ ] ↔ [x] o [X]
+    lines[lineNumber] = checked
+      ? line.replace(/\[\s\]/, '[x]')
+      : line.replace(/\[[xX]\]/, '[ ]');
+    
+    const newBody = lines.join('\n');
+    db.prepare('UPDATE Notes SET body = ?, updatedAt = ? WHERE id = ?')
+      .run(newBody, Date.now(), noteId);
+    
+    // Re-sync FTS
+    db.prepare('DELETE FROM notes_fts WHERE id = ?').run(noteId);
+    db.prepare('INSERT INTO notes_fts (id, title, content) VALUES (?, ?, ?)')
+      .run(noteId, note.title, newBody);
+    
+    return true;
+  },
+
   // Templates
   getTemplates: () => {
     return db.prepare('SELECT * FROM Templates ORDER BY name ASC').all();

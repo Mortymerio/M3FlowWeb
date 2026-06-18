@@ -88,14 +88,13 @@ const NoteList = () => {
   const activeStatusId = useStore(state => state.activeStatusId);
   const activeTagId = useStore(state => state.activeTagId);
   const activeNoteId = useStore(state => state.activeNoteId);
-  const setActiveNote = useStore(state => state.setActiveNote);
+  const themeName = useStore(state => state.theme);
   const searchQuery = useStore(state => state.searchQuery);
   const setSearchQuery = useStore(state => state.setSearchQuery);
   const sortOrder = useStore(state => state.sortOrder);
   const setSortOrder = useStore(state => state.setSortOrder);
   const createNote = useStore(state => state.createNote);
   
-  const themeName = useStore(state => state.theme);
   const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
 
   // Filtrado de Notas por Notebook, Status, Tag y Búsqueda Optimized
@@ -218,7 +217,9 @@ const NoteList = () => {
               key={note.id}
               note={note}
               isActive={note.id === activeNoteId}
-              onSelect={setActiveNote}
+              onSelect={(id: string) => {
+                useStore.getState().openTab({ type: 'note', noteId: id, title: note.title || 'Untitled' });
+              }}
               themeStyle={themeStyle}
               themeName={themeName}
               allTags={tags}

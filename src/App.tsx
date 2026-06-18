@@ -146,6 +146,10 @@ const App = () => {
         e.preventDefault();
         useStore.getState().openMeetingNote();
       }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        useStore.getState().toggleZenMode();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);

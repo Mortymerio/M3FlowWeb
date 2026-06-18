@@ -20,6 +20,7 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
 import { initDB, databaseAPI, closeDB, getFallbackStatus } from './database';
 import { testConnection, syncToGithub, importDbFromGithub, importNotesFromGithub } from './github';
 import type { Note, Notebook, Tag } from './database';
+import { setupAutoUpdater } from './updater';
 
 
 
@@ -55,6 +56,11 @@ ipcMain.handle('db:isFallbackMode', () => getFallbackStatus());
 
 ipcMain.handle('db:search', (_, query: string) => databaseAPI.searchNotes(query));
 ipcMain.handle('db:getBacklinks', (_, noteId: string) => databaseAPI.getBacklinks(noteId));
+
+ipcMain.handle('db:scanTasks', () => databaseAPI.scanTasks());
+ipcMain.handle('db:toggleTask', (_, opts: {noteId: string, lineNumber: number, checked: boolean}) => 
+  databaseAPI.toggleTask(opts.noteId, opts.lineNumber, opts.checked)
+);
 
 ipcMain.handle('get-system-stats', () => {
   const totalMem = os.totalmem();
@@ -328,6 +334,11 @@ async function initializeApp() {
         splashWin.close();
       }
       win!.show();
+      
+      // Phase 4: Iniciar Auto-Updater (solo si no es fallback mode de emergencia)
+      if (!getFallbackStatus()) {
+        setTimeout(() => setupAutoUpdater(), 3000); // Dar un respiro tras iniciar
+      }
     }, 800); // Pequeño buffer para una transición suave
   });
 }

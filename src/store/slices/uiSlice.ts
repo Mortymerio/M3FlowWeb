@@ -11,6 +11,13 @@ export const createUISlice: StateCreator<
   isNoteListCollapsed: false,
   toggleSidebar: () => set(state => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
   toggleNoteList: () => set(state => ({ isNoteListCollapsed: !state.isNoteListCollapsed })),
+  toggleZenMode: () => set((state) => {
+    const isZen = state.isSidebarCollapsed && state.isNoteListCollapsed;
+    return {
+      isSidebarCollapsed: !isZen,
+      isNoteListCollapsed: !isZen
+    };
+  }),
   
   editorMode: (localStorage.getItem('editorMode') as any) || 'normal',
   editorType: (localStorage.getItem('editorType') as 'raw' | 'rich') || 'raw',

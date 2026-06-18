@@ -241,6 +241,18 @@ const Sidebar = () => {
             New
           </span>
         </div>
+
+        {/* Tasks Button */}
+        <div 
+          onClick={() => useStore.getState().openTab({ type: 'tasks', title: 'Tasks' })}
+          className={`px-3 py-1.5 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-1 ${themeStyle.sidebarHover}`}
+          title="Open Tasks Dashboard"
+        >
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={14} className="text-emerald-500" />
+            <span className="text-[13px] font-medium">Tasks</span>
+          </div>
+        </div>
       </div>
 
       {/* Notebooks Section */}

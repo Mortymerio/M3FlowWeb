@@ -34,6 +34,7 @@ export interface UISlice {
   isNoteListCollapsed: boolean;
   toggleSidebar: () => void;
   toggleNoteList: () => void;
+  toggleZenMode: () => void;
   editorMode: 'normal' | 'vim' | 'emacs';
   editorType: 'raw' | 'rich';
   theme: string;
@@ -162,4 +163,24 @@ export interface AISlice {
   setWebLlmState: (state: Partial<{isWebLlmLoaded: boolean, webLlmProgress: number, webLlmStatusText: string}>) => void;
 }
 
-export type AppState = UISlice & DataSlice & SyncSlice & AISlice;
+export interface Tab {
+  id: string;
+  type: 'note' | 'tasks';
+  noteId?: string;
+  title: string;
+  scrollPos?: number;
+  viewMode?: 'edit' | 'split' | 'preview';
+}
+
+export interface TabsSlice {
+  tabs: Tab[];
+  activeTabId: string | null;
+  openTab: (partial: Omit<Tab, 'id'>) => void;
+  closeTab: (tabId: string) => void;
+  setActiveTab: (tabId: string) => void;
+  closeOtherTabs: (keepTabId: string) => void;
+  updateTabTitle: (tabId: string, title: string) => void;
+  updateTabScrollPos: (tabId: string, scrollPos: number) => void;
+}
+
+export type AppState = UISlice & DataSlice & SyncSlice & AISlice & TabsSlice;

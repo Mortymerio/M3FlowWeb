@@ -226,10 +226,11 @@ export const createDataSlice: StateCreator<
     
     set({
       notes: [newNote, ...notes],
-      activeNoteId: newId,
       hasUnsyncedChanges: true,
       syncStatus: get().syncStatus !== 'error' ? 'pending' : 'error'
     });
+    
+    (get() as any).openTab({ type: 'note', noteId: newId, title: initialTitle });
   },
 
   openDailyNote: async () => {
@@ -263,10 +264,10 @@ export const createDataSlice: StateCreator<
     if (existingNote) {
       set({
         activeNotebookId: dailyNotebook.id,
-        activeNoteId: existingNote.id,
         activeStatusId: null,
         activeTagId: null,
       });
+      (get() as any).openTab({ type: 'note', noteId: existingNote.id, title: existingNote.title });
       return;
     }
 
@@ -306,12 +307,12 @@ export const createDataSlice: StateCreator<
     set(state => ({
       notes: [newNote, ...state.notes],
       activeNotebookId: dailyNotebook!.id,
-      activeNoteId: newId,
       activeStatusId: null,
       activeTagId: null,
       hasUnsyncedChanges: true,
       syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error',
     }));
+    (get() as any).openTab({ type: 'note', noteId: newId, title: dailyTitle });
   },
 
   openMeetingNote: async () => {
@@ -374,12 +375,12 @@ export const createDataSlice: StateCreator<
     set(state => ({
       notes: [newNote, ...state.notes],
       activeNotebookId: mtgNotebook!.id,
-      activeNoteId: newId,
       activeStatusId: null,
       activeTagId: null,
       hasUnsyncedChanges: true,
       syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error',
     }));
+    (get() as any).openTab({ type: 'note', noteId: newId, title: meetingTitle });
   },
 
   moveNotebook: async (notebookId, newParentId) => {

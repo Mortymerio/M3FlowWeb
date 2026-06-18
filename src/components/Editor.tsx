@@ -14,6 +14,9 @@ import AiChatPanel from './AiChatPanel';
 import NotebookDashboard from './NotebookDashboard';
 import EditorToolbar from './EditorToolbar';
 import EditorStatusBar from './EditorStatusBar';
+import TabsBar from './TabsBar';
+import TasksDashboard from './TasksDashboard';
+import SelectionToolbar from './SelectionToolbar';
 import { GhostwriterContextMenu } from './GhostwriterContextMenu';
 import { ghostwriterField } from '../lib/ghostwriterExtension';
 import { animate } from 'animejs';
@@ -26,25 +29,22 @@ import { ghostwriterCoordsTracker } from '../lib/cm-extensions/ghostwriterTracke
 // Markdown components extracted to src/components/MarkdownPreview.tsx and src/lib/MarkdownEngine.ts
 
 const Editor = () => {
-  const activeNoteId = useStore(state => state.activeNoteId);
+  const tabs = useStore(state => state.tabs);
   const notes = useStore(state => state.notes);
   const notebooks = useStore(state => state.notebooks);
 
-  const editorMode = useStore(state => state.editorMode);
+  const activeTabId = useStore(state => state.activeTabId);
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  const activeNoteId = activeTab?.type === 'note' ? activeTab.noteId : null;
 
-  const isSidebarCollapsed = useStore(state => state.isSidebarCollapsed);
-  const isNoteListCollapsed = useStore(state => state.isNoteListCollapsed);
-  const themeName = useStore(state => state.theme);
-  const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
-  const isDark = themeStyle.isDark !== false;
+  const editorMode = useStore(state => state.editorMode);
   const editorFontSize = useStore(state => state.editorFontSize);
   const editorType = useStore(state => state.editorType);
-  const setEditorType = useStore(state => state.setEditorType);
   const currentBacklinks = useStore(state => state.currentBacklinks);
   const setActiveNote = useStore(state => state.setActiveNote);
   const setActiveNotebook = useStore(state => state.setActiveNotebook);
 
-  const { content, setContent, viewMode, setViewMode, splitRatio, setSplitRatio, isResizingSplit } = useNoteManager();
+  const { content, setContent, viewMode, setViewMode, splitRatio, setSplitRatio, isResizingSplit } = useNoteManager(activeNoteId || null);
   
   const editorRef = useRef<any>(null);
   const lastRenderedContent = useRef<string>('');
@@ -81,7 +81,7 @@ const Editor = () => {
     handleContextMenu,
     handleGhostwriterAction,
     handleGhostwriterDecision
-  } = useGhostwriterActions(editorRef, editorType, activeNoteId, notes, notebooks);
+  } = useGhostwriterActions(editorRef, editorType, activeNoteId || null, notes, notebooks);
 
   const triggerAiAnimation = useCallback(() => {
     if (!contentAreaRef.current) return;
@@ -95,13 +95,9 @@ const Editor = () => {
     });
   }, []);
 
-  const tags = useStore(state => state.tags);
-  const noteTags = useStore(state => state.noteTags);
-  const customColors = useStore(state => state.customColors);
-
-  const noteHistory = useStore(state => state.noteHistory);
-
-  const myHistory = activeNoteId ? (noteHistory[activeNoteId] || []) : [];
+  const themeName = useStore(state => state.theme);
+  const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
+  const isDark = themeStyle.isDark !== false;
 
 
   // Cursor position tracking extension extracted to src/lib/cm-extensions/cursorTracker.ts
@@ -200,8 +196,22 @@ const Editor = () => {
 
   // Ghostwriter handlers extracted to useGhostwriterActions
 
-  if (!activeNoteId) {
-    return <NotebookDashboard />;
+  if (!activeTabId) {
+    return (
+      <div className={`flex-[2_2_0%] flex flex-col h-full font-sans relative shadow-[-5px_0_15px_rgba(0,0,0,0.02)] ${themeStyle.editorBg} ${themeStyle.editorText}`}>
+        <TabsBar />
+        <NotebookDashboard />
+      </div>
+    );
+  }
+
+  if (activeTab?.type === 'tasks') {
+    return (
+      <div className={`flex-[2_2_0%] flex flex-col h-full font-sans relative shadow-[-5px_0_15px_rgba(0,0,0,0.02)] ${themeStyle.editorBg} ${themeStyle.editorText}`}>
+        <TabsBar />
+        <TasksDashboard />
+      </div>
+    );
   }
 
   const activeNote = notes.find(n => n.id === activeNoteId)!;
@@ -217,28 +227,12 @@ const Editor = () => {
     <div
       className={`flex-[2_2_0%] flex flex-col h-full font-sans relative shadow-[-5px_0_15px_rgba(0,0,0,0.02)] ${themeStyle.editorBg} ${themeStyle.editorText}`}
     >
+      <TabsBar />
       <EditorToolbar
-        activeNote={activeNote}
-        activeNoteId={activeNoteId}
-        notebooks={notebooks}
-        tags={tags}
-        noteTags={noteTags}
-        themeStyle={themeStyle}
-        themeName={themeName}
-        isDark={isDark}
-        editorType={editorType}
-        editorFontSize={editorFontSize}
         viewMode={viewMode}
-        isSidebarCollapsed={isSidebarCollapsed}
-        isNoteListCollapsed={isNoteListCollapsed}
-        isAiPanelOpen={isAiPanelOpen}
-        myHistory={myHistory}
-        customColors={customColors}
         setViewMode={setViewMode}
-        setEditorType={setEditorType}
-        applyFormat={applyFormat}
-        setContent={setContent}
       />
+      <SelectionToolbar applyFormat={applyFormat} />
 
       {/* Dynamic Font Size Injector */}
       <style dangerouslySetInnerHTML={{
