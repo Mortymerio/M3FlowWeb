@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-06-19
+
+### Added
+- **Buscador Avanzado**: Nuevo panel flotante minimalista (estilo VS Code) para búsqueda y reemplazo.
+- **Soporte Regex y Case**: Búsqueda avanzada con soporte para expresiones regulares y coincidencia de mayúsculas en el editor RAW.
+- **Búsqueda Nativa en Modo Rich**: Integración de la API de búsqueda nativa de Electron (Chromium) para una experiencia perfecta en el editor visual.
+- **Resaltado Inteligente**: Mejoras de UI con fondos amarillos de alto contraste para localizar coincidencias rápidamente.
+
+### Fixed
+- **Flecha Arriba (Búsqueda Inversa)**: Se corrigió la lógica de búsqueda hacia atrás y el salto cíclico de coincidencias.
+- **Superposición de Paneles**: Se deshabilitó el panel nativo por defecto de CodeMirror que robaba el foco al usar las teclas de navegación.
+
 ## [0.3.0] - 2026-06-14
 
 ### Added

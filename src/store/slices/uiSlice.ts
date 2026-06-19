@@ -27,6 +27,7 @@ export const createUISlice: StateCreator<
   editorFontSize: parseInt(localStorage.getItem('fontSize') || '14') || 14,
   showHelpOverlay: localStorage.getItem('hasSeenHelp') !== 'true',
   showAboutModal: false,
+  isSearchPanelOpen: false,
   isFallbackMode: false,
   isBrowserMode: false,
   
@@ -68,4 +69,5 @@ export const createUISlice: StateCreator<
     set({ showHelpOverlay: show });
   },
   setShowAboutModal: (show) => set({ showAboutModal: show }),
+  setSearchPanelOpen: (show) => set({ isSearchPanelOpen: show }),
 });

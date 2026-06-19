@@ -36,5 +36,7 @@ export function setupAutoUpdater() {
   });
 
   // Checkear actualizaciones al iniciar
-  autoUpdater.checkForUpdates();
+  autoUpdater.checkForUpdates().catch(err => {
+    console.log('Update check failed (expected in dev or no release yet):', err.message);
+  });
 }

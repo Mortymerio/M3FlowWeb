@@ -150,6 +150,14 @@ const App = () => {
         e.preventDefault();
         useStore.getState().toggleZenMode();
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        useStore.getState().setSearchPanelOpen(true);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        useStore.getState().setSearchPanelOpen(true);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -253,28 +261,26 @@ const App = () => {
         </div>
       )}
 
-      {/* Global Window Controls (Windows Style, Premium Rounded) */}
+      {/* Global Window Controls */}
       <div className="absolute top-0 right-0 h-10 flex items-center gap-0.5 z-[999999] px-3 pointer-events-auto no-drag print:hidden" style={{ WebkitAppRegion: 'no-drag' } as any}>
-        <div className={`flex items-center gap-0.5 backdrop-blur-2xl rounded-full border p-1 shadow-2xl ${themeStyle.isDark !== false ? 'bg-white/10 border-white/20' : 'bg-black/5 border-black/10'}`}>
-          <button 
-            onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.minimizeApp(); }} 
-            className={`w-7 h-7 rounded-full transition-all flex items-center justify-center group ${themeStyle.isDark !== false ? 'text-white/80 hover:bg-white/25 hover:text-white' : 'text-black/60 hover:bg-black/15 hover:text-black'}`}
-          >
-            <Minus size={14} className="group-hover:scale-110 transition-transform" />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.maximizeApp(); }} 
-            className={`w-7 h-7 rounded-full transition-all flex items-center justify-center group ${themeStyle.isDark !== false ? 'text-white/80 hover:bg-white/25 hover:text-white' : 'text-black/60 hover:bg-black/15 hover:text-black'}`}
-          >
-            <Square size={10} className="group-hover:scale-110 transition-transform" />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.closeApp(); }} 
-            className="w-7 h-7 rounded-full hover:bg-red-500 hover:text-white transition-all shadow-lg flex items-center justify-center text-red-400 group"
-          >
-            <X size={14} className="group-hover:scale-110 transition-transform" />
-          </button>
-        </div>
+        <button 
+          onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.minimizeApp(); }} 
+          className={`w-7 h-7 rounded-full transition-all flex items-center justify-center group ${themeStyle.isDark !== false ? 'text-white/80 hover:bg-white/25 hover:text-white' : 'text-black/60 hover:bg-black/15 hover:text-black'}`}
+        >
+          <Minus size={14} className="group-hover:scale-110 transition-transform" />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.maximizeApp(); }} 
+          className={`w-7 h-7 rounded-full transition-all flex items-center justify-center group ${themeStyle.isDark !== false ? 'text-white/80 hover:bg-white/25 hover:text-white' : 'text-black/60 hover:bg-black/15 hover:text-black'}`}
+        >
+          <Square size={10} className="group-hover:scale-110 transition-transform" />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.closeApp(); }} 
+          className="w-7 h-7 rounded-full hover:bg-red-500 hover:text-white transition-all shadow-lg flex items-center justify-center text-red-400 group"
+        >
+          <X size={14} className="group-hover:scale-110 transition-transform" />
+        </button>
       </div>
 
       {/* Overlays at the end of DOM for better event handling */}

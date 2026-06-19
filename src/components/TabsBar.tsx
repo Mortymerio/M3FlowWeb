@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { FileText, CheckCircle2, X, Menu } from 'lucide-react';
+import { FileText, CheckCircle2, X, Menu, Plus } from 'lucide-react';
 
 const TabsBar = () => {
   const tabs = useStore((state) => state.tabs);
@@ -10,6 +10,11 @@ const TabsBar = () => {
   const closeTab = useStore((state) => state.closeTab);
   const themeName = useStore((state) => state.theme);
   const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
+  
+  const createNote = useStore((state) => state.createNote);
+  const notes = useStore((state) => state.notes);
+  const activeNoteId = useStore((state) => state.activeNoteId);
+  const setActiveNotebook = useStore((state) => state.setActiveNotebook);
   
   // Phase 6: Zen Mode
   const isSidebarCollapsed = useStore(state => state.isSidebarCollapsed);
@@ -28,6 +33,16 @@ const TabsBar = () => {
       }
     }
   }, [activeTabId]);
+
+  const handleNewNote = () => {
+    if (activeNoteId) {
+      const activeNote = notes.find((n) => n.id === activeNoteId);
+      if (activeNote && activeNote.notebookId) {
+        setActiveNotebook(activeNote.notebookId);
+      }
+    }
+    createNote();
+  };
 
   if (tabs.length === 0) return null;
 
@@ -89,6 +104,18 @@ const TabsBar = () => {
           </div>
         );
       })}
+
+      {/* New Note Button (Zen Mode) */}
+      {isZenMode && (
+        <div
+          className={`flex items-center justify-center h-full px-3 border-r cursor-pointer transition-colors opacity-60 hover:opacity-100 hover:bg-white/10 flex-shrink-0 no-drag ${themeStyle.editorBorder}`}
+          onClick={handleNewNote}
+          title="New Note in current notebook"
+          style={{ WebkitAppRegion: 'no-drag' } as any}
+        >
+          <Plus size={14} />
+        </div>
+      )}
     </div>
   );
 };

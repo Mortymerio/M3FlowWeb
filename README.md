@@ -107,7 +107,7 @@ npm run build
 - `Ctrl + P`: Open global note search (FTS5).
 - `Ctrl + N`: Create new note.
 - `Ctrl + B`: Toggle Sidebar.
-- `Ctrl + F`: Search within the current note.
+- `Ctrl + F`: Advanced search & replace within the current note (supports Regex and both editor modes).
 
 ---
 

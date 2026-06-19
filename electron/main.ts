@@ -114,6 +114,18 @@ ipcMain.handle('window:maximize', () => {
   if (win?.isMaximized()) { win?.unmaximize(); } else { win?.maximize(); }
 });
 
+ipcMain.handle('window:findInPage', (_, text: string, options: any) => {
+  if (win) {
+    win.webContents.findInPage(text, options);
+  }
+});
+ipcMain.handle('window:stopFindInPage', (_, action: string) => {
+  if (win) {
+    // action can be 'clearSelection', 'keepSelection', 'activateSelection'
+    win.webContents.stopFindInPage(action as any);
+  }
+});
+
 ipcMain.handle('export-markdown', async (_, { title, content }: { title: string, content: string }) => {
   const result = await dialog.showSaveDialog({
     title: 'Export active note to Markdown',

@@ -51,6 +51,7 @@ export interface UISlice {
   editorFontSize: number;
   showHelpOverlay: boolean;
   showAboutModal: boolean;
+  isSearchPanelOpen: boolean;
   isFallbackMode: boolean;
   isBrowserMode: boolean;
   isSyncModalOpen: boolean;
@@ -68,6 +69,7 @@ export interface UISlice {
   setEditorFontSize: (size: number) => void;
   setShowHelpOverlay: (show: boolean) => void;
   setShowAboutModal: (show: boolean) => void;
+  setSearchPanelOpen: (show: boolean) => void;
 }
 
 export interface DataSlice {

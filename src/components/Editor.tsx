@@ -6,6 +6,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { vim } from '@replit/codemirror-vim';
 import { emacs } from '@replit/codemirror-emacs';
 import { languages } from '@codemirror/language-data';
+import { search } from '@codemirror/search';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
 import { Columns } from 'lucide-react';
@@ -17,6 +18,7 @@ import EditorStatusBar from './EditorStatusBar';
 import TabsBar from './TabsBar';
 import TasksDashboard from './TasksDashboard';
 import SelectionToolbar from './SelectionToolbar';
+import { EditorSearchPanel } from './EditorSearchPanel';
 import { GhostwriterContextMenu } from './GhostwriterContextMenu';
 import { ghostwriterField } from '../lib/ghostwriterExtension';
 import { animate } from 'animejs';
@@ -111,6 +113,7 @@ const Editor = () => {
     exts.push(createCursorTracker({ editorMode, setCursorLine, setCursorCol, setTotalLines, setVimMode }));
     exts.push(ghostwriterField);
     exts.push(ghostwriterCoordsTracker);
+    exts.push(search());
     return exts;
   }, [editorMode]);
 
@@ -247,7 +250,17 @@ const Editor = () => {
         .prose-custom-size h1 { font-size: ${editorFontSize * 2}px !important; }
         .prose-custom-size h2 { font-size: ${editorFontSize * 1.5}px !important; }
         .prose-custom-size h3 { font-size: ${editorFontSize * 1.25}px !important; }
+        
+        .cm-searchMatch {
+          background-color: rgba(234, 179, 8, 0.4) !important;
+          border-radius: 2px;
+        }
+        .cm-searchMatch-selected {
+          background-color: rgba(234, 179, 8, 0.8) !important;
+          outline: 1px solid rgba(234, 179, 8, 1);
+        }
       `}} />
+
 
       {/* Editor Main Content Container */}
       <div className="flex-1 flex flex-col overflow-hidden no-drag" style={{ WebkitAppRegion: 'no-drag' } as any}>
@@ -257,6 +270,7 @@ const Editor = () => {
           className="flex-1 flex overflow-hidden relative transition-opacity duration-150 ease-in-out"
           style={{ opacity: editorOpacity }}
         >
+          <EditorSearchPanel editorRef={editorRef} />
 
           {/* RICH MODE: BlockNote replaces everything */}
           {editorType === 'rich' && (
@@ -304,6 +318,7 @@ const Editor = () => {
                         highlightActiveLineGutter: true,
                         highlightActiveLine: true,
                         foldGutter: true,
+                        searchKeymap: false,
                       }}
                     />
                   </div>

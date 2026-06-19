@@ -49,6 +49,8 @@ try {
     closeApp: () => ipcRenderer.invoke('window:close'),
     minimizeApp: () => ipcRenderer.invoke('window:minimize'),
     maximizeApp: () => ipcRenderer.invoke('window:maximize'),
+    findInPage: (text: string, options?: any) => ipcRenderer.invoke('window:findInPage', text, options),
+    stopFindInPage: (action: string) => ipcRenderer.invoke('window:stopFindInPage', action),
     getSystemStats: () => ipcRenderer.invoke('get-system-stats'),
     isFallbackMode: () => ipcRenderer.invoke('db:isFallbackMode'),
     githubTestConnection: (token: string) => ipcRenderer.invoke('github:testConnection', token),
