@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-07-02
+
+### Added
+- **Tasks Dashboard Enhancements**: New Calendar and Kanban views for tasks with drag-and-drop support.
+- **Micro-Indicators**: Note list now displays task progress (e.g., ☑ 2/5) and reminder indicators directly on the cards.
+- **Home Dashboard**: Rich empty state for Notebooks featuring Quick Actions, recent notes, stats, and upcoming reminders.
+- **Command Palette Theming**: The Command Palette now respects the active theme colors.
+- **Inline Tag Creation**: Quickly create and assign new tags with a color picker directly from the editor toolbar.
+- **Editor UX**: Enabled line wrapping in the RAW CodeMirror editor for better readability of long paragraphs.
+
+### Changed
+- **Sidebar Organization**: Reorganized filters and tags into collapsible sections.
+- **Sidebar Footer**: Compacted the sync status footer to reclaim screen real estate for notebooks.
+- **Kanban Columns**: Changed to flexible width to evenly fill the screen without horizontal scrolling.
+
 ## [0.3.1] - 2026-06-19
 
 ### Added

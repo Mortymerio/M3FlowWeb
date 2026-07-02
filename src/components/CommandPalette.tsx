@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store';
+import { THEMES } from '../themes';
 
 const CommandPalette = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,6 +63,9 @@ const CommandPalette = () => {
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const themeName = useStore.getState().theme;
+  const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
 
   const COMMANDS = [
     // Tabs & Navigation
@@ -140,10 +144,10 @@ const CommandPalette = () => {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm"
          onClick={() => setIsOpen(false)}>
       <div 
-        className="w-full max-w-xl bg-[#222222] border border-[#333] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className={`w-full max-w-xl border rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${themeStyle.dropdownBg || 'bg-[#222222]'} ${themeStyle.editorBorder}`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center px-4 py-3 border-b border-[#333]">
+        <div className={`flex items-center px-4 py-3 border-b ${themeStyle.editorBorder}`}>
           <span className="text-gray-400 mr-3">🔍</span>
           <input
             ref={inputRef}
@@ -172,7 +176,7 @@ const CommandPalette = () => {
                 key={item.id}
                 onClick={() => handleSelect(item)}
                 onMouseEnter={() => setSelectedIndex(idx)}
-                className={`px-4 py-3 mx-2 rounded cursor-pointer transition-colors ${idx === selectedIndex ? 'bg-[#333] text-white' : 'text-gray-400 hover:bg-[#2a2a2a]'}`}
+                className={`px-4 py-3 mx-2 rounded cursor-pointer transition-colors ${idx === selectedIndex ? `${themeStyle.sidebarActive || 'bg-[#333]'} text-white` : `${themeStyle.dropdownText || 'text-gray-400'} ${themeStyle.sidebarHover || 'hover:bg-[#2a2a2a]'}`}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -196,7 +200,7 @@ const CommandPalette = () => {
           )}
         </div>
         
-        <div className="bg-[#1a1a1a] px-4 py-2 text-xs text-gray-500 flex justify-between border-t border-[#333]">
+        <div className={`px-4 py-2 text-xs flex justify-between border-t ${themeStyle.editorBorder} opacity-50`}>
           <span><kbd className="bg-[#333] px-1 rounded mr-1">↑↓</kbd> to navigate</span>
           <span><kbd className="bg-[#333] px-1 rounded mr-1">↵</kbd> to select</span>
           <span><kbd className="bg-[#333] px-1 rounded mr-1">ESC</kbd> to close</span>

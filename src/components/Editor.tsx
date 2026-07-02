@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 
-
+import { EditorView } from '@codemirror/view';
 import { vim } from '@replit/codemirror-vim';
 import { emacs } from '@replit/codemirror-emacs';
 import { languages } from '@codemirror/language-data';
@@ -114,6 +114,7 @@ const Editor = () => {
     exts.push(ghostwriterField);
     exts.push(ghostwriterCoordsTracker);
     exts.push(search());
+    exts.push(EditorView.lineWrapping);
     return exts;
   }, [editorMode]);
 

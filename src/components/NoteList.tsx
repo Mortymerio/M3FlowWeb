@@ -1,7 +1,7 @@
 import { useMemo, memo } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { Edit3, Search, Clock, SortDesc, Trash2, FileText } from 'lucide-react';
+import { Edit3, Search, Clock, SortDesc, Trash2, FileText, Bell, CheckSquare } from 'lucide-react';
 
 const NoteItem = memo(({ note, isActive, onSelect, themeStyle, themeName, allTags, allNoteTags }: any) => {
   const getTimeAgo = (ts: number) => {
@@ -60,6 +60,31 @@ const NoteItem = memo(({ note, isActive, onSelect, themeStyle, themeName, allTag
         <p className={`text-[12px] line-clamp-2 opacity-50 leading-relaxed ${themeStyle.listText}`}>
           {snippet}
         </p>
+
+        {/* Micro-indicators: tasks + reminder */}
+        {(() => {
+          const taskMatches = note.body ? note.body.match(/^\s*-\s*\[([ xX])\]\s*.+$/gm) : null;
+          const totalTasks = taskMatches ? taskMatches.length : 0;
+          const doneTasks = taskMatches ? taskMatches.filter((m: string) => /\[[xX]\]/.test(m)).length : 0;
+          const hasReminder = note.reminderAt && note.reminderAt > Date.now();
+
+          return (totalTasks > 0 || hasReminder) ? (
+            <div className="flex items-center gap-3 mt-0.5">
+              {totalTasks > 0 && (
+                <span className={`flex items-center gap-1 text-[10px] font-bold ${doneTasks === totalTasks ? 'text-emerald-500' : 'opacity-40'}`} title={`${doneTasks}/${totalTasks} tasks done`}>
+                  <CheckSquare size={10} />
+                  {doneTasks}/{totalTasks}
+                </span>
+              )}
+              {hasReminder && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500" title={`Reminder: ${new Date(note.reminderAt).toLocaleString()}`}>
+                  <Bell size={10} />
+                  {new Date(note.reminderAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                </span>
+              )}
+            </div>
+          ) : null;
+        })()}
 
         {myTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-1">

@@ -61,6 +61,9 @@ try {
     getBacklinks: (noteId: string) => ipcRenderer.invoke('db:getBacklinks', noteId),
     scanTasks: () => ipcRenderer.invoke('db:scanTasks'),
     toggleTask: (opts: {noteId: string, lineNumber: number, checked: boolean}) => ipcRenderer.invoke('db:toggleTask', opts),
+    getTaskMeta: () => ipcRenderer.invoke('db:getTaskMeta'),
+    setTaskDueDate: (opts: {noteId: string, lineNumber: number, dueDate: number | null}) => ipcRenderer.invoke('db:setTaskDueDate', opts),
+    setTaskPriority: (opts: {noteId: string, lineNumber: number, priority: string}) => ipcRenderer.invoke('db:setTaskPriority', opts),
     onGithubProgress: (callback: (data: { current: number; total: number; message: string }) => void) => {
       ipcRenderer.on('github:progress', (_, data) => callback(data));
     },

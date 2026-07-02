@@ -61,6 +61,13 @@ ipcMain.handle('db:scanTasks', () => databaseAPI.scanTasks());
 ipcMain.handle('db:toggleTask', (_, opts: {noteId: string, lineNumber: number, checked: boolean}) => 
   databaseAPI.toggleTask(opts.noteId, opts.lineNumber, opts.checked)
 );
+ipcMain.handle('db:getTaskMeta', () => databaseAPI.getAllTaskMeta());
+ipcMain.handle('db:setTaskDueDate', (_, opts: {noteId: string, lineNumber: number, dueDate: number | null}) =>
+  databaseAPI.setTaskDueDate(opts.noteId, opts.lineNumber, opts.dueDate)
+);
+ipcMain.handle('db:setTaskPriority', (_, opts: {noteId: string, lineNumber: number, priority: string}) =>
+  databaseAPI.setTaskPriority(opts.noteId, opts.lineNumber, opts.priority)
+);
 
 ipcMain.handle('get-system-stats', () => {
   const totalMem = os.totalmem();

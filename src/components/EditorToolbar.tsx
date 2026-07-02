@@ -13,9 +13,13 @@ interface EditorToolbarProps {
 
 type DropdownType = 'none' | 'notebook' | 'status' | 'tags' | 'reminder' | 'history' | 'assistant';
 
+const TAG_COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+
 const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
-  const [isRow2Open, setIsRow2Open] = useState(false);
+  const [isRow2Open, setIsRow2Open] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState<DropdownType>('none');
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#3b82f6');
   const [tempReminder, setTempReminder] = useState<number | null>(null);
 
   const themeName = useStore(state => state.theme);
@@ -199,6 +203,39 @@ const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
                       </div>
                     );
                   })}
+                </div>
+                {/* Inline tag creation */}
+                <div className={`mt-2 pt-2 border-t ${themeStyle.editorBorder}`}>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex gap-0.5 flex-shrink-0">
+                      {TAG_COLORS.map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setNewTagColor(c)}
+                          className={`w-3 h-3 rounded-full transition-all ${newTagColor === c ? 'ring-2 ring-white/50 scale-125' : 'hover:scale-110'}`}
+                          style={{ backgroundColor: c }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: newTagColor }} />
+                    <input
+                      type="text"
+                      placeholder="New tag..."
+                      value={newTagName}
+                      onChange={e => setNewTagName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && newTagName.trim()) {
+                          useStore.getState().createTag(newTagName.trim(), newTagColor).then(tagId => {
+                            useStore.getState().toggleNoteTag(activeNoteId!, tagId);
+                          });
+                          setNewTagName('');
+                        }
+                      }}
+                      className={`flex-1 bg-transparent border rounded px-1.5 py-1 text-[11px] focus:outline-none focus:border-blue-500/50 ${themeStyle.editorBorder} min-w-0`}
+                    />
+                  </div>
                 </div>
               </div>
             )}

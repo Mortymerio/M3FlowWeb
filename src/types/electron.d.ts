@@ -54,6 +54,13 @@ interface DbAPI {
   githubImportDb: (opts: any) => Promise<{ success: boolean; error?: string }>;
   githubRecoverNotes: (opts: any) => Promise<{ success: boolean; count?: number; error?: string }>;
   onGithubProgress: (callback: (data: { current: number; total: number; message: string }) => void) => void;
+
+  // Task Metadata
+  scanTasks: () => Promise<any[]>;
+  toggleTask: (opts: { noteId: string; lineNumber: number; checked: boolean }) => Promise<boolean>;
+  getTaskMeta: () => Promise<{ noteId: string; lineNumber: number; dueDate: number | null; priority: string }[]>;
+  setTaskDueDate: (opts: { noteId: string; lineNumber: number; dueDate: number | null }) => Promise<void>;
+  setTaskPriority: (opts: { noteId: string; lineNumber: number; priority: string }) => Promise<void>;
 }
 
 declare global {

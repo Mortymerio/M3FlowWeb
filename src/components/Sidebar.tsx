@@ -154,6 +154,8 @@ const Sidebar = () => {
   
   const [expanded, setExpanded] = useState<Set<string>>(new Set(notebooks.map(nb => nb.id)));
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [tagsOpen, setTagsOpen] = useState(true);
   const setSyncModalOpen = useStore(state => state.setSyncModalOpen);
   
   const syncStatus = useStore(state => state.syncStatus);
@@ -170,7 +172,7 @@ const Sidebar = () => {
   const getStatusCount = (status: string) => notes.filter(n => n.status === status).length;
 
   return (
-    <div className={`flex-1 flex flex-col h-full font-sans relative pb-[120px] border-r rounded-l-xl ${themeStyle.sidebarBg} ${themeStyle.sidebarText} ${themeStyle.sidebarBorder}`} style={{ WebkitAppRegion: 'drag' } as any} onClick={() => setSettingsOpen(false)}>
+    <div className={`flex-1 flex flex-col h-full font-sans relative pb-[90px] border-r rounded-l-xl ${themeStyle.sidebarBg} ${themeStyle.sidebarText} ${themeStyle.sidebarBorder}`} style={{ WebkitAppRegion: 'drag' } as any} onClick={() => setSettingsOpen(false)}>
       {/* Logo at the very top */}
       <div className={`px-4 pt-4 pb-1 flex items-center justify-between no-drag ${themeStyle.sidebarHeader}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
         <div className="flex items-center gap-3">
@@ -293,60 +295,68 @@ const Sidebar = () => {
           ))}
         </ul>
 
-        {/* Sección de FILTROS */}
-        <div className="mt-8">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 px-2 opacity-50 flex items-center justify-between">
-            <span>FILTERS</span>
-            <span className="text-[9px] lowercase font-normal opacity-50">{notes.length} notes</span>
+        {/* Sección de FILTROS — Collapsible */}
+        <div className="mt-6">
+          {/* Status — Collapsible */}
+          <div className="mb-4">
+            <button
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className={`w-full px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] opacity-50 hover:opacity-80 flex items-center justify-between rounded-md transition-all ${themeStyle.sidebarHover}`}
+            >
+              <span className="flex items-center gap-1.5">STATUS</span>
+              <ChevronRight size={12} className={`transition-transform duration-200 ${filtersOpen ? 'rotate-90' : ''}`} />
+            </button>
+            {filtersOpen && (
+              <div className="flex flex-col gap-0.5 text-[13px] font-medium mt-1">
+                {['none', 'active', 'on-hold', 'completed', 'dropped'].map(status => {
+                   const isActive = activeStatusId === status;
+                   const label = status === 'none' ? 'None' : status === 'active' ? 'Active' : status === 'on-hold' ? 'On Hold' : status === 'completed' ? 'Completed' : 'Dropped';
+                   const icon = status === 'none' ? <span className="w-2.5 h-2.5 rounded-full border-2 border-gray-400"></span> :
+                                status === 'active' ? <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]"></span> :
+                                status === 'on-hold' ? <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]"></span> :
+                                status === 'completed' ? <div className="w-3 h-3 rounded-full bg-emerald-600 flex items-center justify-center text-[8px] text-white">✓</div> :
+                                <div className="w-3 h-3 rounded-full bg-red-500 flex items-center justify-center text-[8px] text-white">×</div>;
+                   return (
+                      <div key={status} onClick={() => useStore.getState().setActiveStatus(isActive ? null : status)} className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer transition-colors ${isActive ? themeStyle.sidebarActive : themeStyle.sidebarHover}`}>
+                        <div className="flex items-center gap-3">{icon} {label}</div>
+                        {status !== 'none' && <span className="text-[10px] opacity-60 tracking-tight">{getStatusCount(status)}</span>}
+                      </div>
+                   );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Statuses */}
-          <div className="mb-6">
-            <div className={`px-2 mb-2 text-[11px] font-bold opacity-70 ${themeStyle.sidebarText}`}>STATUS</div>
-            <div className="flex flex-col gap-0.5 text-[13px] font-medium">
-              {['none', 'active', 'on-hold', 'completed', 'dropped'].map(status => {
-                 const isActive = activeStatusId === status;
-                 const label = status === 'none' ? 'None' : status === 'active' ? 'Active' : status === 'on-hold' ? 'On Hold' : status === 'completed' ? 'Completed' : 'Dropped';
-                 const icon = status === 'none' ? <span className="w-2.5 h-2.5 rounded-full border-2 border-gray-400"></span> :
-                              status === 'active' ? <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]"></span> :
-                              status === 'on-hold' ? <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]"></span> :
-                              status === 'completed' ? <div className="w-3 h-3 rounded-full bg-emerald-600 flex items-center justify-center text-[8px] text-white">✓</div> :
-                              <div className="w-3 h-3 rounded-full bg-red-500 flex items-center justify-center text-[8px] text-white">×</div>;
-                 return (
-                    <div key={status} onClick={() => useStore.getState().setActiveStatus(isActive ? null : status)} className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer transition-colors ${isActive ? themeStyle.sidebarActive : themeStyle.sidebarHover}`}>
-                      <div className="flex items-center gap-3">{icon} {label}</div>
-                      {status !== 'none' && <span className="text-[10px] opacity-60 tracking-tight">{getStatusCount(status)}</span>}
+          {/* Tags — Collapsible */}
+          <div className="mb-4">
+            <button
+              onClick={() => setTagsOpen(!tagsOpen)}
+              className={`w-full px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] opacity-50 hover:opacity-80 flex items-center justify-between rounded-md transition-all ${themeStyle.sidebarHover}`}
+            >
+              <span className="flex items-center gap-1.5">TAGS <span className="text-[9px] font-normal opacity-60">{tags.length}</span></span>
+              <ChevronRight size={12} className={`transition-transform duration-200 ${tagsOpen ? 'rotate-90' : ''}`} />
+            </button>
+            {tagsOpen && (
+              <div className="flex flex-col gap-0.5 text-[13px] font-medium mt-1">
+                {tags.map(tag => {
+                  const isActive = activeTagId === tag.id;
+                  const count = noteTags.filter(nt => nt.tagId === tag.id).length;
+                  return (
+                    <div 
+                      key={tag.id} 
+                      onClick={() => useStore.getState().setActiveTag(isActive ? null : tag.id)}
+                      className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer transition-colors ${isActive ? themeStyle.sidebarActive : themeStyle.sidebarHover}`}
+                    >
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }}></div>
+                        <span className="truncate opacity-80">{tag.name}</span>
+                      </div>
+                      <span className="text-[10px] opacity-60 flex-shrink-0">{count}</span>
                     </div>
-                 );
-              })}
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="mb-8">
-            <div className="px-2 mb-2 text-[11px] font-bold opacity-70 flex items-center justify-between">
-              <span>TAGS</span>
-              <span className="text-[9px] font-normal opacity-50 uppercase tracking-tighter">{tags.length} total</span>
-            </div>
-            <div className="flex flex-col gap-0.5 text-[13px] font-medium">
-              {tags.map(tag => {
-                const isActive = activeTagId === tag.id;
-                const count = noteTags.filter(nt => nt.tagId === tag.id).length;
-                return (
-                  <div 
-                    key={tag.id} 
-                    onClick={() => useStore.getState().setActiveTag(isActive ? null : tag.id)}
-                    className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer transition-colors ${isActive ? themeStyle.sidebarActive : themeStyle.sidebarHover}`}
-                  >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }}></div>
-                      <span className="truncate opacity-80">{tag.name}</span>
-                    </div>
-                    <span className="text-[10px] opacity-60 flex-shrink-0">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -354,51 +364,35 @@ const Sidebar = () => {
       {/* Footer Area (Sync + Prefs) */}
       <div className={`absolute bottom-0 w-full z-10 border-t rounded-bl-xl flex flex-col ${themeStyle.sidebarBg} ${themeStyle.sidebarBorder} no-drag`} style={{ WebkitAppRegion: 'no-drag' } as any}>
         
-        {/* Sync Status Button (Large) */}
-        <div className="px-3 pt-3 pb-1">
+        {/* Sync Status — Compact Row */}
+        <div className="px-3 py-2">
           <div 
             onClick={() => setSyncModalOpen(true)}
-            className={`relative overflow-hidden cursor-pointer rounded-xl border p-3 flex flex-col gap-2 transition-all hover:shadow-lg ${themeStyle.sidebarBorder} ${themeStyle.sidebarHover}`}
+            className={`relative overflow-hidden cursor-pointer rounded-lg border px-3 py-2 flex items-center justify-between gap-2 transition-all hover:shadow-md ${themeStyle.sidebarBorder} ${themeStyle.sidebarHover}`}
           >
-            {/* Fondo de progreso animado si está sincronizando */}
             {syncStatus === 'syncing' && syncProgress && (
               <div 
                 className="absolute left-0 top-0 bottom-0 bg-blue-500/10 transition-all duration-300"
                 style={{ width: `${syncProgress.current}%` }}
               />
             )}
-
-            <div className="relative flex justify-between items-center z-10">
-              <div className="flex items-center gap-2">
-                {syncStatus === 'syncing' ? (
-                  <SpinnerIcon size={16} className={`animate-spin text-blue-500`} />
-                ) : syncStatus === 'error' ? (
-                  <AlertCircle size={16} className="text-red-500" />
-                ) : hasUnsyncedChanges ? (
-                  <Cloud size={16} className="text-amber-500" />
-                ) : (
-                  <CheckCircle2 size={16} className="text-green-500" />
-                )}
-                <span className={`text-[11px] font-bold uppercase tracking-wider`}>
-                  {syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'error' ? 'Sync Error' : hasUnsyncedChanges ? 'Pending Sync' : 'Up to date'}
-                </span>
-              </div>
-              {syncStatus === 'syncing' && syncProgress && (
-                <span className="text-[10px] font-bold text-blue-400">{Math.round(syncProgress.current)}%</span>
-              )}
-            </div>
-            
-            <div className="relative z-10 text-[9px] opacity-60 flex justify-between items-end">
-              {syncStatus === 'syncing' && syncProgress ? (
-                <span className="truncate pr-2">{syncProgress.message}</span>
+            <div className="relative flex items-center gap-2 z-10">
+              {syncStatus === 'syncing' ? (
+                <SpinnerIcon size={14} className="animate-spin text-blue-500" />
               ) : syncStatus === 'error' ? (
-                <span className="text-red-400">Check your connection.</span>
+                <AlertCircle size={14} className="text-red-500" />
               ) : hasUnsyncedChanges ? (
-                <span>Pending auto-sync...</span>
+                <Cloud size={14} className="text-amber-500" />
               ) : (
-                <span>Safely backed up to the cloud.</span>
+                <CheckCircle2 size={14} className="text-green-500" />
               )}
+              <span className="text-[10px] font-bold uppercase tracking-wider">
+                {syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'error' ? 'Error' : hasUnsyncedChanges ? 'Pending' : 'Synced'}
+              </span>
             </div>
+            {syncStatus === 'syncing' && syncProgress && (
+              <span className="relative z-10 text-[10px] font-bold text-blue-400">{Math.round(syncProgress.current)}%</span>
+            )}
           </div>
         </div>
 

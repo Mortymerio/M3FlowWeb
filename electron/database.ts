@@ -102,6 +102,16 @@ const initDB = (onProgress?: (msg: string) => void) => {
       FOREIGN KEY(source_id) REFERENCES Notes(id) ON DELETE CASCADE,
       FOREIGN KEY(target_id) REFERENCES Notes(id) ON DELETE CASCADE
     );
+
+    -- Fase 4: Task Metadata (due dates, priority)
+    CREATE TABLE IF NOT EXISTS TaskMeta (
+      noteId TEXT NOT NULL,
+      lineNumber INTEGER NOT NULL,
+      dueDate INTEGER,
+      priority TEXT DEFAULT 'none',
+      PRIMARY KEY(noteId, lineNumber),
+      FOREIGN KEY(noteId) REFERENCES Notes(id) ON DELETE CASCADE
+    );
   `;
   
   db.exec(initScript);
@@ -438,6 +448,7 @@ const databaseAPI = {
     db.prepare('DELETE FROM NoteTags WHERE noteId = ?').run(id);
     db.prepare('DELETE FROM notes_fts WHERE id = ?').run(id);
     db.prepare('DELETE FROM note_links WHERE source_id = ? OR target_id = ?').run(id, id);
+    db.prepare('DELETE FROM TaskMeta WHERE noteId = ?').run(id);
     db.prepare('DELETE FROM Notes WHERE id = ?').run(id);
   },
   deleteNotebook: (id: string) => {
@@ -491,7 +502,14 @@ const databaseAPI = {
 
   // Fase 3: Tasks Dashboard
   scanTasks: () => {
-    const notes = db.prepare('SELECT id, title, body FROM Notes').all() as {id: string, title: string, body: string}[];
+    const notes = db.prepare('SELECT n.id, n.title, n.body, n.status FROM Notes n').all() as {id: string, title: string, body: string, status: string}[];
+    // Pre-load all TaskMeta into a map for fast lookup
+    const allMeta = db.prepare('SELECT * FROM TaskMeta').all() as {noteId: string, lineNumber: number, dueDate: number | null, priority: string}[];
+    const metaMap = new Map<string, {dueDate: number | null, priority: string}>();
+    for (const m of allMeta) {
+      metaMap.set(`${m.noteId}:${m.lineNumber}`, { dueDate: m.dueDate, priority: m.priority });
+    }
+
     const tasks: any[] = [];
     
     for (const note of notes) {
@@ -501,18 +519,50 @@ const databaseAPI = {
       for (let i = 0; i < lines.length; i++) {
         const match = lines[i].match(/^(\s*)-\s*\[([ xX])\]\s*(.+)$/);
         if (match) {
+          const meta = metaMap.get(`${note.id}:${i}`);
           tasks.push({
             noteId: note.id,
             noteTitle: note.title,
+            noteStatus: note.status || 'none',
             lineNumber: i,
             taskIndex: taskIndex++,
             checked: match[2] !== ' ',
             text: match[3].trim(),
+            dueDate: meta?.dueDate || null,
+            priority: meta?.priority || 'none',
           });
         }
       }
     }
     return tasks;
+  },
+
+  // Fase 4: Task Metadata
+  getAllTaskMeta: () => {
+    return db.prepare('SELECT * FROM TaskMeta').all();
+  },
+
+  setTaskDueDate: (noteId: string, lineNumber: number, dueDate: number | null) => {
+    if (dueDate === null) {
+      // Remove the row if clearing the date
+      db.prepare('DELETE FROM TaskMeta WHERE noteId = ? AND lineNumber = ?').run(noteId, lineNumber);
+    } else {
+      const existing = db.prepare('SELECT * FROM TaskMeta WHERE noteId = ? AND lineNumber = ?').get(noteId, lineNumber);
+      if (existing) {
+        db.prepare('UPDATE TaskMeta SET dueDate = ? WHERE noteId = ? AND lineNumber = ?').run(dueDate, noteId, lineNumber);
+      } else {
+        db.prepare('INSERT INTO TaskMeta (noteId, lineNumber, dueDate, priority) VALUES (?, ?, ?, ?)').run(noteId, lineNumber, dueDate, 'none');
+      }
+    }
+  },
+
+  setTaskPriority: (noteId: string, lineNumber: number, priority: string) => {
+    const existing = db.prepare('SELECT * FROM TaskMeta WHERE noteId = ? AND lineNumber = ?').get(noteId, lineNumber);
+    if (existing) {
+      db.prepare('UPDATE TaskMeta SET priority = ? WHERE noteId = ? AND lineNumber = ?').run(priority, noteId, lineNumber);
+    } else {
+      db.prepare('INSERT INTO TaskMeta (noteId, lineNumber, dueDate, priority) VALUES (?, ?, ?, ?)').run(noteId, lineNumber, null, priority);
+    }
   },
 
   toggleTask: (noteId: string, lineNumber: number, checked: boolean) => {
