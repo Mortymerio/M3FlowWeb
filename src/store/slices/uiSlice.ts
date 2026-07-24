@@ -21,7 +21,7 @@ export const createUISlice: StateCreator<
   
   editorMode: (localStorage.getItem('editorMode') as any) || 'normal',
   editorType: (localStorage.getItem('editorType') as 'raw' | 'rich') || 'raw',
-  theme: (localStorage.getItem('theme') as any) || 'cyber-ronin',
+  theme: (localStorage.getItem('theme') as any) || 'github-dark',
   customColors: JSON.parse(localStorage.getItem('customColors') || '{"sidebarBg":"#1e2329","sidebarHeader":"#171b1f","listBg":"#252b33","listHeader":"#1e2329","editorBg":"#15191e","editorHeader":"#1e2329","previewBg":"#1a1e24"}'),
   isCustomMenuOpen: false,
   editorFontSize: parseInt(localStorage.getItem('fontSize') || '14') || 14,
