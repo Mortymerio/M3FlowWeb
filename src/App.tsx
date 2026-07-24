@@ -25,7 +25,6 @@ const isLightColor = (hex: string) => {
 };
 
 const App = () => {
-  const loadInitialData = useStore(state => state.loadInitialData);
   const isFallbackMode = useStore(state => state.isFallbackMode);
   const isBrowserMode = useStore(state => state.isBrowserMode);
   const themeName = useStore(state => state.theme);
