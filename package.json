@@ -8,8 +8,7 @@
                     "dev":  "vite",
                     "build":  "tsc -b \u0026\u0026 vite build",
                     "lint":  "eslint .",
-                    "preview":  "vite preview",
-                    "postinstall":  "electron-builder install-app-deps"
+                    "preview":  "vite preview"
                 },
     "dependencies":  {
                          "@blocknote/core":  "^0.49.0",
