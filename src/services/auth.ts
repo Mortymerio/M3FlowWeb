@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 import { 
   getAuth, 
   signInWithPopup, 
@@ -19,14 +20,16 @@ const firebaseConfig = {
 
 // Initialize Firebase only if the user has replaced the config
 let app;
-let auth: ReturnType<typeof getAuth> | null = null;
-let provider: GithubAuthProvider | null = null;
+export let auth: ReturnType<typeof getAuth> | null = null;
+export let provider: GithubAuthProvider | null = null;
+export let db: ReturnType<typeof getFirestore> | null = null;
 
 try {
   if (firebaseConfig.apiKey !== "REPLACE_WITH_YOUR_API_KEY") {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     provider = new GithubAuthProvider();
+    db = getFirestore(app);
   }
 } catch (e) {
   console.warn("Firebase config is missing or invalid.");

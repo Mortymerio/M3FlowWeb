@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import { Minus, Square, X, Bell } from 'lucide-react';
+import { X, Bell } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import NoteList from './components/NoteList';
 import Editor from './components/Editor';
@@ -11,6 +11,7 @@ import AboutModal from './components/AboutModal';
 import SyncSettingsModal from './components/SyncSettingsModal';
 import { TemplatesManagerModal } from './components/TemplatesManagerModal';
 import NotebookContextModal from './components/NotebookContextModal';
+import LoginScreen from './components/LoginScreen';
 import { useStore } from './store';
 import { THEMES } from './themes';
 
@@ -167,6 +168,31 @@ const App = () => {
   const customColors = useStore(state => state.customColors);
   const isCustomMenuOpen = useStore(state => state.isCustomMenuOpen);
 
+  // --- Auth Integration ---
+  const [user, setUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  
+  useEffect(() => {
+    import('./services/auth').then(({ subscribeToAuthChanges }) => {
+      const unsub = subscribeToAuthChanges((u) => {
+        setUser(u);
+        setAuthChecked(true);
+      });
+      return unsub;
+    });
+  }, []);
+
+  if (!authChecked) {
+    return <div className="flex h-screen items-center justify-center text-gray-400">Loading...</div>;
+  }
+
+  if (!user) {
+    // Requires importing LoginScreen - we'll do it via lazy or require to avoid changing the top level imports just for this block, actually let's just inline a require since we are hacking it, wait, Vite doesn't like require. I will add the import at the top of the file in a separate replace_file_content call, and here I'll just render it if available, but for now I'll return it directly assuming the import exists.
+    return (
+      <LoginScreen onLogin={(u) => setUser(u)} />
+    );
+  }
+
   return (
     <div id="app-root-container" className={`flex h-screen w-screen overflow-hidden font-sans selection:bg-blue-500/30 relative rounded-[20px] border border-white/5 ${themeStyle.sidebarBg} print:!bg-white`}>
       
@@ -261,27 +287,7 @@ const App = () => {
         </div>
       )}
 
-      {/* Global Window Controls */}
-      <div className="absolute top-0 right-0 h-10 flex items-center gap-0.5 z-[999999] px-3 pointer-events-auto no-drag print:hidden" style={{ WebkitAppRegion: 'no-drag' } as any}>
-        <button 
-          onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.minimizeApp(); }} 
-          className={`w-7 h-7 rounded-full transition-all flex items-center justify-center group ${themeStyle.isDark !== false ? 'text-white/80 hover:bg-white/25 hover:text-white' : 'text-black/60 hover:bg-black/15 hover:text-black'}`}
-        >
-          <Minus size={14} className="group-hover:scale-110 transition-transform" />
-        </button>
-        <button 
-          onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.maximizeApp(); }} 
-          className={`w-7 h-7 rounded-full transition-all flex items-center justify-center group ${themeStyle.isDark !== false ? 'text-white/80 hover:bg-white/25 hover:text-white' : 'text-black/60 hover:bg-black/15 hover:text-black'}`}
-        >
-          <Square size={10} className="group-hover:scale-110 transition-transform" />
-        </button>
-        <button 
-          onClick={(e) => { e.stopPropagation(); (window as any).dbAPI.closeApp(); }} 
-          className="w-7 h-7 rounded-full hover:bg-red-500 hover:text-white transition-all shadow-lg flex items-center justify-center text-red-400 group"
-        >
-          <X size={14} className="group-hover:scale-110 transition-transform" />
-        </button>
-      </div>
+      {/* Global Window Controls (Removed for Web) */}
 
       {/* Overlays at the end of DOM for better event handling */}
       <WelcomeScreen />
