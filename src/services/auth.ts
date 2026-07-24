@@ -4,6 +4,7 @@ import {
   getAuth, 
   signInWithPopup, 
   GithubAuthProvider, 
+  GoogleAuthProvider,
   onAuthStateChanged,
   signOut
 } from 'firebase/auth';
@@ -21,14 +22,16 @@ const firebaseConfig = {
 // Initialize Firebase only if the user has replaced the config
 let app;
 export let auth: ReturnType<typeof getAuth> | null = null;
-export let provider: GithubAuthProvider | null = null;
+export let githubProvider: GithubAuthProvider | null = null;
+export let googleProvider: GoogleAuthProvider | null = null;
 export let db: ReturnType<typeof getFirestore> | null = null;
 
 try {
   if (firebaseConfig.apiKey !== "REPLACE_WITH_YOUR_API_KEY") {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    provider = new GithubAuthProvider();
+    githubProvider = new GithubAuthProvider();
+    googleProvider = new GoogleAuthProvider();
     db = getFirestore(app);
   }
 } catch (e) {
@@ -36,12 +39,20 @@ try {
 }
 
 export const loginWithGithub = async () => {
-  if (!auth || !provider) {
+  if (!auth || !githubProvider) {
     alert("Firebase not configured. Please add your credentials in src/services/auth.ts");
-    // For demo purposes, we will return a fake user if not configured
     return { uid: 'demo-user', displayName: 'Demo User' } as unknown as User;
   }
-  const result = await signInWithPopup(auth, provider);
+  const result = await signInWithPopup(auth, githubProvider);
+  return result.user;
+};
+
+export const loginWithGoogle = async () => {
+  if (!auth || !googleProvider) {
+    alert("Firebase not configured. Please add your credentials in src/services/auth.ts");
+    return { uid: 'demo-user', displayName: 'Demo User' } as unknown as User;
+  }
+  const result = await signInWithPopup(auth, googleProvider);
   return result.user;
 };
 
