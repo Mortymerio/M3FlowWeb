@@ -53,10 +53,6 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    loadInitialData().catch(_e => {
-      console.error('[App] Error:', _e);
-    });
-
     const handleMouseMove = (e: MouseEvent) => {
       if (isResizingSidebar.current) {
         let newWidth = e.clientX;
@@ -83,7 +79,7 @@ const App = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [loadInitialData, sidebarWidth]);
+  }, [sidebarWidth]);
 
   // Recordatorios (Alert System Watchdog)
   const triggeredReminders = useRef<Set<string>>(new Set());
@@ -177,6 +173,9 @@ const App = () => {
       const unsub = subscribeToAuthChanges((u) => {
         setUser(u);
         setAuthChecked(true);
+        if (u) {
+          useStore.getState().loadInitialData().catch(e => console.error(e));
+        }
       });
       return unsub;
     });
