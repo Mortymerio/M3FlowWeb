@@ -500,6 +500,16 @@ export const createDataSlice: StateCreator<
   },
   deleteNote: async (id) => {
     if (!id) return;
+
+    // Check if there's an open tab for this note and close it
+    const tabs = (get() as any).tabs;
+    if (tabs) {
+      const tabToClose = tabs.find((t: any) => t.type === 'note' && t.noteId === id);
+      if (tabToClose) {
+        (get() as any).closeTab(tabToClose.id);
+      }
+    }
+
     set(state => ({ 
       notes: state.notes.filter(n => n.id !== id),
       activeNoteId: state.activeNoteId === id ? null : state.activeNoteId,
