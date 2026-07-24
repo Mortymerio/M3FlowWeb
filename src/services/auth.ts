@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { 
   getAuth, 
   signInWithPopup, 
@@ -32,7 +32,9 @@ try {
     auth = getAuth(app);
     githubProvider = new GithubAuthProvider();
     googleProvider = new GoogleAuthProvider();
-    db = getFirestore(app);
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache()
+    });
   }
 } catch (e) {
   console.warn("Firebase config is missing or invalid.");
