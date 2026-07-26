@@ -12,7 +12,8 @@ import {
 import { createReactBlockSpec, createReactInlineContentSpec } from '@blocknote/react'
 import { MATH_BLOCK_TYPE, MATH_INLINE_TYPE, renderMathToHtml } from '../lib/math-markdown.ts'
 import { MERMAID_BLOCK_TYPE, mermaidFenceSource } from '../lib/mermaid-markdown.ts'
-import { MermaidDiagram } from './MermaidDiagram.tsx'
+import { lazy, Suspense } from 'react';
+const MermaidDiagram = lazy(() => import('./MermaidDiagram.tsx').then(m => ({ default: m.MermaidDiagram })));
 import { sanitizeHtml } from '../lib/sanitize';
 
 // --- Math Rendering ---
@@ -102,10 +103,12 @@ const MermaidBlock = createReactBlockSpec(
     runsBefore: ['codeBlock'],
     parse: readMermaidPreElement,
     render: (props) => (
-      <MermaidDiagram
-        diagram={props.block.props.diagram}
-        source={props.block.props.source}
-      />
+      <Suspense fallback={<div className="p-4 text-center text-sm opacity-50">Loading diagram...</div>}>
+        <MermaidDiagram
+          diagram={props.block.props.diagram}
+          source={props.block.props.source}
+        />
+      </Suspense>
     ),
   },
 )

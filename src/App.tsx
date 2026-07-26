@@ -12,6 +12,7 @@ import SyncSettingsModal from './components/SyncSettingsModal';
 import { TemplatesManagerModal } from './components/TemplatesManagerModal';
 import NotebookContextModal from './components/NotebookContextModal';
 import LoginScreen from './components/LoginScreen';
+import dbAPI from './services/db';
 import { useStore } from './store';
 import { THEMES } from './themes';
 
@@ -43,8 +44,7 @@ const App = () => {
   // Auto-sync Watchdog (DISABLED per user request)
   useEffect(() => {
     // Solo mantenemos el listener del progreso para la UI
-    const dbAPI = (window as any).dbAPI;
-    if (dbAPI?.onGithubProgress) {
+    if (dbAPI.onGithubProgress) {
       dbAPI.onGithubProgress((data: any) => {
         useStore.getState().setSyncProgress(data);
       });

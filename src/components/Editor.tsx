@@ -9,9 +9,10 @@ import { languages } from '@codemirror/language-data';
 import { search } from '@codemirror/search';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { Columns } from 'lucide-react';
-import RichEditor from './RichEditor';
-import AiChatPanel from './AiChatPanel';
+import { Columns, Loader2 } from 'lucide-react';
+import { lazy, Suspense } from 'react';
+const RichEditor = lazy(() => import('./RichEditor'));
+const AiChatPanel = lazy(() => import('./AiChatPanel'));
 import NotebookDashboard from './NotebookDashboard';
 import EditorToolbar from './EditorToolbar';
 import EditorStatusBar from './EditorStatusBar';
@@ -275,16 +276,18 @@ const Editor = () => {
           <EditorSearchPanel editorRef={editorRef} />
 
           {/* RICH MODE: BlockNote replaces everything */}
-          {editorType === 'rich' && (
-            <div className="flex-1 h-full overflow-hidden" style={{ fontSize: `${editorFontSize}px` }}>
-              <RichEditor
-                content={content}
-                onChange={(md) => setContent(md)}
-                fontSize={editorFontSize}
-                themeName={themeName}
-              />
-            </div>
-          )}
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center h-full"><Loader2 className="animate-spin opacity-50" /></div>}>
+            {editorType === 'rich' && (
+              <div className="flex-1 h-full overflow-hidden" style={{ fontSize: `${editorFontSize}px` }}>
+                <RichEditor
+                  content={content}
+                  onChange={(md) => setContent(md)}
+                  fontSize={editorFontSize}
+                  themeName={themeName}
+                />
+              </div>
+            )}
+          </Suspense>
 
           {/* RAW MODE: Original CodeMirror + Preview */}
           {editorType === 'raw' && (
@@ -397,6 +400,7 @@ const Editor = () => {
           )}
 
           {/* AI Chat Panel — slides in from right */}
+        <Suspense fallback={<div className="w-80 border-l border-white/5 flex items-center justify-center bg-black/20 backdrop-blur-xl"><Loader2 className="animate-spin opacity-50" /></div>}>
           <AiChatPanel
             isOpen={isAiPanelOpen}
             onClose={() => toggleAiPanel()}
@@ -410,6 +414,7 @@ const Editor = () => {
               triggerAiAnimation();
             }}
           />
+        </Suspense>
           
           {contextMenu && (
             <GhostwriterContextMenu

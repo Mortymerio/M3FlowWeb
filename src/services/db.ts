@@ -204,7 +204,7 @@ const dbAPI = {
   githubSync: async (_args?: any) => ({ success: false, error: '' }),
   githubImportDb: async (_args?: any) => ({ success: false, error: '' }),
   githubRecoverNotes: async (_args?: any) => ({ success: false, count: 0, error: '' }),
-  onGithubProgress: () => {},
+  onGithubProgress: (_callback: any) => {},
 
   scanTasks: async () => {
     if (!auth?.currentUser) return [];
