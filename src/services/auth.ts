@@ -11,12 +11,12 @@ import {
 import type { User } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "***REMOVED***",
-  authDomain: "***REMOVED_PROJECT***.firebaseapp.com",
-  projectId: "***REMOVED_PROJECT***",
-  storageBucket: "***REMOVED_PROJECT***.firebasestorage.app",
-  messagingSenderId: "***REMOVED***",
-  appId: "1:***REMOVED***:web:eef36482675f8775404c1d"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || ""
 };
 
 // Initialize Firebase only if the user has replaced the config
@@ -27,7 +27,7 @@ export let googleProvider: GoogleAuthProvider | null = null;
 export let db: ReturnType<typeof getFirestore> | null = null;
 
 try {
-  if (firebaseConfig.apiKey !== "REPLACE_WITH_YOUR_API_KEY") {
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "REPLACE_WITH_YOUR_API_KEY") {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     githubProvider = new GithubAuthProvider();
