@@ -156,6 +156,12 @@ export interface AISlice {
   isWebLlmLoaded: boolean;
   webLlmProgress: number;
   webLlmStatusText: string;
+  masterPassword: string | null;
+  vaultUnlocked: boolean;
+  vaultExists: boolean;
+  setMasterPassword: (pwd: string) => Promise<boolean>;
+  resetVault: () => Promise<void>;
+  checkVaultExists: () => Promise<void>;
   pendingAiPrompt: string | null;
   setPendingAiPrompt: (prompt: string | null) => void;
   aiChatHistory: Record<string, { id: string; role: 'user' | 'ai'; text: string; timestamp: number }[]>;

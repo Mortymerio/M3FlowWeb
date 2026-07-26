@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, X, Sparkles, Brain, Settings2, Cpu, ChevronDown, ChevronRight } from 'lucide-react';
+import { Send, Loader2, Trash2, X, Sparkles, Brain, Settings2, Cpu, ChevronDown, ChevronRight, Lock } from 'lucide-react';
 import { THEMES } from '../themes';
 import { useStore } from '../store';
 import { initWebLlm } from '../lib/webllm';
@@ -46,6 +46,19 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
   const webLlmModelUrl = useStore(state => state.webLlmModelUrl);
   const setAiConfig = useStore(state => state.setAiConfig);
   const setActiveAiProvider = useStore(state => state.setActiveAiProvider);
+  
+  // Vault state
+  const vaultUnlocked = useStore(state => state.vaultUnlocked);
+  const vaultExists = useStore(state => state.vaultExists);
+  const setMasterPassword = useStore(state => state.setMasterPassword);
+  const resetVault = useStore(state => state.resetVault);
+  const checkVaultExists = useStore(state => state.checkVaultExists);
+  const [vaultInput, setVaultInput] = useState('');
+  const [vaultError, setVaultError] = useState(false);
+
+  useEffect(() => {
+    checkVaultExists();
+  }, [checkVaultExists]);
   const notes = useStore(state => state.notes);
 
   const isWebLlmLoaded = useStore(state => state.isWebLlmLoaded);
@@ -486,54 +499,102 @@ const AiChatPanel = ({ isOpen, onClose, content, noteTitle, onContentChange }: A
             {activeAiProvider === 'lmstudio' && (
               <input type="text" placeholder="LM Studio URL" value={lmStudioUrl} onChange={(e) => setAiConfig('lmStudioUrl', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
             )}
-            {activeAiProvider === 'openai' && (
-              <input type="password" placeholder="sk-..." value={openAiKey} onChange={(e) => setAiConfig('openAiKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
-            )}
-            {activeAiProvider === 'azure' && (
-              <div className="space-y-1.5">
-                <input type="text" placeholder="Azure URL" value={azureUrl} onChange={(e) => setAiConfig('azureUrl', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
-                <input type="password" placeholder="Azure API Key" value={azureKey} onChange={(e) => setAiConfig('azureKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
-              </div>
-            )}
-            {activeAiProvider === 'github' && (
-              <input type="password" placeholder="GitHub Token (ghp_...)" value={githubToken} onChange={(e) => setAiConfig('githubToken', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
-            )}
-            {activeAiProvider === 'gemini' && (
-              <div className="space-y-1.5">
-                <div className="flex gap-1.5">
-                  <select value={geminiApiVersion} onChange={(e) => setAiConfig('geminiApiVersion', e.target.value)} className={`text-[10px] p-2 rounded-lg w-24 border ${fieldBg}`}>
-                    <option value="v1">v1 (Stable)</option>
-                    <option value="v1beta">v1beta</option>
-                  </select>
-                  <div className="flex-1 flex gap-1 items-center">
-                    {availableGeminiModels.length > 0 ? (
-                      <select
-                        value={geminiModel}
-                        onChange={(e) => setAiConfig('geminiModel', e.target.value)}
-                        className={`text-[10px] p-2 rounded-lg flex-1 border ${fieldBg}`}
-                      >
-                        {availableGeminiModels.map(m => (
-                          <option key={m.name} value={m.name}>{m.displayName}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input type="text" placeholder="Model (ej: gemini-3.1-pro)" value={geminiModel} onChange={(e) => setAiConfig('geminiModel', e.target.value)} className={`text-[10px] p-2 rounded-lg flex-1 border ${fieldBg}`} />
-                    )}
-                    <button
-                      onClick={fetchGeminiModels}
-                      disabled={isFetchingModels || !geminiKey}
-                      className={`p-2 rounded-lg border ${fieldBg} ${hoverBg} transition-colors disabled:opacity-30`}
-                      title="Refresh models from API"
-                    >
-                      {isFetchingModels ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} className="rotate-90" />}
-                    </button>
-                  </div>
+            
+            {/* Cloud providers require Vault */}
+            {['openai', 'azure', 'github', 'gemini', 'claude'].includes(activeAiProvider) && !vaultUnlocked ? (
+              <div className={`p-3 rounded-lg border ${themeStyle.editorBorder} bg-black/20 mt-2 space-y-3`}>
+                <div className="flex items-center gap-2 text-yellow-500">
+                  <Lock size={14} />
+                  <span className="text-[11px] font-bold">API Vault</span>
                 </div>
-                <input type="password" placeholder="Gemini API Key" value={geminiKey} onChange={(e) => setAiConfig('geminiKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+                <p className="text-[10px] opacity-70 leading-tight">
+                  {vaultExists 
+                    ? "Ingresa tu contraseña para desencriptar tus claves." 
+                    : "Crea una contraseña maestra para encriptar tus claves. Usamos AES-256-GCM (estándar de seguridad militar)."}
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    placeholder="Contraseña Maestra"
+                    value={vaultInput}
+                    onChange={(e) => { setVaultInput(e.target.value); setVaultError(false); }}
+                    className={`text-[10px] p-2 rounded-lg flex-1 border ${vaultError ? 'border-red-500 bg-red-500/10' : fieldBg}`}
+                  />
+                  <button
+                    onClick={async () => {
+                      const success = await setMasterPassword(vaultInput);
+                      if (!success) setVaultError(true);
+                    }}
+                    className="px-3 py-1 bg-yellow-600/80 hover:bg-yellow-500 text-white text-[10px] font-bold rounded-lg transition-colors"
+                  >
+                    {vaultExists ? 'Unlock' : 'Create'}
+                  </button>
+                </div>
+                {vaultExists && (
+                  <button 
+                    onClick={() => {
+                      if (confirm('¿Estás seguro de querer borrar la bóveda? Perderás todas tus claves encriptadas permanentemente.')) {
+                        resetVault();
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-1 mt-2 text-[9px] text-red-400 hover:text-red-300 transition-colors opacity-70"
+                  >
+                    <Trash2 size={10} /> Borrar bóveda y claves
+                  </button>
+                )}
               </div>
-            )}
-            {activeAiProvider === 'claude' && (
-              <input type="password" placeholder="sk-ant-..." value={claudeKey} onChange={(e) => setAiConfig('claudeKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+            ) : (
+              <>
+                {activeAiProvider === 'openai' && (
+                  <input type="password" placeholder="sk-..." value={openAiKey} onChange={(e) => setAiConfig('openAiKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+                )}
+                {activeAiProvider === 'azure' && (
+                  <div className="space-y-1.5">
+                    <input type="text" placeholder="Azure URL" value={azureUrl} onChange={(e) => setAiConfig('azureUrl', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+                    <input type="password" placeholder="Azure API Key" value={azureKey} onChange={(e) => setAiConfig('azureKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+                  </div>
+                )}
+                {activeAiProvider === 'github' && (
+                  <input type="password" placeholder="GitHub Token (ghp_...)" value={githubToken} onChange={(e) => setAiConfig('githubToken', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+                )}
+                {activeAiProvider === 'gemini' && (
+                  <div className="space-y-1.5">
+                    <div className="flex gap-1.5">
+                      <select value={geminiApiVersion} onChange={(e) => setAiConfig('geminiApiVersion', e.target.value)} className={`text-[10px] p-2 rounded-lg w-24 border ${fieldBg}`}>
+                        <option value="v1">v1 (Stable)</option>
+                        <option value="v1beta">v1beta</option>
+                      </select>
+                      <div className="flex-1 flex gap-1 items-center">
+                        {availableGeminiModels.length > 0 ? (
+                          <select
+                            value={geminiModel}
+                            onChange={(e) => setAiConfig('geminiModel', e.target.value)}
+                            className={`text-[10px] p-2 rounded-lg flex-1 border ${fieldBg}`}
+                          >
+                            {availableGeminiModels.map(m => (
+                              <option key={m.name} value={m.name}>{m.displayName}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input type="text" placeholder="Model (ej: gemini-3.1-pro)" value={geminiModel} onChange={(e) => setAiConfig('geminiModel', e.target.value)} className={`text-[10px] p-2 rounded-lg flex-1 border ${fieldBg}`} />
+                        )}
+                        <button
+                          onClick={fetchGeminiModels}
+                          disabled={isFetchingModels || !geminiKey}
+                          className={`p-2 rounded-lg border ${fieldBg} ${hoverBg} transition-colors disabled:opacity-30`}
+                          title="Refresh models from API"
+                        >
+                          {isFetchingModels ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} className="rotate-90" />}
+                        </button>
+                      </div>
+                    </div>
+                    <input type="password" placeholder="Gemini API Key" value={geminiKey} onChange={(e) => setAiConfig('geminiKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+                  </div>
+                )}
+                {activeAiProvider === 'claude' && (
+                  <input type="password" placeholder="sk-ant-..." value={claudeKey} onChange={(e) => setAiConfig('claudeKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
+                )}
+              </>
             )}
           </div>
         )}

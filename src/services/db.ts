@@ -29,6 +29,7 @@ const templatesRef = () => collection(db!, `users/${getUid()}/templates`);
 const templateDoc = (id: string) => doc(db!, `users/${getUid()}/templates/${id}`);
 const taskMetaRef = () => collection(db!, `users/${getUid()}/taskMeta`);
 const taskMetaDoc = (id: string) => doc(db!, `users/${getUid()}/taskMeta/${id}`);
+const aiSettingsDoc = () => doc(db!, `users/${getUid()}/settings/ai`);
 
 const dbAPI = {
   getNotes: async () => {
@@ -183,6 +184,21 @@ const dbAPI = {
   maximizeApp: async () => {},
   getSystemStats: async () => ({ sysMemPct: 0, processMemMb: 0 }),
   isFallbackMode: async () => false,
+
+  getAiSettings: async () => {
+    if (!auth?.currentUser) return null;
+    const snap = await getDoc(aiSettingsDoc());
+    if (snap.exists()) return snap.data().encryptedPayload as string;
+    return null;
+  },
+  saveAiSettings: async (encryptedPayload: string | null) => {
+    if (!auth?.currentUser) return;
+    if (encryptedPayload === null) {
+      await deleteDoc(aiSettingsDoc());
+    } else {
+      await setDoc(aiSettingsDoc(), { encryptedPayload });
+    }
+  },
 
   githubTestConnection: async () => ({ success: false }),
   githubSync: async () => ({ success: false }),
