@@ -212,10 +212,10 @@ const dbAPI = {
     const tasks: any[] = [];
     for (const note of notes) {
       if (note.deletedAt) continue;
-      const lines = (note.body || '').split('\n');
+      const lines = (note.body || '').split(/\r?\n/);
       let taskIndex = 0;
       for (let i = 0; i < lines.length; i++) {
-        const match = lines[i].match(/^(\s*)-\s*\[([ xX])\]\s*(.+)$/);
+        const match = lines[i].match(/^(\s*)[-*]\s*\[([ xX])\]\s*(.+)$/);
         if (match) {
           const meta = metaMap.get(`${note.id}:${i}`);
           tasks.push({
@@ -268,7 +268,7 @@ const dbAPI = {
     if (!snap.exists()) return false;
     const note = snap.data() as Note;
     if (!note.body) return false;
-    const lines = note.body.split('\n');
+    const lines = note.body.split(/\r?\n/);
     if (lines[lineNumber] === undefined) return false;
     lines[lineNumber] = checked
       ? lines[lineNumber].replace(/\[\s\]/, '[x]')
