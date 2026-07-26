@@ -115,7 +115,7 @@ const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
           {/* Pin Toggle */}
           <button
             onClick={() => {
-              if (activeNote) {
+              if (activeNote && activeNoteId) {
                 useStore.getState().updateNoteIsPinned(activeNoteId, !activeNote.isPinned);
               }
             }}
