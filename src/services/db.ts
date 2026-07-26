@@ -175,15 +175,7 @@ const dbAPI = {
     return notes.filter(n => n.body?.includes(titleMatch));
   },
 
-  exportMarkdown: async (_title?: string, _content?: string) => false,
-  exportCSV: async (_title?: string, _content?: string) => false,
-  exportPDF: async (_title?: string) => false,
-  importWorkspace: async () => false,
-  closeApp: async () => {},
-  minimizeApp: async () => {},
-  maximizeApp: async () => {},
-  getSystemStats: async () => ({ sysMemPct: 0, processMemMb: 0 }),
-  isFallbackMode: async () => false,
+
 
   getAiSettings: async () => {
     if (!auth?.currentUser) return null;

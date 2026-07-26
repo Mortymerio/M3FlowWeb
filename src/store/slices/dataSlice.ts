@@ -98,9 +98,6 @@ export const createDataSlice: StateCreator<
         return;
       }
 
-      const isFallback = await dbAPI.isFallbackMode();
-      set({ isFallbackMode: isFallback } as any);
-
       let [notebooks, notes, tags, noteTags, templates] = await Promise.all([
         dbAPI.getNotebooks(),
         dbAPI.getNotes(),

@@ -92,10 +92,11 @@ export const EditorSearchPanel = ({ editorRef }: EditorSearchPanelProps) => {
       const selFrom = view.state.selection.main.from;
       const selTo = view.state.selection.main.to;
       
-      let match = null;
-      let firstMatch = null;
-      let lastMatch = null;
-      let prevMatch = null;
+      type Match = { from: number; to: number } | null;
+      let match: Match = null;
+      let firstMatch: Match = null;
+      let lastMatch: Match = null;
+      let prevMatch: Match = null;
 
       let iter = cursor.next();
       while (!iter.done) {

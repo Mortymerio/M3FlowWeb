@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Cpu, Check, PenLine, AlertCircle } from 'lucide-react';
-import dbAPI from '../services/db';
+import { Check, PenLine, AlertCircle } from 'lucide-react';
 import { useStore } from '../store';
 
 interface EditorStatusBarProps {
@@ -39,25 +38,9 @@ const EditorStatusBar = ({
     }
   }, [saveStatus]);
 
-  const [sysMemPct, setSysMemPct] = useState<number | null>(null);
-  const [processMemMb, setProcessMemMb] = useState<number | null>(null);
-
   useEffect(() => {
-    // Poll system stats gently every 5 seconds
-    const fetchStats = async () => {
-      try {
-        if (dbAPI.getSystemStats) {
-          const stats = await dbAPI.getSystemStats();
-          setSysMemPct(stats.sysMemPct);
-          setProcessMemMb(stats.processMemMb);
-        }
-      } catch (e) {
-        // Ignore quietly
-      }
-    };
-    
-    fetchStats();
-    const interval = setInterval(fetchStats, 5000);
+    // Only run character/word count interval
+    const interval = setInterval(() => {}, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -86,18 +69,7 @@ const EditorStatusBar = ({
           </span>
         )}
         
-        {/* System & RAM Stats */}
-        {sysMemPct !== null && processMemMb !== null && (
-          <>
-            <span className={`mx-1 w-px h-3 border-l ${themeStyle.editorBorder}`}></span>
-            <span className="flex items-center gap-1.5 text-[10px] opacity-40 hover:opacity-100 transition-opacity" title="M3Flow Memory Usage / System Memory Load">
-              <Cpu size={10} />
-              <span>APP: {processMemMb}MB</span>
-              <span className="opacity-50">|</span>
-              <span>SYS: {sysMemPct}%</span>
-            </span>
-          </>
-        )}
+
       </div>
       <div className="flex items-center gap-4 opacity-60">
         {editorType === 'raw' && (
@@ -130,42 +102,8 @@ const EditorStatusBar = ({
           ) : null}
         </div>
 
-        <span className={`mx-1 w-px h-3 border-l ${themeStyle.editorBorder}`}></span>
 
-        {/* Export buttons — integrated into status bar */}
-        <button
-          className="flex items-center gap-1 text-[10px] font-semibold opacity-60 hover:opacity-100 transition-all hover:text-blue-400 print:hidden"
-          title="Export as Markdown"
-          onClick={async () => {
-            const lines = content.split('\n');
-            const title = (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled Note').replace(/^#+\s*/, '').trim().substring(0, 50);
-            await dbAPI.exportMarkdown(title, content);
-          }}
-        >
-          <Download size={10} /> MD
-        </button>
-        <button
-          className="flex items-center gap-1 text-[10px] font-semibold opacity-60 hover:opacity-100 transition-all hover:text-green-400 print:hidden"
-          title="Export as CSV"
-          onClick={async () => {
-            const lines = content.split('\n');
-            const title = (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled Note').replace(/^#+\s*/, '').trim().substring(0, 50);
-            await dbAPI.exportCSV(title, content);
-          }}
-        >
-          <Download size={10} /> CSV
-        </button>
-        <button
-          className="flex items-center gap-1 text-[10px] font-semibold opacity-60 hover:opacity-100 transition-all hover:text-purple-400 print:hidden"
-          title="Export as PDF"
-          onClick={async () => {
-            const lines = content.split('\n');
-            const title = (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled Note').replace(/^#+\s*/, '').trim().substring(0, 50);
-            await dbAPI.exportPDF(title);
-          }}
-        >
-          <Download size={10} /> PDF
-        </button>
+
       </div>
     </div>
   );

@@ -46,7 +46,7 @@ export const createAISlice: StateCreator<
 
   setMasterPassword: async (pwd) => {
     try {
-        let payload = null;
+        let payload: string | null = null;
       if (dbAPI) payload = await dbAPI.getAiSettings();
 
       if (payload) {
