@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { executeAiPrompt } from '../services/aiService';
 import { setGhostwriterRange } from '../lib/ghostwriterExtension';
 
@@ -130,7 +131,7 @@ export function useGhostwriterActions(
       }
     } catch (e: any) {
       console.error(e);
-      alert(`AI Error: ${e.message}`);
+      toast.error(`AI Error: ${e.message}`);
     } finally {
       setIsAiLoading(false);
       setContextMenu(null);

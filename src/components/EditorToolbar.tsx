@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
 import { 
-  ChevronRight, Sparkles, LayoutList, Columns, Eye, Settings2 
+  ChevronRight, Sparkles, LayoutList, Columns, Eye, Settings2, Pin 
 } from 'lucide-react';
 import { 
   NotebookDropdown, StatusDropdown, TagsDropdown, ReminderDropdown, HistoryDropdown 
@@ -86,6 +86,7 @@ const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
               <button
                 key={mode.id}
                 onClick={() => setViewMode(mode.id as any)}
+                aria-label={mode.title}
                 className={`p-1.5 rounded-md transition-all ${viewMode === mode.id ? 'bg-black/20 text-blue-400 shadow-sm' : `opacity-40 hover:opacity-100 ${themeStyle.sidebarHover}`}`}
                 title={mode.title}
               >
@@ -106,15 +107,31 @@ const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
             onClick={() => toggleAiPanel()}
             className={`p-1.5 rounded-lg border transition-all ${isAiPanelOpen ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : `bg-black/5 opacity-50 hover:opacity-100 ${themeStyle.editorBorder}`}`}
             title="Toggle AI Assistant"
+            aria-label="Toggle AI Assistant"
           >
             <Sparkles size={14} />
+          </button>
+
+          {/* Pin Toggle */}
+          <button
+            onClick={() => {
+              if (activeNote) {
+                useStore.getState().updateNoteIsPinned(activeNoteId, !activeNote.isPinned);
+              }
+            }}
+            className={`p-1.5 rounded-lg border transition-all ${activeNote.isPinned ? 'bg-amber-500/20 text-amber-500 border-amber-500/30' : `bg-black/5 opacity-50 hover:opacity-100 ${themeStyle.editorBorder}`}`}
+            title={activeNote.isPinned ? "Unpin Note" : "Pin Note"}
+            aria-label={activeNote.isPinned ? "Unpin Note" : "Pin Note"}
+          >
+            <Pin size={14} className={activeNote.isPinned ? 'fill-amber-500/20' : ''} />
           </button>
 
           {/* Row 2 Toggle (Metadata & Tools) */}
           <button
             onClick={() => setIsRow2Open(!isRow2Open)}
             className={`p-1.5 rounded-lg border transition-all relative ${isRow2Open ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : `bg-black/5 opacity-50 hover:opacity-100 ${themeStyle.editorBorder}`}`}
-            title="Note Properties"
+            title="Toggle Properties Bar"
+            aria-label="Toggle Properties Bar"
           >
             <Settings2 size={14} />
             {/* Micro-Indicators */}

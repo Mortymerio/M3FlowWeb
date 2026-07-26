@@ -1,7 +1,9 @@
 import { useMemo, memo, useCallback } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { Edit3, Search, Clock, SortDesc, Trash2, FileText, Bell, CheckSquare } from 'lucide-react';
+import { Edit3, Search, Clock, SortDesc, Trash2, FileText, Bell, CheckSquare, Pin } from 'lucide-react';
+import { toastConfirm } from '../utils/toastConfirm';
+import toast from 'react-hot-toast';
 
 const NoteItem = memo(({ note, isActive, onSelect, themeStyle, themeName, allTags, allNoteTags }: any) => {
   const getTimeAgo = (ts: number) => {
@@ -55,6 +57,11 @@ const NoteItem = memo(({ note, isActive, onSelect, themeStyle, themeName, allTag
            <div className={`text-[10px] opacity-30 font-medium ${themeStyle.listText}`}>
              {new Date(note.updatedAt).toLocaleDateString([], { day: '2-digit', month: 'short' })}
            </div>
+           {note.isPinned && (
+             <div className="ml-auto flex items-center text-amber-500 opacity-80">
+               <Pin size={12} className="fill-amber-500/20" />
+             </div>
+           )}
         </div>
 
         <p className={`text-[12px] line-clamp-2 opacity-50 leading-relaxed ${themeStyle.listText}`}>
@@ -129,8 +136,16 @@ const NoteList = () => {
   // Filtrado de Notas por Notebook, Status, Tag y Búsqueda Optimized
   const filteredNotes = useMemo(() => {
     return notes.filter(note => {
+      // If trash is active, ONLY show deleted notes
+      if (activeNotebookId === 'trash') {
+        if (!note.deletedAt) return false;
+      } else {
+        // Otherwise, never show deleted notes
+        if (note.deletedAt) return false;
+      }
+
       let matchesCategory = true;
-      if (activeNotebookId) matchesCategory = note.notebookId === activeNotebookId;
+      if (activeNotebookId && activeNotebookId !== 'trash') matchesCategory = note.notebookId === activeNotebookId;
       else if (activeStatusId) matchesCategory = note.status === activeStatusId;
       else if (activeTagId) matchesCategory = noteTags.some(nt => nt.noteId === note.id && nt.tagId === activeTagId);
 
@@ -144,6 +159,9 @@ const NoteList = () => {
   // Ordenamiento con useMemo
   const sortedNotes = useMemo(() => {
     return [...filteredNotes].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+
       if (sortOrder === 'alphabetical') {
         return a.title.localeCompare(b.title);
       }
@@ -179,15 +197,50 @@ const NoteList = () => {
 
         <div className={`font-semibold text-sm truncate px-2 ${themeStyle.listText}`}>{listTitle}</div>
         <div className="flex items-center gap-1 no-drag" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          {activeNotebookId === 'trash' && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                toastConfirm('Empty all trash?', () => useStore.getState().emptyTrash());
+              }}
+              className={`transition-colors bg-transparent px-2 py-1 text-xs font-bold rounded-md opacity-70 hover:opacity-100 hover:text-red-500 hover:bg-red-500/10 ${themeStyle.listText}`}
+              title="Empty Trash"
+            >
+              Empty
+            </button>
+          )}
           <button 
             onClick={(e) => {
               e.stopPropagation();
-              if (activeNoteId && window.confirm('¿Borrar esta nota?')) {
-                useStore.getState().deleteNote(activeNoteId);
+              if (activeNoteId) {
+                if (activeNotebookId === 'trash') {
+                  toastConfirm(
+                    'Permanently delete this note?',
+                    () => useStore.getState().permanentlyDeleteNote(activeNoteId)
+                  );
+                } else {
+                  const idToTrash = activeNoteId;
+                  useStore.getState().deleteNote(idToTrash);
+                  toast((t) => (
+                    <div className="flex items-center gap-4 text-sm font-medium">
+                      <span>Note moved to trash</span>
+                      <button 
+                        onClick={() => {
+                          useStore.getState().restoreNote(idToTrash);
+                          toast.dismiss(t.id);
+                        }}
+                        className="text-[11px] font-bold text-blue-400 hover:text-blue-300 bg-white/10 px-3 py-1 rounded"
+                      >
+                        Undo
+                      </button>
+                    </div>
+                  ));
+                }
               }
             }}
             className={`transition-colors bg-transparent p-1 rounded-md opacity-40 hover:opacity-100 hover:text-red-500 ${themeStyle.listText} ${themeStyle.listHover}`}
             title="Delete active note"
+            aria-label="Delete active note"
           >
             <Trash2 size={16} />
           </button>
@@ -195,6 +248,7 @@ const NoteList = () => {
             onClick={createNote}
             className={`transition-colors bg-transparent p-1 rounded-md opacity-60 hover:opacity-100 ${themeStyle.listText} ${themeStyle.listHover}`}
             title="New Note (Ctrl+N)"
+            aria-label="New Note"
           >
             <Edit3 size={16} />
           </button>

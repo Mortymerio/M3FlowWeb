@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
 import { ChevronRight, ChevronDown, Edit2, LayoutDashboard, Trash2 } from 'lucide-react';
+import { toastConfirm } from '../utils/toastConfirm';
 
 export const NotebookNode = React.memo(({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -106,9 +107,10 @@ export const NotebookNode = React.memo(({ notebook, notebooks, depth, expanded, 
                 e.stopPropagation(); 
                 // Usamos un pequeño delay para evitar problemas con el drag
                 setTimeout(() => {
-                  if (confirm(`¿Eliminar la carpeta "${notebook.name}"?`)) {
-                    useStore.getState().deleteNotebook(notebook.id);
-                  }
+                  toastConfirm(
+                    `Delete folder "${notebook.name}"?`,
+                    () => useStore.getState().deleteNotebook(notebook.id)
+                  );
                 }, 10);
               }}
               className={`p-1 rounded transition-all hover:text-red-500 ${themeStyle.sidebarHover}`}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { loginWithGithub, loginWithGoogle } from '../services/auth';
 import { Mail } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function LoginScreen({ onLogin }: { onLogin: (user: any) => void }) {
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: any) => void 
       }
     } catch (e: any) {
       console.error(e);
-      alert('Login failed: ' + e.message);
+      toast.error('Login failed: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -29,7 +30,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: any) => void 
       }
     } catch (e: any) {
       console.error(e);
-      alert('Login failed: ' + e.message);
+      toast.error('Login failed: ' + e.message);
     } finally {
       setLoading(false);
     }

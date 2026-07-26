@@ -48,6 +48,8 @@ const TabsBar = () => {
 
   return (
     <div 
+      role="tablist"
+      aria-label="Open Notes Tabs"
       className={`flex items-center h-9 border-b overflow-x-auto overflow-y-hidden select-none no-scrollbar ${themeStyle.editorBg} ${themeStyle.editorBorder} relative z-40`}
       ref={scrollRef}
       style={{ WebkitAppRegion: 'drag' } as any}
@@ -72,6 +74,9 @@ const TabsBar = () => {
           <div
             key={tab.id}
             data-tab-id={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
             onClick={() => setActiveTab(tab.id)}
             className={`
               flex items-center gap-2 h-full px-3 min-w-32 max-w-48 border-r cursor-pointer transition-colors relative group no-drag
@@ -84,7 +89,7 @@ const TabsBar = () => {
               <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-amber-500 shadow-[0_-2px_8px_rgba(245,158,11,0.5)]"></div>
             )}
             
-            <div className="flex-shrink-0 text-amber-500">
+            <div className="flex-shrink-0 text-amber-500" aria-hidden="true">
               {isNote ? <FileText size={12} /> : <CheckCircle2 size={12} />}
             </div>
             
@@ -92,7 +97,8 @@ const TabsBar = () => {
               {tab.title || (isNote ? 'Untitled' : 'Tasks')}
             </span>
             
-            <div 
+            <button 
+              aria-label={`Close ${tab.title || (isNote ? 'Untitled' : 'Tasks')} tab`}
               className={`p-0.5 rounded-md hover:bg-white/10 transition-colors ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -100,7 +106,7 @@ const TabsBar = () => {
               }}
             >
               <X size={12} />
-            </div>
+            </button>
           </div>
         );
       })}

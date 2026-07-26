@@ -402,20 +402,34 @@ export const createDataSlice: StateCreator<
     } catch(e) { console.error('[store] moveNote error:', e); }
   },
   updateNoteStatus: async (noteId, status) => {
+    const state = get();
+    const updatedNote = { ...state.notes.find(n => n.id === noteId)!, status, updatedAt: Date.now() };
     set(state => ({
-      notes: state.notes.map(n => n.id === noteId ? { ...n, status, updatedAt: Date.now() } : n)
+      notes: state.notes.map(n => n.id === noteId ? updatedNote : n),
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
     }));
-    try {
-      if (dbAPI.updateNoteStatus) await dbAPI.updateNoteStatus(noteId, status);
-    } catch(e) { console.error('[store] updateNoteStatus error:', e); }
+    try { if (dbAPI?.saveNote) await dbAPI.saveNote(updatedNote); } catch(e) {}
+  },
+  updateNoteIsPinned: async (noteId, isPinned) => {
+    const state = get();
+    const updatedNote = { ...state.notes.find(n => n.id === noteId)!, isPinned, updatedAt: Date.now() };
+    set(state => ({
+      notes: state.notes.map(n => n.id === noteId ? updatedNote : n),
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
+    }));
+    try { if (dbAPI?.saveNote) await dbAPI.saveNote(updatedNote); } catch(e) {}
   },
   updateNoteReminder: async (noteId, reminderAt) => {
+    const state = get();
+    const updatedNote = { ...state.notes.find(n => n.id === noteId)!, reminderAt, updatedAt: Date.now() };
     set(state => ({
-      notes: state.notes.map(n => n.id === noteId ? { ...n, reminderAt, updatedAt: Date.now() } : n)
+      notes: state.notes.map(n => n.id === noteId ? updatedNote : n),
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
     }));
-    try {
-      if (dbAPI.updateNoteReminder) await dbAPI.updateNoteReminder(noteId, reminderAt);
-    } catch(e) { console.error('[store] updateNoteReminder error:', e); }
+    try { if (dbAPI?.saveNote) await dbAPI.saveNote(updatedNote); } catch(e) {}
   },
   createTag: async (name, color) => {
     const id = 'tag-' + crypto.randomUUID().slice(0, 8);
@@ -505,15 +519,68 @@ export const createDataSlice: StateCreator<
       }
     }
 
+    const state = get();
+    const noteToSoftDelete = state.notes.find(n => n.id === id);
+    if (!noteToSoftDelete) return;
+
+    const updatedNote = { ...noteToSoftDelete, deletedAt: Date.now(), updatedAt: Date.now() };
+
     set(state => ({ 
-      notes: state.notes.filter(n => n.id !== id),
+      notes: state.notes.map(n => n.id === id ? updatedNote : n),
       activeNoteId: state.activeNoteId === id ? null : state.activeNoteId,
       hasUnsyncedChanges: true,
       syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
     }));
     try {
-        if (dbAPI && dbAPI.deleteNote) await dbAPI.deleteNote(id);
+        if (dbAPI && dbAPI.saveNote) await dbAPI.saveNote(updatedNote);
     } catch(e) { console.error('[store] deleteNote error:', e); }
+  },
+  restoreNote: async (id) => {
+    if (!id) return;
+
+    const state = get();
+    const noteToRestore = state.notes.find(n => n.id === id);
+    if (!noteToRestore) return;
+
+    const updatedNote = { ...noteToRestore, deletedAt: null, updatedAt: Date.now() };
+
+    set(state => ({ 
+      notes: state.notes.map(n => n.id === id ? updatedNote : n),
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
+    }));
+    try {
+        if (dbAPI && dbAPI.saveNote) await dbAPI.saveNote(updatedNote);
+    } catch(e) { console.error('[store] restoreNote error:', e); }
+  },
+  permanentlyDeleteNote: async (id) => {
+    if (!id) return;
+
+    set(state => ({ 
+      notes: state.notes.filter(n => n.id !== id),
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
+    }));
+    try {
+        if (dbAPI && dbAPI.deleteNote) await dbAPI.deleteNote(id);
+    } catch(e) { console.error('[store] permanentlyDeleteNote error:', e); }
+  },
+  emptyTrash: async () => {
+    const state = get();
+    const trashNotes = state.notes.filter(n => n.deletedAt != null);
+    if (trashNotes.length === 0) return;
+
+    set(state => ({ 
+      notes: state.notes.filter(n => n.deletedAt == null),
+      hasUnsyncedChanges: true,
+      syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
+    }));
+
+    try {
+      if (dbAPI && dbAPI.deleteNote) {
+        await Promise.all(trashNotes.map(n => dbAPI.deleteNote!(n.id)));
+      }
+    } catch(e) { console.error('[store] emptyTrash error:', e); }
   },
   deleteNotebook: async (id) => {
     set(state => ({ 

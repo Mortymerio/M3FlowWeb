@@ -3,6 +3,8 @@ import { X, Cloud, GitBranch, Loader2, Database, FileText, CheckCircle2, AlertCi
 import { useStore } from '../store';
 import dbAPI from '../services/db';
 import { THEMES } from '../themes';
+import { toastConfirm } from '../utils/toastConfirm';
+import toast from 'react-hot-toast';
 
 interface SyncSettingsModalProps {
   isOpen: boolean;
@@ -55,39 +57,47 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
 
   const handleImport = async () => {
     if (!githubSyncToken || !githubSyncRepo) return;
-    if (!confirm('WARNING: This will replace your local database with the one from GitHub. Unsynced local changes will be lost. Proceed?')) return;
-    
-    setIsImporting(true);
-    try {
-      const res = await dbAPI.githubImportDb({ token: githubSyncToken, repoName: githubSyncRepo });
-      if (!res.success) {
-        alert(`Import failed: ${res.error}`);
+    toastConfirm(
+      'WARNING: This will replace your local database with the one from GitHub. Unsynced local changes will be lost. Proceed?',
+      async () => {
+        setIsImporting(true);
+        try {
+          const res = await dbAPI.githubImportDb({ token: githubSyncToken, repoName: githubSyncRepo });
+          if (!res.success) {
+            toast.error(`Import failed: ${res.error}`);
+          } else {
+            toast.success('Import successful!');
+            window.location.reload();
+          }
+        } catch (e: any) {
+          toast.error(`Import failed: ${e.message}`);
+        } finally {
+          setIsImporting(false);
+        }
       }
-    } catch (e: any) {
-      alert(`Import failed: ${e.message}`);
-    } finally {
-      setIsImporting(false);
-    }
+    );
   };
 
   const handleRecoverNotes = async () => {
     if (!githubSyncToken || !githubSyncRepo) return;
-    if (!confirm('This will download all .md files from GitHub and insert them into your current database. Proceed?')) return;
-    
-    setIsRecovering(true);
-    try {
-      const res = await dbAPI.githubRecoverNotes({ token: githubSyncToken, repoName: githubSyncRepo });
-      if (res.success) {
-        alert(`Successfully recovered ${res.count} notes!`);
-        window.location.reload();
-      } else {
-        alert(`Recovery failed: ${res.error}`);
+    toastConfirm(
+      'This will download all .md files from GitHub and insert them into your current database. Proceed?',
+      async () => {
+        setIsRecovering(true);
+        try {
+          const res = await dbAPI.githubRecoverNotes({ token: githubSyncToken, repoName: githubSyncRepo });
+          if (res.success) {
+            toast.success(`Successfully recovered ${res.count} notes!`);
+          } else {
+            toast.error(`Recovery failed: ${res.error}`);
+          }
+        } catch (e: any) {
+          toast.error(`Recovery failed: ${e.message}`);
+        } finally {
+          setIsRecovering(false);
+        }
       }
-    } catch (e: any) {
-      alert(`Recovery failed: ${e.message}`);
-    } finally {
-      setIsRecovering(false);
-    }
+    );
   };
 
   const bgClass = themeStyle.sidebarBg || (isDark ? 'bg-[#15191e]' : 'bg-white');
@@ -96,7 +106,12 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
   const inputBg = isDark ? 'bg-black/20 border-white/10' : 'bg-gray-50 border-gray-200';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 no-drag">
+    <div 
+      role="dialog" 
+      aria-modal="true" 
+      aria-labelledby="sync-modal-title"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 no-drag"
+    >
       <div className={`w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border ${bgClass} ${borderClass} ${textClass}`}>
         
         {/* Header */}
@@ -106,11 +121,11 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
               <Cloud size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-bold">Cloud Sync & Backup</h2>
+              <h2 id="sync-modal-title" className="text-sm font-bold">Cloud Sync & Backup</h2>
               <p className="text-[10px] opacity-60">Auto-sync your vault to GitHub when idle.</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors opacity-60 hover:opacity-100">
+          <button aria-label="Close Sync Settings" onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors opacity-60 hover:opacity-100">
             <X size={18} />
           </button>
         </div>

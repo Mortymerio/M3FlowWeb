@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, FileText, Lock } from 'lucide-react';
 import { useStore } from '../store';
+import { toastConfirm } from '../utils/toastConfirm';
 
 export const TemplatesManagerModal: React.FC = () => {
   const { isTemplatesModalOpen, setTemplatesModalOpen, templates, saveTemplate, deleteTemplate, theme, customColors } = useStore() as any;
@@ -49,18 +50,26 @@ export const TemplatesManagerModal: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de eliminar esta plantilla?')) {
-      await deleteTemplate(id);
-      if (activeTemplate?.id === id) {
-        setActiveTemplate(null);
+    toastConfirm(
+      'Are you sure you want to delete this template?',
+      async () => {
+        await deleteTemplate(id);
+        if (activeTemplate?.id === id) {
+          setActiveTemplate(null);
+        }
       }
-    }
+    );
   };
 
   if (!isTemplatesModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div 
+      role="dialog" 
+      aria-modal="true" 
+      aria-labelledby="templates-modal-title"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    >
       <div 
         className={`w-full max-w-5xl h-[80vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border border-white/10 ${bgColor}`}
         onClick={(e) => e.stopPropagation()}
@@ -72,11 +81,12 @@ export const TemplatesManagerModal: React.FC = () => {
               <FileText size={18} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-100">Gestor de Plantillas</h2>
-              <p className="text-xs text-gray-400">Personaliza tus plantillas y automatiza la creación de notas</p>
+              <h2 id="templates-modal-title" className="text-lg font-bold text-gray-100">Templates Manager</h2>
+              <p className="text-xs text-gray-400">Customize your templates and automate note creation</p>
             </div>
           </div>
           <button 
+            aria-label="Close Templates Manager"
             onClick={() => setTemplatesModalOpen(false)}
             className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           >

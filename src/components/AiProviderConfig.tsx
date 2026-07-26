@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Settings2, ChevronDown, ChevronRight, Cpu, Send, Loader2, Lock, Trash2 } from 'lucide-react';
 import { useStore } from '../store';
+import { toastConfirm } from '../utils/toastConfirm';
 import { THEMES } from '../themes';
 import { initWebLlm } from '../lib/webllm';
 
@@ -167,13 +168,14 @@ export const AiProviderConfig = () => {
               {vaultExists && (
                 <button 
                   onClick={() => {
-                    if (confirm('¿Estás seguro de querer borrar la bóveda? Perderás todas tus claves encriptadas permanentemente.')) {
-                      resetVault();
-                    }
+                    toastConfirm(
+                      'Are you sure you want to delete the vault? You will lose all your encrypted keys permanently.',
+                      () => resetVault()
+                    );
                   }}
                   className="w-full flex items-center justify-center gap-1 mt-2 text-[9px] text-red-400 hover:text-red-300 transition-colors opacity-70"
                 >
-                  <Trash2 size={10} /> Borrar bóveda y claves
+                  <Trash2 size={10} /> Delete vault and keys
                 </button>
               )}
             </div>
@@ -228,6 +230,20 @@ export const AiProviderConfig = () => {
               {activeAiProvider === 'claude' && (
                 <input type="password" placeholder="sk-ant-..." value={claudeKey} onChange={(e) => setAiConfig('claudeKey', e.target.value)} className={`text-[10px] p-2 rounded-lg w-full border ${fieldBg}`} />
               )}
+              
+              <div className="pt-2 border-t border-white/5 mt-4">
+                <button 
+                  onClick={() => {
+                    toastConfirm(
+                      'Are you sure you want to delete the vault? You will lose all your encrypted keys permanently.',
+                      () => resetVault()
+                    );
+                  }}
+                  className="w-full flex items-center justify-center gap-1 text-[9px] text-red-400 hover:text-red-300 transition-colors opacity-70"
+                >
+                  <Trash2 size={10} /> Delete vault and keys
+                </button>
+              </div>
             </>
           )}
         </div>

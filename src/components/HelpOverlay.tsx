@@ -23,7 +23,7 @@ const HelpItem = ({ title, description, position, arrowDirection }: any) => {
         <p className="text-white/90 text-[12px] leading-relaxed font-semibold drop-shadow-sm">{description}</p>
       </div>
       <div className={`absolute text-blue-500 text-4xl pointer-events-none drop-shadow-[0_0_15px_rgba(59,130,246,0.8)] leading-none ${arrowStyles[arrowDirection]}`}>
-        ↑
+        ▲
       </div>
     </div>
   );
@@ -52,80 +52,80 @@ const HelpOverlay = () => {
     >
       {/* 1. Window Controls */}
       <HelpItem 
-        title="Ventana" 
-        description="Controles estándar para minimizar, maximizar y cerrar." 
+        title="Window" 
+        description="Standard controls to minimize, maximize and close." 
         position="top-[60px] right-[40px]" 
         arrowDirection="upRight" 
       />
 
       {/* 2. Settings Sidebar */}
       <HelpItem 
-        title="Ajustes" 
-        description="Accede a la configuración general y acerca de M3Flow." 
+        title="Settings" 
+        description="Access general configuration and about M3Flow." 
         position="top-[45px] left-[200px]" 
         arrowDirection="upLeft" 
       />
 
       {/* 3. Metadata Bar */}
       <HelpItem 
-        title="Metadatos" 
-        description="Cambia carpeta, estado, etiquetas y recordatorios de la nota." 
+        title="Metadata" 
+        description="Change folder, status, tags and reminders for the note." 
         position="top-[110px] left-[620px]" 
         arrowDirection="up" 
       />
 
       {/* 4. AI Engine */}
       <HelpItem 
-        title="Inteligencia Artificial" 
-        description="Usa IA para resumir, traducir o mejorar tus notas (Local o Cloud)." 
+        title="Artificial Intelligence" 
+        description="Use AI to summarize, translate or improve your notes (Local or Cloud)." 
         position="top-[160px] left-[780px]" 
         arrowDirection="up" 
       />
 
       {/* 5. Sidebar Filters */}
       <HelpItem 
-        title="Navegación" 
-        description="Filtra notas por categorías, estados o etiquetas personalizadas." 
+        title="Navigation" 
+        description="Filter notes by categories, statuses or custom tags." 
         position="top-[40%] left-[280px]" 
         arrowDirection="left" 
       />
 
       {/* 6. Theme & Modes */}
       <HelpItem 
-        title="Personalización" 
-        description="Cambia el tema visual y el modo del editor (VIM/Emacs)." 
+        title="Customization" 
+        description="Change visual theme and editor mode (VIM/Emacs)." 
         position="bottom-[80px] left-[40px]" 
         arrowDirection="downLeft" 
       />
 
       {/* 7. Search & Sorting */}
       <HelpItem 
-        title="Búsqueda" 
-        description="Encuentra notas rápidamente y cambia el orden de la lista." 
+        title="Search" 
+        description="Quickly find notes and change the list order." 
         position="top-[180px] left-[320px]" 
         arrowDirection="up" 
       />
 
       {/* 8. Export Options */}
       <HelpItem 
-        title="Exportar" 
-        description="Guarda tu trabajo en formato Markdown o PDF profesional." 
+        title="Export" 
+        description="Save your work in Markdown or professional PDF format." 
         position="bottom-[100px] right-[60px]" 
         arrowDirection="downRight" 
       />
 
       {/* 9. View Modes */}
       <HelpItem 
-        title="Visualización" 
-        description="Alterna entre edición pura, vista dividida o previsualización." 
+        title="Visualization" 
+        description="Toggle between pure edit, split view or preview only." 
         position="top-[110px] right-[100px]" 
         arrowDirection="up" 
       />
 
       {/* 10. Format Toolbar */}
       <HelpItem 
-        title="Formato" 
-        description="Aplica negritas, cursivas, código o encabeza textos rápidamente." 
+        title="Format" 
+        description="Apply bold, italic, code or headers quickly." 
         position="top-[180px] left-[580px]" 
         arrowDirection="up" 
       />
@@ -139,34 +139,34 @@ const HelpOverlay = () => {
           </div>
           
           <h1 className="text-white text-5xl font-black mb-3 tracking-tighter drop-shadow-2xl">
-            Centro de <span className="text-blue-500">M3Flow</span>
+            <span className="text-blue-500">M3Flow</span> Center
           </h1>
-          <p className="text-blue-200 text-lg opacity-80 mb-10 font-medium">Domina tu flujo de trabajo con atajos potentes.</p>
+          <p className="text-blue-200 text-lg opacity-80 mb-10 font-medium">Master your workflow with powerful shortcuts.</p>
           
           <div className="grid grid-cols-2 gap-x-12 gap-y-2 w-full text-left">
             <div className="flex flex-col gap-2">
               <h5 className="text-[10px] font-black uppercase text-blue-500/50 tracking-[0.3em] mb-2 px-1">Global</h5>
-              <Shortcut label="Nueva Nota" keys={['Ctrl', 'N']} />
-              <Shortcut label="Paleta Comandos" keys={['Ctrl', 'P']} />
-              <Shortcut label="Alternar Sidebar" keys={['Ctrl', 'B']} />
+              <Shortcut label="New Note" keys={['Ctrl', 'N']} />
+              <Shortcut label="Command Palette" keys={['Ctrl', 'P']} />
+              <Shortcut label="Toggle Sidebar" keys={['Ctrl', 'B']} />
               <Shortcut label="Daily Note" keys={['Ctrl', 'D']} />
               <Shortcut label="Meeting" keys={['Ctrl', 'M']} />
             </div>
             <div className="flex flex-col gap-2">
               <h5 className="text-[10px] font-black uppercase text-blue-500/50 tracking-[0.3em] mb-2 px-1">Editor</h5>
-              <Shortcut label="Guardar (Auto)" keys={['1s idle']} />
-              <Shortcut label="Modo VIM" keys={['Esc', ':', 'w']} />
-              <Shortcut label="IA Magic" keys={['Ctrl', 'Enter']} />
-              <Shortcut label="Panel IA" keys={['Ctrl', '⇧', 'A']} />
+              <Shortcut label="Save (Auto)" keys={['1s idle']} />
+              <Shortcut label="VIM Mode" keys={['Esc', ':', 'w']} />
+              <Shortcut label="AI Magic" keys={['Ctrl', 'Enter']} />
+              <Shortcut label="AI Panel" keys={['Ctrl', '⇧', 'A']} />
             </div>
           </div>
 
           <div className="mt-12 flex items-center gap-6">
             <div className="flex items-center gap-2 text-white/40 text-[11px] font-bold">
-               <MousePointer2 size={14} /> Haz click para continuar
+               <MousePointer2 size={14} /> Click to continue
             </div>
             <button className="px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black shadow-2xl transition-all shadow-blue-500/40 border border-white/20 active:scale-95">
-              ¡ENTENDIDO!
+              GOT IT!
             </button>
           </div>
         </div>

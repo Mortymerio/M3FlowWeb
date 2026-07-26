@@ -24,15 +24,15 @@ const WelcomeScreen = () => {
          <div className="w-24 h-24 mb-10 rounded-[32px] overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.2)] border border-white/10 rotate-3 bg-[#1e293b] flex items-center justify-center">
             <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-3xl">M3</div>
          </div>
-         <h1 className="text-white text-5xl font-black mb-6 tracking-tighter">Bienvenido a M3Flow</h1>
-         <p className="text-blue-200/60 text-xl mb-12 max-w-md leading-relaxed">Tu bóveda de notas personal y local. Selecciona una carpeta para empezar.</p>
+         <h1 className="text-white text-5xl font-black mb-6 tracking-tighter">Welcome to M3Flow</h1>
+         <p className="text-blue-200/60 text-xl mb-12 max-w-md leading-relaxed">Your personal and local note vault. Select a folder to start.</p>
          
          <button 
            onClick={handleSelect}
            className="group px-12 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-[24px] font-black text-xl shadow-2xl transition-all hover:scale-105 active:scale-95 shadow-blue-500/40 flex items-center gap-4 border border-white/20"
          >
            <Download size={24} className="rotate-180" />
-           Configurar Carpeta / Vault
+           Configure Folder / Vault
          </button>
          
          <div className="mt-16 flex gap-6 opacity-30 text-[11px] uppercase font-black tracking-[0.3em] text-white">

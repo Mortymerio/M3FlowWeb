@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import toast from 'react-hot-toast';
 import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -42,7 +43,7 @@ try {
 
 export const loginWithGithub = async () => {
   if (!auth || !githubProvider) {
-    alert("Firebase not configured. Please add your credentials in src/services/auth.ts");
+    toast.error("Firebase not configured. Please add your credentials in src/services/auth.ts");
     return { uid: 'demo-user', displayName: 'Demo User' } as unknown as User;
   }
   const result = await signInWithPopup(auth, githubProvider);
@@ -51,7 +52,7 @@ export const loginWithGithub = async () => {
 
 export const loginWithGoogle = async () => {
   if (!auth || !googleProvider) {
-    alert("Firebase not configured. Please add your credentials in src/services/auth.ts");
+    toast.error("Firebase not configured. Please add your credentials in src/services/auth.ts");
     return { uid: 'demo-user', displayName: 'Demo User' } as unknown as User;
   }
   const result = await signInWithPopup(auth, googleProvider);

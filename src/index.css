@@ -104,3 +104,14 @@ input, textarea, [contenteditable="true"], .cm-content {
     page-break-inside: avoid;
   }
 }
+
+/* Touch Targets for Mobile */
+@media (max-width: 768px) {
+  button, [role="button"] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

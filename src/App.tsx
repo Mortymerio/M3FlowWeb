@@ -15,6 +15,7 @@ import LoginScreen from './components/LoginScreen';
 import dbAPI from './services/db';
 import { useStore } from './store';
 import { THEMES } from './themes';
+import { Toaster } from 'react-hot-toast';
 
 const isLightColor = (hex: string) => {
   if (!hex || hex.length < 7) return false;
@@ -193,7 +194,22 @@ const App = () => {
 
   return (
     <div id="app-root-container" className={`flex h-screen w-screen overflow-hidden font-sans selection:bg-blue-500/30 relative rounded-[20px] border border-white/5 ${themeStyle.sidebarBg} print:!bg-white`}>
-      
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#1e2329',
+            color: '#e2e8f0',
+            border: '1px solid #334155'
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+        }} 
+      />
       <style dangerouslySetInnerHTML={{ __html: `
         :root {
           --custom-sidebar-bg: ${customColors.sidebarBg};
@@ -214,7 +230,7 @@ const App = () => {
       <div 
         id="sidebar-panel"
         style={{ width: isSidebarCollapsed ? 0 : sidebarWidth }} 
-        className={`flex-shrink-0 flex flex-col h-full relative ${isCustomMenuOpen ? 'z-[100]' : 'z-[10]'} ${(isCustomMenuOpen && !isSidebarCollapsed) ? '' : 'overflow-hidden'} transition-all duration-300 ease-in-out print:hidden`}
+        className={`flex-shrink-0 flex flex-col h-full relative max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:shadow-2xl ${isCustomMenuOpen ? 'z-[100]' : 'z-[50]'} ${(isCustomMenuOpen && !isSidebarCollapsed) ? '' : 'overflow-hidden'} transition-all duration-300 ease-in-out print:hidden`}
       >
         <div style={{ width: sidebarWidth }} className="h-full">
           <Sidebar />
@@ -232,8 +248,11 @@ const App = () => {
       {/* Panel 2: Lista de notas */}
       <div 
         id="notelist-panel"
-        style={{ width: isNoteListCollapsed ? 0 : noteListWidth }} 
-        className={`flex-shrink-0 flex flex-col h-full relative z-20 overflow-hidden transition-all duration-300 ease-in-out print:hidden`}
+        style={{ 
+          width: isNoteListCollapsed ? 0 : noteListWidth,
+          transform: (window.innerWidth <= 768 && !isSidebarCollapsed) ? `translateX(${sidebarWidth}px)` : 'none'
+        }} 
+        className={`flex-shrink-0 flex flex-col h-full relative max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:shadow-xl z-40 overflow-hidden transition-all duration-300 ease-in-out print:hidden`}
       >
         <div style={{ width: noteListWidth }} className="h-full">
           <NoteList />

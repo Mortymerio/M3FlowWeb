@@ -12,7 +12,8 @@ export interface Note {
   body: string;
   notebookId: string | null;
   status: string;
-  isPinned?: number;
+  isPinned?: number | boolean;
+  deletedAt?: number | null;
   reminderAt: number | null;
   createdAt: number;
   updatedAt: number;
@@ -103,6 +104,7 @@ export interface DataSlice {
   moveNotebook: (notebookId: string, newParentId: string | null) => Promise<void>;
   moveNote: (noteId: string, notebookId: string) => Promise<void>;
   updateNoteStatus: (noteId: string, status: string) => Promise<void>;
+  updateNoteIsPinned: (noteId: string, isPinned: boolean) => Promise<void>;
   createTag: (name: string, color: string) => Promise<string>;
   updateTag: (id: string, name: string, color: string) => Promise<void>;
   deleteTag: (id: string) => Promise<void>;
@@ -111,6 +113,9 @@ export interface DataSlice {
   createNotebook: (name: string, parentId: string | null, config?: any) => Promise<void>;
   updateNotebook: (id: string, name: string, parentId: string | null, config?: any) => Promise<void>;
   deleteNote: (id: string | null) => Promise<void>;
+  restoreNote: (id: string) => Promise<void>;
+  permanentlyDeleteNote: (id: string) => Promise<void>;
+  emptyTrash: () => Promise<void>;
   deleteNotebook: (id: string) => Promise<void>;
   openDailyNote: () => Promise<void>;
   openMeetingNote: () => Promise<void>;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
-import { ChevronRight, Settings, Plus, LayoutDashboard, Cloud, AlertCircle, CheckCircle2, Loader2 as SpinnerIcon, CalendarDays, Users, FileText } from 'lucide-react';
+import { ChevronRight, Settings, Plus, LayoutDashboard, Cloud, AlertCircle, CheckCircle2, Loader2 as SpinnerIcon, CalendarDays, Users, FileText, Trash2 } from 'lucide-react';
 import { NotebookNode } from './NotebookTree';
 import { ThemeSelector } from './ThemeSelector';
 
@@ -43,7 +43,7 @@ const Sidebar = () => {
           <span className="font-black text-lg tracking-tighter opacity-90">M3Flow</span>
         </div>
         <div className="relative">
-            <button onClick={(e) => { e.stopPropagation(); setSettingsOpen(!settingsOpen); }} className="opacity-50 hover:opacity-100 transition-opacity p-1"><Settings size={14} /></button>
+            <button aria-label="Settings" onClick={(e) => { e.stopPropagation(); setSettingsOpen(!settingsOpen); }} className="opacity-50 hover:opacity-100 transition-opacity p-1"><Settings size={14} /></button>
             {settingsOpen && (
               <div className={`absolute top-6 right-0 w-48 rounded-md shadow-2xl border overflow-hidden z-50 ${themeStyle.sidebarBg} ${themeStyle.sidebarBorder}`}>
                <div className={`px-3 py-2 text-[10px] uppercase font-bold border-b opacity-60 ${themeStyle.sidebarBorder}`}>General Settings</div>
@@ -131,9 +131,10 @@ const Sidebar = () => {
           <button 
             className={`transition-all rounded-md p-1 ${themeStyle.sidebarHover} hover:text-blue-500 text-blue-500 bg-blue-500/10 shadow-sm`}
             title="New Folder"
+            aria-label="New Folder"
             onClick={(e) => {
               e.stopPropagation();
-              useStore.getState().createNotebook('Nueva Carpeta', null);
+              useStore.getState().createNotebook('New Folder', null);
             }}
           >
             <Plus size={16} strokeWidth={3} />
@@ -155,6 +156,18 @@ const Sidebar = () => {
             />
           ))}
         </ul>
+
+        <div className="mt-4 border-t border-white/5 pt-2">
+          <div
+            onClick={() => setActiveNotebook('trash')}
+            className={`flex items-center gap-2 px-1 py-1.5 cursor-pointer rounded-md transition-colors text-[13px] font-medium
+              ${activeNotebookId === 'trash' ? 'bg-red-500/20 text-red-400 font-bold' : `opacity-60 hover:opacity-100 ${themeStyle.sidebarHover} hover:text-red-400`}
+            `}
+          >
+            <Trash2 size={14} />
+            <span>Trash</span>
+          </div>
+        </div>
 
         {/* Sección de FILTROS — Collapsible */}
         <div className="mt-6">
