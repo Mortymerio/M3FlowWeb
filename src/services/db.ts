@@ -211,8 +211,8 @@ const dbAPI = {
     
     const tasks: any[] = [];
     for (const note of notes) {
-      if (!note.body) continue;
-      const lines = note.body.split('\n');
+      if (note.deletedAt) continue;
+      const lines = (note.body || '').split('\n');
       let taskIndex = 0;
       for (let i = 0; i < lines.length; i++) {
         const match = lines[i].match(/^(\s*)-\s*\[([ xX])\]\s*(.+)$/);

@@ -45,7 +45,7 @@ const TasksDashboard = () => {
 
   useEffect(() => {
     loadTasks();
-  }, []);
+  }, [notes]);
 
   const handleToggle = async (task: ParsedTask) => {
     // Optimistic UI update
