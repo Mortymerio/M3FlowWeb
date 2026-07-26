@@ -56,7 +56,7 @@ interface DbAPI {
   onGithubProgress: (callback: (data: { current: number; total: number; message: string }) => void) => void;
 
   // Task Metadata
-  scanTasks: () => Promise<any[]>;
+  scanTasks: (localNotes?: any[]) => Promise<any[]>;
   toggleTask: (opts: { noteId: string; lineNumber: number; checked: boolean }) => Promise<boolean>;
   getTaskMeta: () => Promise<{ noteId: string; lineNumber: number; dueDate: number | null; priority: string }[]>;
   setTaskDueDate: (opts: { noteId: string; lineNumber: number; dueDate: number | null }) => Promise<void>;

@@ -43,19 +43,19 @@ export const createDataSlice: StateCreator<
   setSearchQuery: async (query) => {
     set({ searchQuery: query });
     
-    // Debounce FTS search to avoid hammering DB on every keystroke
-    if ((window as any).__m3flow_searchTimer) clearTimeout((window as any).__m3flow_searchTimer);
-    
-    if (dbAPI?.searchNotes && query.trim().length > 1) {
-      (window as any).__m3flow_searchTimer = setTimeout(async () => {
-        try {
-          const results = await dbAPI.searchNotes(query);
-          set({ searchResults: results });
-        } catch (e) {
-          console.error('FTS Search error:', e);
-          set({ searchResults: [] });
-        }
-      }, 200);
+    if (query.trim().length > 1) {
+      try {
+        const notes = get().notes;
+        const q = query.toLowerCase();
+        const results = notes.filter(n => 
+          n.title.toLowerCase().includes(q) || 
+          (n.body && n.body.toLowerCase().includes(q))
+        ).map(n => ({ ...n, highlight: '' }));
+        set({ searchResults: results });
+      } catch (e) {
+        console.error('Local Search error:', e);
+        set({ searchResults: [] });
+      }
     } else {
       set({ searchResults: [] });
     }
@@ -64,14 +64,17 @@ export const createDataSlice: StateCreator<
   clearSearchResults: () => set({ searchResults: [], searchQuery: '' }),
 
   loadBacklinks: async (noteId) => {
-    if (dbAPI && dbAPI.getBacklinks) {
-      try {
-        const links = await dbAPI.getBacklinks(noteId);
-        set({ currentBacklinks: links });
-      } catch (e) {
-        console.error('Load Backlinks error:', e);
-        set({ currentBacklinks: [] });
-      }
+    try {
+      const notes = get().notes;
+      const targetNote = notes.find(n => n.id === noteId);
+      if (!targetNote) return set({ currentBacklinks: [] });
+      
+      const titleMatch = `[[${targetNote.title}]]`;
+      const links = notes.filter(n => n.body?.includes(titleMatch) && n.id !== noteId);
+      set({ currentBacklinks: links });
+    } catch (e) {
+      console.error('Failed to parse backlinks locally', e);
+      set({ currentBacklinks: [] });
     }
   },
 

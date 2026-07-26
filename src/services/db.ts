@@ -206,9 +206,9 @@ const dbAPI = {
   githubRecoverNotes: async (_args?: any) => ({ success: false, count: 0, error: '' }),
   onGithubProgress: (_callback: any) => {},
 
-  scanTasks: async () => {
+  scanTasks: async (localNotes?: Note[]) => {
     if (!auth?.currentUser) return [];
-    const notes = await dbAPI.getNotes();
+    const notes = localNotes || await dbAPI.getNotes();
     const snap = await getDocs(taskMetaRef());
     const allMeta = snap.docs.map(d => ({ ...d.data(), id: d.id })) as TaskMeta[];
     

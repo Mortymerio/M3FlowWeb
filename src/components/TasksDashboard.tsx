@@ -29,10 +29,12 @@ const TasksDashboard = () => {
   const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
   const openTab = useStore(state => state.openTab);
 
+  const notes = useStore(state => state.notes);
+
   const loadTasks = async () => {
     setLoading(true);
     try {
-      const scannedTasks = await (window as any).dbAPI.scanTasks();
+      const scannedTasks = await (window as any).dbAPI.scanTasks(notes);
       setTasks(scannedTasks);
     } catch (e) {
       console.error('Failed to load tasks:', e);
