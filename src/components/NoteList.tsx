@@ -1,4 +1,4 @@
-import { useMemo, memo } from 'react';
+import { useMemo, memo, useCallback } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
 import { Edit3, Search, Clock, SortDesc, Trash2, FileText, Bell, CheckSquare } from 'lucide-react';
@@ -22,7 +22,7 @@ const NoteItem = memo(({ note, isActive, onSelect, themeStyle, themeName, allTag
 
   return (
     <div 
-      onClick={() => onSelect(note.id)}
+      onClick={() => onSelect(note.id, note.title)}
       draggable
       onDragStart={(e) => e.dataTransfer.setData('noteId', note.id)}
       className={`relative px-4 py-4 cursor-pointer border-b transition-all duration-200 group
@@ -119,6 +119,10 @@ const NoteList = () => {
   const sortOrder = useStore(state => state.sortOrder);
   const setSortOrder = useStore(state => state.setSortOrder);
   const createNote = useStore(state => state.createNote);
+  
+  const handleSelectNote = useCallback((id: string, title: string) => {
+    useStore.getState().openTab({ type: 'note', noteId: id, title: title || 'Untitled' });
+  }, []);
   
   const themeStyle = THEMES[themeName] || THEMES['midnight-indigo'];
 
@@ -242,9 +246,7 @@ const NoteList = () => {
               key={note.id}
               note={note}
               isActive={note.id === activeNoteId}
-              onSelect={(id: string) => {
-                useStore.getState().openTab({ type: 'note', noteId: id, title: note.title || 'Untitled' });
-              }}
+              onSelect={handleSelectNote}
               themeStyle={themeStyle}
               themeName={themeName}
               allTags={tags}

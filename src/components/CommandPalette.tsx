@@ -63,6 +63,16 @@ const CommandPalette = () => {
     }
   }, [isOpen]);
 
+  // Debounced search query
+  useEffect(() => {
+    if (mode === 'notes') {
+      const timeout = setTimeout(() => {
+        setSearchQuery(query);
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [query, mode, setSearchQuery]);
+
   if (!isOpen) return null;
 
   const themeName = useStore.getState().theme;
@@ -157,7 +167,6 @@ const CommandPalette = () => {
             onChange={e => {
               const val = e.target.value;
               setQuery(val);
-              if (mode === 'notes') setSearchQuery(val); // Disparar FTS solo en notas
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}

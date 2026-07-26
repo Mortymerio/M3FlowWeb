@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
 import { ChevronRight, ChevronDown, Settings, Plus, LayoutDashboard, Trash2, Palette, Paintbrush, Cloud, AlertCircle, CheckCircle2, Edit2, Loader2 as SpinnerIcon, CalendarDays, Users, FileText } from 'lucide-react';
 
-const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
+const NotebookNode = React.memo(({ notebook, notebooks, depth, expanded, setExpanded, activeNotebookId, setActiveNotebook, themeStyle }: any) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(notebook.name);
 
@@ -137,7 +137,7 @@ const NotebookNode = ({ notebook, notebooks, depth, expanded, setExpanded, activ
       )}
     </>
   );
-};
+});
 
 const Sidebar = () => {
   const notebooks = useStore(state => state.notebooks);
