@@ -27,6 +27,7 @@ import { useNoteManager } from '../hooks/useNoteManager';
 import { createCursorTracker } from '../lib/cm-extensions/cursorTracker';
 import { useGhostwriterActions } from '../hooks/useGhostwriterActions';
 import { ghostwriterCoordsTracker } from '../lib/cm-extensions/ghostwriterTracker';
+import { sanitizeHtml } from '../lib/sanitize';
 
 // Markdown components extracted to src/components/MarkdownPreview.tsx and src/lib/MarkdownEngine.ts
 
@@ -240,7 +241,7 @@ const Editor = () => {
 
       {/* Dynamic Font Size Injector */}
       <style dangerouslySetInnerHTML={{
-        __html: `
+        __html: sanitizeHtml(`
         .cm-editor .cm-content, 
         .cm-editor .cm-gutter,
         .bn-editor,
@@ -260,7 +261,7 @@ const Editor = () => {
           background-color: rgba(234, 179, 8, 0.8) !important;
           outline: 1px solid rgba(234, 179, 8, 1);
         }
-      `}} />
+      `)}} />
 
 
       {/* Editor Main Content Container */}

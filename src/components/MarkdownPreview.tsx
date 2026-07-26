@@ -3,6 +3,7 @@ import mermaid from 'mermaid';
 import { mdParser } from '../lib/MarkdownEngine';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
+import { sanitizeHtml } from '../lib/sanitize';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -78,7 +79,7 @@ export const MarkdownPreview = React.memo(({ content, className = '' }: Markdown
       id="preview-area"
       ref={containerRef}
       className={className}
-      dangerouslySetInnerHTML={{ __html: mdParser.render(content) }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(mdParser.render(content)) }}
     />
   );
 });

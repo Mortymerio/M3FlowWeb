@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Download, Cpu, Check, PenLine, AlertCircle } from 'lucide-react';
+import dbAPI from '../services/db';
 import { useStore } from '../store';
 
 interface EditorStatusBarProps {
@@ -45,8 +46,8 @@ const EditorStatusBar = ({
     // Poll system stats gently every 5 seconds
     const fetchStats = async () => {
       try {
-        if (window.dbAPI && window.dbAPI.getSystemStats) {
-          const stats = await window.dbAPI.getSystemStats();
+        if (dbAPI.getSystemStats) {
+          const stats = await dbAPI.getSystemStats();
           setSysMemPct(stats.sysMemPct);
           setProcessMemMb(stats.processMemMb);
         }
@@ -138,7 +139,7 @@ const EditorStatusBar = ({
           onClick={async () => {
             const lines = content.split('\n');
             const title = (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled Note').replace(/^#+\s*/, '').trim().substring(0, 50);
-            await window.dbAPI.exportMarkdown(title, content);
+            await dbAPI.exportMarkdown(title, content);
           }}
         >
           <Download size={10} /> MD
@@ -149,7 +150,7 @@ const EditorStatusBar = ({
           onClick={async () => {
             const lines = content.split('\n');
             const title = (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled Note').replace(/^#+\s*/, '').trim().substring(0, 50);
-            await window.dbAPI.exportCSV(title, content);
+            await dbAPI.exportCSV(title, content);
           }}
         >
           <Download size={10} /> CSV
@@ -160,7 +161,7 @@ const EditorStatusBar = ({
           onClick={async () => {
             const lines = content.split('\n');
             const title = (lines.find(l => l.trim().startsWith('#')) || lines[0] || 'Untitled Note').replace(/^#+\s*/, '').trim().substring(0, 50);
-            await window.dbAPI.exportPDF(title);
+            await dbAPI.exportPDF(title);
           }}
         >
           <Download size={10} /> PDF

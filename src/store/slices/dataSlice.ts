@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import dbAPI from '../../services/db';
 import type { AppState, DataSlice } from '../types';
 
 export const createDataSlice: StateCreator<
@@ -45,10 +46,10 @@ export const createDataSlice: StateCreator<
     // Debounce FTS search to avoid hammering DB on every keystroke
     if ((window as any).__m3flow_searchTimer) clearTimeout((window as any).__m3flow_searchTimer);
     
-    if (window.dbAPI?.searchNotes && query.trim().length > 1) {
+    if (dbAPI?.searchNotes && query.trim().length > 1) {
       (window as any).__m3flow_searchTimer = setTimeout(async () => {
         try {
-          const results = await window.dbAPI.searchNotes(query);
+          const results = await dbAPI.searchNotes(query);
           set({ searchResults: results });
         } catch (e) {
           console.error('FTS Search error:', e);
@@ -63,7 +64,6 @@ export const createDataSlice: StateCreator<
   clearSearchResults: () => set({ searchResults: [], searchQuery: '' }),
 
   loadBacklinks: async (noteId) => {
-    const dbAPI = (window as any).dbAPI;
     if (dbAPI && dbAPI.getBacklinks) {
       try {
         const links = await dbAPI.getBacklinks(noteId);
@@ -83,8 +83,7 @@ export const createDataSlice: StateCreator<
 
   loadInitialData: async () => {
     try {
-      const dbAPI = (window as any).dbAPI;
-      if (!dbAPI) {
+        if (!dbAPI) {
         console.warn('dbAPI no detectado. Activando Modo Navegador (Local Storage Fallback)');
         get().setWebLlmState({ isBrowserMode: true } as any); // Cast since we're using partial
         // Intentar cargar de localStorage si existe
@@ -149,7 +148,7 @@ export const createDataSlice: StateCreator<
     set({ saveStatus: 'saving' });
 
     try {
-      await (window as any).dbAPI.saveNote({
+      await dbAPI.saveNote({
         id,
         title,
         body,
@@ -222,7 +221,7 @@ export const createDataSlice: StateCreator<
       updatedAt: Date.now(),
     };
     
-    await (window as any).dbAPI.saveNote(newNote);
+    await dbAPI.saveNote(newNote);
     
     set({
       notes: [newNote, ...notes],
@@ -251,8 +250,7 @@ export const createDataSlice: StateCreator<
       const newNB = { id: nbId, name: DAILY_NB_NAME, parentId: null, config, createdAt: Date.now() };
       set(state => ({ notebooks: [...state.notebooks, newNB] }));
       try {
-        const dbAPI = (window as any).dbAPI;
-        if (dbAPI?.saveNotebook) await dbAPI.saveNotebook(newNB);
+            if (dbAPI?.saveNotebook) await dbAPI.saveNotebook(newNB);
       } catch (e) { console.error('[store] openDailyNote createNotebook error:', e); }
       dailyNotebook = newNB;
     }
@@ -301,7 +299,7 @@ export const createDataSlice: StateCreator<
     };
 
     try {
-      await (window as any).dbAPI.saveNote(newNote);
+      await dbAPI.saveNote(newNote);
     } catch (e) { console.error('[store] openDailyNote saveNote error:', e); }
 
     set(state => ({
@@ -334,8 +332,7 @@ export const createDataSlice: StateCreator<
       const newNB = { id: nbId, name: MTG_NB_NAME, parentId: null, config, createdAt: Date.now() };
       set(state => ({ notebooks: [...state.notebooks, newNB] }));
       try {
-        const dbAPI = (window as any).dbAPI;
-        if (dbAPI?.saveNotebook) await dbAPI.saveNotebook(newNB);
+            if (dbAPI?.saveNotebook) await dbAPI.saveNotebook(newNB);
       } catch (e) { console.error('[store] openMeetingNote createNotebook error:', e); }
       mtgNotebook = newNB;
     }
@@ -369,7 +366,7 @@ export const createDataSlice: StateCreator<
     };
 
     try {
-      await (window as any).dbAPI.saveNote(newNote);
+      await dbAPI.saveNote(newNote);
     } catch (e) { console.error('[store] openMeetingNote saveNote error:', e); }
 
     set(state => ({
@@ -391,8 +388,8 @@ export const createDataSlice: StateCreator<
       )
     }));
     try {
-      if ((window as any).dbAPI.moveNotebook) {
-        await (window as any).dbAPI.moveNotebook(notebookId, newParentId);
+      if (dbAPI.moveNotebook) {
+        await dbAPI.moveNotebook(notebookId, newParentId);
       }
     } catch(e) { console.error('[store] moveNotebook error:', e); }
   },
@@ -401,7 +398,7 @@ export const createDataSlice: StateCreator<
       notes: state.notes.map(n => n.id === noteId ? { ...n, notebookId, updatedAt: Date.now() } : n)
     }));
     try {
-      if ((window as any).dbAPI.moveNote) await (window as any).dbAPI.moveNote(noteId, notebookId);
+      if (dbAPI.moveNote) await dbAPI.moveNote(noteId, notebookId);
     } catch(e) { console.error('[store] moveNote error:', e); }
   },
   updateNoteStatus: async (noteId, status) => {
@@ -409,7 +406,7 @@ export const createDataSlice: StateCreator<
       notes: state.notes.map(n => n.id === noteId ? { ...n, status, updatedAt: Date.now() } : n)
     }));
     try {
-      if ((window as any).dbAPI.updateNoteStatus) await (window as any).dbAPI.updateNoteStatus(noteId, status);
+      if (dbAPI.updateNoteStatus) await dbAPI.updateNoteStatus(noteId, status);
     } catch(e) { console.error('[store] updateNoteStatus error:', e); }
   },
   updateNoteReminder: async (noteId, reminderAt) => {
@@ -417,7 +414,7 @@ export const createDataSlice: StateCreator<
       notes: state.notes.map(n => n.id === noteId ? { ...n, reminderAt, updatedAt: Date.now() } : n)
     }));
     try {
-      if ((window as any).dbAPI.updateNoteReminder) await (window as any).dbAPI.updateNoteReminder(noteId, reminderAt);
+      if (dbAPI.updateNoteReminder) await dbAPI.updateNoteReminder(noteId, reminderAt);
     } catch(e) { console.error('[store] updateNoteReminder error:', e); }
   },
   createTag: async (name, color) => {
@@ -425,14 +422,14 @@ export const createDataSlice: StateCreator<
     const newTag = { id, name, color };
     set(state => ({ tags: [...state.tags, newTag] }));
     try {
-      if ((window as any).dbAPI.createTag) await (window as any).dbAPI.createTag(newTag);
+      if (dbAPI.createTag) await dbAPI.createTag(newTag);
     } catch(e) { console.error('[store] createTag error:', e); }
     return id;
   },
   updateTag: async (id, name, color) => {
     set(state => ({ tags: state.tags.map(t => t.id === id ? { ...t, name, color } : t) }));
     try {
-      if ((window as any).dbAPI.updateTag) await (window as any).dbAPI.updateTag({ id, name, color });
+      if (dbAPI.updateTag) await dbAPI.updateTag({ id, name, color });
     } catch(e) { console.error('[store] updateTag error:', e); }
   },
   deleteTag: async (id) => {
@@ -441,7 +438,7 @@ export const createDataSlice: StateCreator<
       noteTags: state.noteTags.filter(nt => nt.tagId !== id)
     }));
     try {
-      if ((window as any).dbAPI.deleteTag) await (window as any).dbAPI.deleteTag(id);
+      if (dbAPI.deleteTag) await dbAPI.deleteTag(id);
     } catch(e) { console.error('[store] deleteTag error:', e); }
   },
   toggleNoteTag: async (noteId, tagId) => {
@@ -453,22 +450,22 @@ export const createDataSlice: StateCreator<
       return { noteTags: [...state.noteTags, { noteId, tagId }] };
     });
     try {
-      if ((window as any).dbAPI.toggleNoteTag) await (window as any).dbAPI.toggleNoteTag(noteId, tagId);
+      if (dbAPI.toggleNoteTag) await dbAPI.toggleNoteTag(noteId, tagId);
     } catch(e) { console.error('[store] toggleNoteTag error:', e); }
   },
   saveTemplate: async (template) => {
     try {
-      if ((window as any).dbAPI.saveTemplate) {
-        await (window as any).dbAPI.saveTemplate(template);
-        const templates = await (window as any).dbAPI.getTemplates();
+      if (dbAPI.saveTemplate) {
+        await dbAPI.saveTemplate(template);
+        const templates = await dbAPI.getTemplates();
         set({ templates });
       }
     } catch(e) { console.error('[store] saveTemplate error:', e); }
   },
   deleteTemplate: async (id) => {
     try {
-      if ((window as any).dbAPI.deleteTemplate) {
-        await (window as any).dbAPI.deleteTemplate(id);
+      if (dbAPI.deleteTemplate) {
+        await dbAPI.deleteTemplate(id);
         set(state => ({ templates: state.templates.filter(t => t.id !== id) }));
       }
     } catch(e) { console.error('[store] deleteTemplate error:', e); }
@@ -483,8 +480,7 @@ export const createDataSlice: StateCreator<
       activeNoteId: null
     }));
     try {
-      const dbAPI = (window as any).dbAPI;
-      if (dbAPI && dbAPI.saveNotebook) await dbAPI.saveNotebook(newNB);
+        if (dbAPI && dbAPI.saveNotebook) await dbAPI.saveNotebook(newNB);
     } catch(e) { console.error('[store] createNotebook error:', e); }
   },
   updateNotebook: async (id, name, parentId, config) => {
@@ -494,8 +490,7 @@ export const createDataSlice: StateCreator<
       notebooks: state.notebooks.map(nb => nb.id === id ? { ...nb, name, parentId, config: configStr as any } : nb)
     }));
     try {
-      const dbAPI = (window as any).dbAPI;
-      if (dbAPI && dbAPI.saveNotebook) await dbAPI.saveNotebook(updatedNB);
+        if (dbAPI && dbAPI.saveNotebook) await dbAPI.saveNotebook(updatedNB);
     } catch(e) { console.error('[store] updateNotebook error:', e); }
   },
   deleteNote: async (id) => {
@@ -517,8 +512,7 @@ export const createDataSlice: StateCreator<
       syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
     }));
     try {
-      const dbAPI = (window as any).dbAPI;
-      if (dbAPI && dbAPI.deleteNote) await dbAPI.deleteNote(id);
+        if (dbAPI && dbAPI.deleteNote) await dbAPI.deleteNote(id);
     } catch(e) { console.error('[store] deleteNote error:', e); }
   },
   deleteNotebook: async (id) => {
@@ -530,8 +524,7 @@ export const createDataSlice: StateCreator<
       syncStatus: state.syncStatus !== 'error' ? 'pending' : 'error'
     }));
     try {
-      const dbAPI = (window as any).dbAPI;
-      if (dbAPI && dbAPI.deleteNotebook) await dbAPI.deleteNotebook(id);
+        if (dbAPI && dbAPI.deleteNotebook) await dbAPI.deleteNotebook(id);
     } catch(e) { console.error('[store] deleteNotebook error:', e); }
   }
 });

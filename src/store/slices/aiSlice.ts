@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import dbAPI from '../../services/db';
 import type { AppState, AISlice } from '../types';
 import { encryptVault, decryptVault } from '../../services/crypto';
 
@@ -37,7 +38,6 @@ export const createAISlice: StateCreator<
   vaultExists: false,
 
   checkVaultExists: async () => {
-    const dbAPI = (window as any).dbAPI;
     if (dbAPI) {
       const payload = await dbAPI.getAiSettings();
       set({ vaultExists: !!payload });
@@ -46,8 +46,7 @@ export const createAISlice: StateCreator<
 
   setMasterPassword: async (pwd) => {
     try {
-      const dbAPI = (window as any).dbAPI;
-      let payload = null;
+        let payload = null;
       if (dbAPI) payload = await dbAPI.getAiSettings();
 
       if (payload) {
@@ -80,7 +79,6 @@ export const createAISlice: StateCreator<
   },
 
   resetVault: async () => {
-    const dbAPI = (window as any).dbAPI;
     if (dbAPI) await dbAPI.saveAiSettings(null);
     set({
       masterPassword: null,
@@ -118,8 +116,7 @@ export const createAISlice: StateCreator<
     // Si es secreta y la bóveda está desbloqueada, se encripta
     const state = get();
     if (state.vaultUnlocked && state.masterPassword) {
-      const dbAPI = (window as any).dbAPI;
-      const dataToSave = {
+        const dataToSave = {
         openAiKey: state.openAiKey,
         geminiKey: state.geminiKey,
         claudeKey: state.claudeKey,

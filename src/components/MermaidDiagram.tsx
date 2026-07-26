@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useId, useMemo, useState } from 'react'
+import { sanitizeHtml } from '../lib/sanitize';
 
 type MermaidApi = typeof import('mermaid')['default']
 
@@ -101,7 +102,7 @@ export function MermaidDiagram({ diagram, source }: MermaidDiagramProps) {
         aria-label="Mermaid diagram"
         role="img"
         tabIndex={0}
-        dangerouslySetInnerHTML={{ __html: currentState.svg }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentState.svg) }}
         style={{ display: 'flex', justifyContent: 'center' }}
       />
     </figure>

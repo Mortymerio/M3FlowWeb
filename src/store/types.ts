@@ -2,7 +2,7 @@ export interface Notebook {
   id: string;
   name: string;
   parentId: string | null;
-  config?: string; // JSON string con prompt, tema, etc.
+  config?: string | null; // JSON string con prompt, tema, etc.
   createdAt: number;
 }
 
@@ -10,9 +10,9 @@ export interface Note {
   id: string;
   title: string;
   body: string;
-  notebookId: string;
+  notebookId: string | null;
   status: string;
-  isPinned: number;
+  isPinned?: number;
   reminderAt: number | null;
   createdAt: number;
   updatedAt: number;

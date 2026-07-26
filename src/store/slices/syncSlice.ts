@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import dbAPI from '../../services/db';
 import type { AppState, SyncSlice } from '../types';
 
 export const createSyncSlice: StateCreator<
@@ -40,7 +41,6 @@ export const createSyncSlice: StateCreator<
     
     set({ syncStatus: 'syncing', syncProgress: { current: 0, total: 100, message: 'Starting sync...' } });
     try {
-      const dbAPI = (window as any).dbAPI;
       const result = await dbAPI.githubSync({
         token: state.githubSyncToken,
         repoName: state.githubSyncRepo,

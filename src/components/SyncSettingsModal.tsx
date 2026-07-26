@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Cloud, GitBranch, Loader2, Database, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useStore } from '../store';
+import dbAPI from '../services/db';
 import { THEMES } from '../themes';
 
 interface SyncSettingsModalProps {
@@ -39,7 +40,6 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
     setIsTesting(true);
     setTestResult(null);
     try {
-      const dbAPI = (window as any).dbAPI;
       const res = await dbAPI.githubTestConnection(githubSyncToken);
       if (res.success) {
         setTestResult({ success: true, msg: `Connected as @${res.username}` });
@@ -59,7 +59,6 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
     
     setIsImporting(true);
     try {
-      const dbAPI = (window as any).dbAPI;
       const res = await dbAPI.githubImportDb({ token: githubSyncToken, repoName: githubSyncRepo });
       if (!res.success) {
         alert(`Import failed: ${res.error}`);
@@ -77,7 +76,6 @@ const SyncSettingsModal = ({ isOpen, onClose }: SyncSettingsModalProps) => {
     
     setIsRecovering(true);
     try {
-      const dbAPI = (window as any).dbAPI;
       const res = await dbAPI.githubRecoverNotes({ token: githubSyncToken, repoName: githubSyncRepo });
       if (res.success) {
         alert(`Successfully recovered ${res.count} notes!`);

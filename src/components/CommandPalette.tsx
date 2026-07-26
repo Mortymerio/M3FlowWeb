@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { THEMES } from '../themes';
+import { sanitizeHtml } from '../lib/sanitize';
 
 const CommandPalette = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -186,7 +187,7 @@ const CommandPalette = () => {
                       {item.itemType === 'note' && item.highlight && (
                         <span 
                           className="text-xs text-gray-500 line-clamp-1 italic"
-                          dangerouslySetInnerHTML={{ __html: item.highlight.replace(/==/g, '<mark class="bg-yellow-500/30 text-yellow-200 rounded px-0.5">').replace(/==/g, '</mark>') }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.highlight.replace(/==/g, '<mark class="bg-yellow-500/30 text-yellow-200 rounded px-0.5">').replace(/==/g, '</mark>')) }}
                         />
                       )}
                     </div>

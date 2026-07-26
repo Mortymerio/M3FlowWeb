@@ -4,7 +4,7 @@ import {
   query, where, orderBy, updateDoc, writeBatch 
 } from 'firebase/firestore';
 
-interface Note { id: string; title: string; body: string; notebookId: string | null; status?: string; reminderAt?: number | null; createdAt: number; updatedAt: number; }
+interface Note { id: string; title: string; body: string; notebookId: string | null; status: string; reminderAt: number | null; createdAt: number; updatedAt: number; }
 interface Notebook { id: string; name: string; parentId: string | null; config?: string | null; createdAt: number; }
 interface Tag { id: string; name: string; color: string; }
 interface NoteTag { noteId: string; tagId: string; }
@@ -175,9 +175,9 @@ const dbAPI = {
     return notes.filter(n => n.body?.includes(titleMatch));
   },
 
-  exportMarkdown: async () => false,
-  exportCSV: async () => false,
-  exportPDF: async () => false,
+  exportMarkdown: async (_title?: string, _content?: string) => false,
+  exportCSV: async (_title?: string, _content?: string) => false,
+  exportPDF: async (_title?: string) => false,
   importWorkspace: async () => false,
   closeApp: async () => {},
   minimizeApp: async () => {},
@@ -200,10 +200,10 @@ const dbAPI = {
     }
   },
 
-  githubTestConnection: async () => ({ success: false }),
-  githubSync: async () => ({ success: false }),
-  githubImportDb: async () => ({ success: false }),
-  githubRecoverNotes: async () => ({ success: false }),
+  githubTestConnection: async (_token?: string) => ({ success: false, username: '', error: '' }),
+  githubSync: async (_args?: any) => ({ success: false, error: '' }),
+  githubImportDb: async (_args?: any) => ({ success: false, error: '' }),
+  githubRecoverNotes: async (_args?: any) => ({ success: false, count: 0, error: '' }),
   onGithubProgress: () => {},
 
   scanTasks: async () => {
@@ -285,7 +285,5 @@ const dbAPI = {
     return true;
   }
 };
-
-(window as any).dbAPI = dbAPI;
 
 export default dbAPI;

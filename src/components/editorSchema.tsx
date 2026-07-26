@@ -13,6 +13,7 @@ import { createReactBlockSpec, createReactInlineContentSpec } from '@blocknote/r
 import { MATH_BLOCK_TYPE, MATH_INLINE_TYPE, renderMathToHtml } from '../lib/math-markdown.ts'
 import { MERMAID_BLOCK_TYPE, mermaidFenceSource } from '../lib/mermaid-markdown.ts'
 import { MermaidDiagram } from './MermaidDiagram.tsx'
+import { sanitizeHtml } from '../lib/sanitize';
 
 // --- Math Rendering ---
 
@@ -24,7 +25,7 @@ function MathRender({ latex, displayMode }: { latex: string; displayMode: boolea
       data-latex={latex}
       role="img"
       title={displayMode ? `$$\n${latex}\n$$` : `$${latex}$`}
-      dangerouslySetInnerHTML={{ __html: renderMathToHtml({ latex, displayMode }) }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMathToHtml({ latex, displayMode })) }}
     />
   )
 }
