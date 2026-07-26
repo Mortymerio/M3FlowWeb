@@ -107,7 +107,7 @@ export const createAISlice: StateCreator<
     set({ [key]: value } as any);
     
     // Si no es una key secreta, se guarda en localStorage normal
-    const secretKeys = ['openAiKey', 'geminiKey', 'claudeKey', 'githubToken', 'azureUrl', 'azureKey'];
+    const secretKeys = ['openAiKey', 'geminiKey', 'claudeKey', 'githubToken', 'azureUrl', 'azureKey', 'githubSyncToken'];
     if (!secretKeys.includes(key)) {
       localStorage.setItem(key, value);
       return;
@@ -123,6 +123,7 @@ export const createAISlice: StateCreator<
         githubToken: state.githubToken,
         azureUrl: state.azureUrl,
         azureKey: state.azureKey,
+        githubSyncToken: state.githubSyncToken,
         [key]: value // override with latest just in case
       };
       try {

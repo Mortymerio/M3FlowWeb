@@ -19,9 +19,13 @@ export const createSyncSlice: StateCreator<
   lastSyncTime: parseInt(localStorage.getItem('lastSyncTime') || '0') || null,
 
   setGithubSyncConfig: (config) => {
+    if (config.githubSyncToken !== undefined) {
+      // Instead of writing to localStorage directly, use the vault
+      get().setAiConfig('githubSyncToken', config.githubSyncToken);
+    }
+    
     set((state) => {
       const newState = { ...state, ...config };
-      if (config.githubSyncToken !== undefined) localStorage.setItem('githubSyncToken', config.githubSyncToken);
       if (config.githubSyncRepo !== undefined) localStorage.setItem('githubSyncRepo', config.githubSyncRepo);
       if (config.githubSyncMarkdown !== undefined) localStorage.setItem('githubSyncMarkdown', String(config.githubSyncMarkdown));
       if (config.githubSyncDb !== undefined) localStorage.setItem('githubSyncDb', String(config.githubSyncDb));
