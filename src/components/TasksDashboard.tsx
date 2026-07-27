@@ -4,6 +4,7 @@ import { THEMES } from '../themes';
 import { CheckCircle2, Circle, FileText, Loader2, LayoutList, Calendar, Columns3, X, Clock } from 'lucide-react';
 import TasksCalendarView from './TasksCalendarView';
 import TasksKanbanView from './TasksKanbanView';
+import dbAPI from '../services/db';
 
 interface ParsedTask {
   noteId: string;
@@ -34,7 +35,7 @@ const TasksDashboard = () => {
   const loadTasks = async () => {
     setLoading(true);
     try {
-      const scannedTasks = await (window as any).dbAPI.scanTasks(notes);
+      const scannedTasks = await dbAPI.scanTasks(notes);
       setTasks(scannedTasks);
     } catch (e) {
       console.error('Failed to load tasks:', e);
@@ -56,7 +57,7 @@ const TasksDashboard = () => {
     ));
 
     try {
-      await (window as any).dbAPI.toggleTask({
+      await dbAPI.toggleTask({
         noteId: task.noteId,
         lineNumber: task.lineNumber,
         checked: !task.checked
@@ -64,7 +65,7 @@ const TasksDashboard = () => {
 
       // Fetch fresh notes from sqlite and update zustand store
       // so if this note is open in another tab, its content updates.
-      const freshNotes = await (window as any).dbAPI.getNotes();
+      const freshNotes = await dbAPI.getNotes();
       useStore.setState({ notes: freshNotes });
     } catch (e) {
       console.error('Failed to toggle task:', e);
@@ -86,7 +87,7 @@ const TasksDashboard = () => {
     ));
 
     try {
-      await (window as any).dbAPI.setTaskDueDate({
+      await dbAPI.setTaskDueDate({
         noteId: task.noteId,
         lineNumber: task.lineNumber,
         dueDate: date,
