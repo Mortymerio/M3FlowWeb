@@ -199,8 +199,22 @@ const dbAPI = {
   onGithubProgress: (_callback: any) => {},
 
   scanTasks: async (localNotes?: Note[]) => {
-    if (!auth?.currentUser) return [];
+    console.log('[scanTasks] called, auth?.currentUser:', !!auth?.currentUser);
+    if (!auth?.currentUser) { console.log('[scanTasks] EARLY RETURN: no auth user'); return []; }
     const notes = localNotes || await dbAPI.getNotes();
+    console.log('[scanTasks] notes count:', notes.length);
+    
+    // Log first note's body to understand the format
+    if (notes.length > 0) {
+      const sample = notes[0];
+      console.log('[scanTasks] sample note keys:', Object.keys(sample));
+      console.log('[scanTasks] sample note.title:', sample.title);
+      console.log('[scanTasks] sample note.body type:', typeof sample.body);
+      console.log('[scanTasks] sample note.body length:', (sample.body || '').length);
+      console.log('[scanTasks] sample note.body first 500 chars:', (sample.body || '').substring(0, 500));
+      console.log('[scanTasks] sample note.deletedAt:', (sample as any).deletedAt);
+    }
+    
     const snap = await getDocs(taskMetaRef());
     const allMeta = snap.docs.map(d => ({ ...d.data(), id: d.id })) as TaskMeta[];
     
@@ -210,12 +224,24 @@ const dbAPI = {
     }
     
     const tasks: any[] = [];
+    const taskRegex = /^(\s*)[-*]\s*\[([ xX])\]\s*(.+)$/;
     for (const note of notes) {
-      if (note.deletedAt) continue;
-      const lines = (note.body || '').split(/\r?\n/);
+      if ((note as any).deletedAt) continue;
+      const body = (note.body || '');
+      const lines = body.split(/\r?\n/);
       let taskIndex = 0;
+      let noteHasCheckbox = body.includes('[ ]') || body.includes('[x]') || body.includes('[X]');
+      if (noteHasCheckbox) {
+        console.log(`[scanTasks] note "${note.title}" HAS checkbox text. Lines: ${lines.length}`);
+        // Log lines that contain checkbox-like patterns
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes('[') && lines[i].includes(']')) {
+            console.log(`[scanTasks]   line ${i}: "${lines[i]}" -> regex match:`, taskRegex.test(lines[i]));
+          }
+        }
+      }
       for (let i = 0; i < lines.length; i++) {
-        const match = lines[i].match(/^(\s*)[-*]\s*\[([ xX])\]\s*(.+)$/);
+        const match = lines[i].match(taskRegex);
         if (match) {
           const meta = metaMap.get(`${note.id}:${i}`);
           tasks.push({
@@ -232,6 +258,7 @@ const dbAPI = {
         }
       }
     }
+    console.log('[scanTasks] total tasks found:', tasks.length);
     return tasks;
   },
   getTaskMeta: async () => {
