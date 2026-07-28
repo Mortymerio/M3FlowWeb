@@ -41,20 +41,26 @@ export const MarkdownPreview = React.memo(({ content, className = '' }: Markdown
         // Skip if already processed or has error
         if (el.querySelector('svg') || el.querySelector('.mermaid-error')) continue;
         
-        const src = el.getAttribute('data-mermaid-src');
-        if (src) {
+        const rawSrc = el.getAttribute('data-mermaid-src');
+        const uniqueId = `mermaid-${Date.now()}-${i}`;
+        
+        if (rawSrc) {
           try {
-            const uniqueId = `mermaid-${Date.now()}-${i}`;
+            const src = decodeURIComponent(rawSrc);
+            console.log('Calling mermaid.render...');
             const renderPromise = mermaid.render(uniqueId, src);
             const timeoutPromise = new Promise<{svg: string}>((_, reject) => 
               setTimeout(() => reject(new Error('Mermaid timeout')), 2000)
             );
             
             const { svg } = await Promise.race([renderPromise, timeoutPromise]);
+            console.log('Mermaid render success, svg length:', svg.length);
             
             if (!isCancelled) {
               el.innerHTML = svg;
               el.setAttribute('data-processed', 'true');
+            } else {
+              console.log('Mermaid render cancelled');
             }
           } catch (err) {
             if (!isCancelled) {

@@ -20,9 +20,10 @@ export const mdParser = new MarkdownIt({
 mdParser.renderer.rules.fence = (tokens: any[], idx: number, options: any, _env: any, _slf: any) => {
   const token = tokens[idx];
   const code = token.content.trim();
-  if (token.info === 'mermaid') {
+  if (token.info && token.info.trim() === 'mermaid') {
+    const encodedCode = encodeURIComponent(code);
     const escapedCode = mdParser.utils.escapeHtml(code);
-    return `<div class="mermaid" data-mermaid-src="${escapedCode}">${escapedCode}</div>`;
+    return `<div class="mermaid" data-mermaid-src="${encodedCode}">${escapedCode}</div>`;
   }
   if (token.info) {
     const highlightedText = options.highlight?.(code, token.info, '') || mdParser.utils.escapeHtml(code);
