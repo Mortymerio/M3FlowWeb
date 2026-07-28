@@ -42,6 +42,15 @@ const App = () => {
   const isSyncModalOpen = useStore(state => state.isSyncModalOpen);
   const setSyncModalOpen = useStore(state => state.setSyncModalOpen);
   
+  // Apply dark mode class to html element
+  useEffect(() => {
+    if (themeStyle.isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [themeStyle.isDark]);
+  
   // Auto-sync Watchdog (DISABLED per user request)
   useEffect(() => {
     // Solo mantenemos el listener del progreso para la UI

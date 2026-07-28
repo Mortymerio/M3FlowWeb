@@ -1,6 +1,99 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@theme {
+  --color-z-bg: rgb(var(--z-bg));
+  --color-z-bg-softer: rgb(var(--z-bg-softer));
+  --color-z-bg-1: rgb(var(--z-bg-1));
+  --color-z-bg-2: rgb(var(--z-bg-2));
+  --color-z-bg-3: rgb(var(--z-bg-3));
+  
+  --color-z-fg: rgb(var(--z-fg));
+  --color-z-fg-1: rgb(var(--z-fg-1));
+  --color-z-fg-2: rgb(var(--z-fg-2));
+  
+  --color-z-accent: rgb(var(--z-accent));
+  --color-z-accent-soft: rgb(var(--z-accent-soft));
+  
+  --color-z-red: rgb(var(--z-red));
+  --color-z-green: rgb(var(--z-green));
+  --color-z-yellow: rgb(var(--z-yellow));
+  --color-z-blue: rgb(var(--z-blue));
+  --color-z-purple: rgb(var(--z-purple));
+  --color-z-aqua: rgb(var(--z-aqua));
+  
+  --color-z-shadow: rgb(var(--z-shadow));
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    
+    /* Gruvbox Light Medium */
+    --z-bg: 251 241 199;
+    --z-bg-softer: 249 245 215;
+    --z-bg-1: 242 229 188;
+    --z-bg-2: 229 213 173;
+    --z-bg-3: 213 196 161;
+
+    --z-fg: 80 73 69;
+    --z-fg-1: 60 56 54;
+    --z-fg-2: 101 71 53;
+
+    --z-accent: 195 94 10;
+    --z-accent-soft: 180 113 9;
+
+    --z-red: 193 74 74;
+    --z-green: 108 120 46;
+    --z-yellow: 180 113 9;
+    --z-blue: 69 112 122;
+    --z-purple: 148 94 128;
+    --z-aqua: 76 122 93;
+
+    --z-shadow: 42 38 32;
+    
+    --glass-stroke: rgb(var(--z-shadow) / 0.08);
+  }
+
+  .dark {
+    color-scheme: dark;
+    
+    /* Gruvbox Dark Medium */
+    --z-bg: 40 40 40;
+    --z-bg-softer: 50 48 47;
+    --z-bg-1: 60 56 54;
+    --z-bg-2: 80 73 69;
+    --z-bg-3: 102 92 84;
+
+    --z-fg: 235 219 178;
+    --z-fg-1: 251 241 199;
+    --z-fg-2: 213 196 161;
+
+    --z-accent: 254 128 25;
+    --z-accent-soft: 250 189 47;
+
+    --z-red: 251 73 52;
+    --z-green: 184 187 38;
+    --z-yellow: 250 189 47;
+    --z-blue: 131 165 152;
+    --z-purple: 211 134 155;
+    --z-aqua: 142 192 124;
+
+    --z-shadow: 0 0 0;
+    
+    --glass-stroke: rgb(var(--z-fg) / 0.08);
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-z-bg/80 backdrop-blur-xl border border-[var(--glass-stroke)] shadow-sm;
+  }
+  .glass-panel {
+    @apply bg-z-bg-1/70 backdrop-blur-md border border-[var(--glass-stroke)] shadow-md;
+  }
+}
+
 
 html, body, #root {
   height: 100vh;

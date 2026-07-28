@@ -33,7 +33,7 @@ const Sidebar = () => {
   const getStatusCount = (status: string) => notes.filter(n => n.status === status).length;
 
   return (
-    <div className={`flex-1 flex flex-col h-full font-sans relative pb-[90px] border-r rounded-l-xl ${themeStyle.sidebarBg} ${themeStyle.sidebarText} ${themeStyle.sidebarBorder}`} style={{ WebkitAppRegion: 'drag' } as any} onClick={() => setSettingsOpen(false)}>
+    <div className={`flex-1 flex flex-col h-full font-sans relative pb-[90px] border-r border-[var(--glass-stroke)] rounded-l-xl ${themeStyle.sidebarBg} ${themeStyle.sidebarText}`} style={{ WebkitAppRegion: 'drag' } as any} onClick={() => setSettingsOpen(false)}>
       {/* Logo at the very top */}
       <div className={`px-4 pt-4 pb-1 flex items-center justify-between no-drag ${themeStyle.sidebarHeader}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
         <div className="flex items-center gap-3">
@@ -64,7 +64,7 @@ const Sidebar = () => {
 
         <div 
           onClick={() => { setActiveNotebook(null); useStore.getState().setActiveStatus(null); useStore.getState().setActiveTag(null); }}
-          className={`px-3 py-1.5 rounded-md cursor-pointer flex items-center justify-between transition-colors
+          className={`px-2 py-1 mx-1 rounded-md cursor-pointer flex items-center justify-between transition-colors
             ${!activeNotebookId && !activeStatusId && !activeTagId ? themeStyle.sidebarActive : themeStyle.sidebarHover}
           `}
         >
@@ -78,14 +78,14 @@ const Sidebar = () => {
         {/* Daily Note Button */}
         <div 
           onClick={() => useStore.getState().openDailyNote()}
-          className={`px-3 py-1.5 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-1 ${themeStyle.sidebarHover}`}
+          className={`px-2 py-1 mx-1 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-0.5 ${themeStyle.sidebarHover}`}
           title="Open today's daily note (Ctrl+D)"
         >
           <div className="flex items-center gap-2">
-            <CalendarDays size={14} className="text-amber-500" />
+            <CalendarDays size={14} className="text-z-yellow" />
             <span className="text-[13px] font-medium">Today</span>
           </div>
-          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-500 border border-amber-500/20 tabular-nums">
+          <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[var(--color-z-yellow)]/10 text-[var(--color-z-yellow)] tabular-nums">
             {new Date().getDate()}
           </span>
         </div>
@@ -93,14 +93,14 @@ const Sidebar = () => {
         {/* Meeting Note Button */}
         <div 
           onClick={() => useStore.getState().openMeetingNote()}
-          className={`px-3 py-1.5 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-1 ${themeStyle.sidebarHover}`}
+          className={`px-2 py-1 mx-1 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-0.5 ${themeStyle.sidebarHover}`}
           title="Create meeting notes (Ctrl+M)"
         >
           <div className="flex items-center gap-2">
-            <Users size={14} className="text-purple-400" />
+            <Users size={14} className="text-z-purple" />
             <span className="text-[13px] font-medium">Meeting</span>
           </div>
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/20 uppercase tracking-wider">
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--color-z-purple)]/10 text-[var(--color-z-purple)] uppercase tracking-wider">
             New
           </span>
         </div>
@@ -108,11 +108,11 @@ const Sidebar = () => {
         {/* Tasks Button */}
         <div 
           onClick={() => useStore.getState().openTab({ type: 'tasks', title: 'Tasks' })}
-          className={`px-3 py-1.5 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-1 ${themeStyle.sidebarHover}`}
+          className={`px-2 py-1 mx-1 rounded-md cursor-pointer flex items-center justify-between transition-colors group mt-0.5 ${themeStyle.sidebarHover}`}
           title="Open Tasks Dashboard"
         >
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={14} className="text-emerald-500" />
+            <CheckCircle2 size={14} className="text-z-green" />
             <span className="text-[13px] font-medium">Tasks</span>
           </div>
         </div>
@@ -236,7 +236,7 @@ const Sidebar = () => {
       </div>
 
       {/* Footer Area (Sync + Prefs) */}
-      <div className={`absolute bottom-0 w-full z-10 border-t rounded-bl-xl flex flex-col ${themeStyle.sidebarBg} ${themeStyle.sidebarBorder} no-drag`} style={{ WebkitAppRegion: 'no-drag' } as any}>
+      <div className={`absolute bottom-0 w-full z-10 rounded-bl-xl flex flex-col glass no-drag`} style={{ WebkitAppRegion: 'no-drag' } as any}>
         
         {/* Sync Status — Compact Row */}
         <div className="px-3 py-2">

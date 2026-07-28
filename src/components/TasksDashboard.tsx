@@ -126,7 +126,7 @@ const TasksDashboard = () => {
       <div className="flex-shrink-0 px-8 pt-8 pb-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--color-z-green)]/10 text-z-green flex items-center justify-center">
               <CheckCircle2 size={24} />
             </div>
             <div>
@@ -138,7 +138,7 @@ const TasksDashboard = () => {
           </div>
 
           {/* View Mode Selector */}
-          <div className={`flex items-center p-1 rounded-xl border ${themeStyle.editorBorder} bg-black/10`}>
+          <div className={`flex items-center p-1 rounded-xl glass-panel`}>
             {([
               { id: 'list' as ViewMode, icon: LayoutList, label: 'List' },
               { id: 'calendar' as ViewMode, icon: Calendar, label: 'Calendar' },
@@ -149,8 +149,8 @@ const TasksDashboard = () => {
                 onClick={() => setViewMode(mode.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-bold transition-all
                   ${viewMode === mode.id
-                    ? 'bg-blue-500/20 text-blue-400 shadow-sm border border-blue-500/20'
-                    : 'opacity-50 hover:opacity-100 hover:bg-white/5 border border-transparent'
+                    ? 'bg-z-accent/10 text-z-accent shadow-sm border border-[var(--color-z-accent)]/20'
+                    : 'opacity-50 hover:opacity-100 hover:bg-z-bg-1/40 border border-transparent'
                   }
                 `}
               >
@@ -244,7 +244,7 @@ const TasksDashboard = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-blue-400" />
+                <Calendar size={16} className="text-z-accent" />
                 <span className="text-[12px] font-black uppercase tracking-widest">Set Due Date</span>
               </div>
               <button onClick={() => setDatePickerTask(null)} className="p-1 rounded hover:bg-white/10 transition-colors">
@@ -298,8 +298,8 @@ const TasksDashboard = () => {
                     onClick={() => setDatePickerValue(val)}
                     className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all
                       ${datePickerValue === val
-                        ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                        : 'bg-white/5 opacity-50 hover:opacity-100 border-white/5 hover:border-white/10'}
+                        ? 'bg-z-accent/20 text-z-accent border-[var(--color-z-accent)]/30'
+                        : 'bg-z-bg-1/20 opacity-50 hover:opacity-100 border-[var(--glass-stroke)] hover:border-[var(--color-z-accent)]/30'}
                     `}
                   >
                     {opt.label}
@@ -314,7 +314,7 @@ const TasksDashboard = () => {
   );
 };
 
-const TaskItem = ({ task, onToggle, onOpenNote, onSetDate, onClearDate, themeStyle }: any) => {
+const TaskItem = ({ task, onToggle, onOpenNote, onSetDate, onClearDate }: any) => {
   const formatDueDate = (ts: number) => {
     const d = new Date(ts);
     const now = new Date();
@@ -327,10 +327,10 @@ const TaskItem = ({ task, onToggle, onOpenNote, onSetDate, onClearDate, themeSty
   const due = task.dueDate ? formatDueDate(task.dueDate) : null;
 
   return (
-    <div className={`flex items-center gap-4 p-3 rounded-lg border transition-all hover:shadow-md group ${themeStyle.editorBorder} hover:bg-black/5`}>
+    <div className={`flex items-center gap-4 p-3 rounded-lg border border-[var(--glass-stroke)] transition-all hover:shadow-md group hover:bg-z-bg-1/40`}>
       <button 
         onClick={onToggle}
-        className={`flex-shrink-0 transition-colors ${task.checked ? 'text-emerald-500' : 'text-gray-400 hover:text-emerald-400'}`}
+        className={`flex-shrink-0 transition-colors ${task.checked ? 'text-z-green' : 'text-z-fg-1 hover:text-z-green'}`}
       >
         {task.checked ? <CheckCircle2 size={20} /> : <Circle size={20} />}
       </button>
@@ -344,9 +344,9 @@ const TaskItem = ({ task, onToggle, onOpenNote, onSetDate, onClearDate, themeSty
         <div className="flex items-center gap-1 flex-shrink-0">
           <span
             className={`text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 cursor-pointer transition-all hover:scale-105
-              ${due.isOverdue ? 'bg-red-500/15 text-red-400 border-red-500/20' :
-                due.isToday ? 'bg-blue-500/15 text-blue-400 border-blue-500/20' :
-                'bg-white/5 text-white/40 border-white/5'}
+              ${due.isOverdue ? 'bg-z-red/15 text-z-red border-[var(--color-z-red)]/20' :
+                due.isToday ? 'bg-z-accent/15 text-z-accent border-[var(--color-z-accent)]/20' :
+                'bg-z-bg-1/40 text-z-fg-1 border-[var(--glass-stroke)]'}
             `}
             onClick={onSetDate}
             title="Change due date"
@@ -365,7 +365,7 @@ const TaskItem = ({ task, onToggle, onOpenNote, onSetDate, onClearDate, themeSty
       ) : (
         <button
           onClick={onSetDate}
-          className="flex items-center gap-1 text-[10px] opacity-0 group-hover:opacity-40 hover:!opacity-100 transition-all hover:text-blue-400 px-2 py-0.5 rounded-md border border-transparent hover:border-blue-500/20 flex-shrink-0"
+          className="flex items-center gap-1 text-[10px] opacity-0 group-hover:opacity-40 hover:!opacity-100 transition-all hover:text-z-accent px-2 py-0.5 rounded-md border border-transparent hover:border-[var(--color-z-accent)]/20 flex-shrink-0"
           title="Set due date"
         >
           <Calendar size={10} />
@@ -375,7 +375,7 @@ const TaskItem = ({ task, onToggle, onOpenNote, onSetDate, onClearDate, themeSty
       
       <button 
         onClick={onOpenNote}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-all hover:bg-black/10 flex-shrink-0 max-w-[150px]"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-all hover:bg-z-bg-1/50 flex-shrink-0 max-w-[150px]"
         title="Open Note"
       >
         <FileText size={12} className="opacity-50" />

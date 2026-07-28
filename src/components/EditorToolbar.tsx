@@ -55,10 +55,10 @@ const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
 
   const myTags = noteTags.filter(nt => nt.noteId === activeNoteId).map(nt => tags.find(t => t.id === nt.tagId)).filter(Boolean) as any[];
   const hasReminder = !!activeNote.reminderAt;
-  const statusColor = activeNote.status === 'active' ? 'bg-blue-500' :
-                      activeNote.status === 'on-hold' ? 'bg-amber-500' :
-                      activeNote.status === 'completed' ? 'bg-emerald-600' :
-                      activeNote.status === 'dropped' ? 'bg-red-500' : null;
+  const statusColor = activeNote.status === 'active' ? 'bg-[var(--color-z-blue)]' :
+                      activeNote.status === 'on-hold' ? 'bg-[var(--color-z-yellow)]' :
+                      activeNote.status === 'completed' ? 'bg-[var(--color-z-green)]' :
+                      activeNote.status === 'dropped' ? 'bg-[var(--color-z-red)]' : null;
 
   return (
     <div className={`flex flex-col border-b relative z-[90] ${themeStyle.editorHeader} ${themeStyle.editorBorder}`}>
@@ -77,7 +77,7 @@ const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
         {/* Right: Essential Tools */}
         <div className="flex items-center gap-1.5 no-drag" style={{ WebkitAppRegion: 'no-drag' } as any}>
           {/* View Mode Toggle */}
-          <div className={`flex items-center p-0.5 rounded-lg border ${themeStyle.editorBorder} bg-black/5`}>
+          <div className={`flex items-center p-0.5 rounded-lg border border-[var(--glass-stroke)] bg-z-bg-1/40`}>
             {[
               { id: 'edit', icon: LayoutList, title: 'Edit Only' },
               { id: 'split', icon: Columns, title: 'Split View' },
@@ -87,7 +87,7 @@ const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
                 key={mode.id}
                 onClick={() => setViewMode(mode.id as any)}
                 aria-label={mode.title}
-                className={`p-1.5 rounded-md transition-all ${viewMode === mode.id ? 'bg-black/20 text-blue-400 shadow-sm' : `opacity-40 hover:opacity-100 ${themeStyle.sidebarHover}`}`}
+                className={`p-1.5 rounded-md transition-all ${viewMode === mode.id ? 'bg-z-accent/20 text-z-accent shadow-sm' : `opacity-40 hover:opacity-100 ${themeStyle.sidebarHover}`}`}
                 title={mode.title}
               >
                 <mode.icon size={13} />
@@ -96,7 +96,7 @@ const EditorToolbar = ({ viewMode, setViewMode }: EditorToolbarProps) => {
             <div className={`w-px h-3 mx-1 bg-white/10`} />
             <button
               onClick={() => setEditorType(editorType === 'raw' ? 'rich' : 'raw')}
-              className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-colors ${editorType === 'raw' ? 'bg-blue-500/20 text-blue-400' : `opacity-40 hover:opacity-100 ${themeStyle.sidebarHover}`}`}
+              className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-colors ${editorType === 'raw' ? 'bg-z-accent/20 text-z-accent' : `opacity-40 hover:opacity-100 ${themeStyle.sidebarHover}`}`}
             >
               {editorType === 'raw' ? 'RAW' : 'RICH'}
             </button>
